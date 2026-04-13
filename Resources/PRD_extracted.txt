@@ -1,0 +1,470 @@
+MedLens — Product Requirements Document   |   Team 1   |   April 2026 
+Confidential — Capstone 2026     Page 1 
+ 
+ 
+ 
+ 
+MedLens 
+AI Medication Plain-Language Translator 
+ 
+ 
+ 
+Product Requirements Document 
+ 
+Version 1.0   |   April 2026   |   Team 1 
+ 
+Platform: Mobile App (iOS & Android)   |   Industry: Pharma Tech / Health 
+ 
+DeepSeek API   •   OpenFDA API   •   Supabase   •   React Native 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+CONFIDENTIAL — CAPSTONE PROJECT DOCUMENT 
+  
+MedLens — Product Requirements Document   |   Team 1   |   April 2026 
+Confidential — Capstone 2026     Page 2 
+Executive Summary 
+ 
+MedLens is a mobile application — available on iOS and Android — that translates complex 
+medication information into clear, plain everyday language that anyone can understand. The 
+app is built for patients, caregivers, and everyday people who are handed a prescription or 
+medication leaflet and struggle to make sense of what it says. 
+ 
+Medication leaflets and prescription documents are written in dense medical jargon designed for 
+healthcare professionals, not for the patients who actually take the drugs. A patient who picks 
+up a prescription and cannot understand the dosage instructions, warnings, or side effects is at 
+genuine risk of taking their medication incorrectly. This is the daily experience of the majority of 
+patients worldwide, and it is even more acute in regions where English is a second language. 
+ 
+MedLens addresses this directly. A user opens the app, types the name of a medication, and 
+the app retrieves official drug data from the OpenFDA API. That data is passed to DeepSeek AI, 
+which rewrites the medical information in simple, everyday language — what the drug is for, 
+how to take it, what warnings to be aware of, and what side effects are possible. Beyond the 
+core explanation, users can save medications to a personal medicine cabinet, check for risky 
+drug combinations in plain language, export a summary card to share with a caregiver, and 
+activate an 'Explain Like I'm 12' toggle for even simpler language. 
+ 
+The app runs on a fully free technology stack — OpenFDA for drug data, DeepSeek API for AI-
+powered rewriting, and Supabase for user accounts and saved cabinets — built with React 
+Native, the same framework that powers the ChatGPT mobile app. MedLens is not a diagnostic 
+tool. It is a health literacy tool that helps people understand the medications they have already 
+been prescribed, so they can take them correctly, safely, and with confidence. 
+ 
+Problem Statement 
+ 
+Medication leaflets and prescription information are written in dense medical jargon. Patients 
+routinely misunderstand dosage instructions, side effects, and drug interactions — especially in 
+regions where English is a second language. Key problems include: 
+ 
+• Low Health Literacy: Many users cannot correctly interpret dosage instructions, 
+warnings, or side effects from standard prescription labels or medication leaflets. 
+• Medication Misuse: Misunderstanding instructions leads to incorrect usage, missed 
+doses, or dangerous over-use — all of which carry serious health consequences. 
+• Language Barriers: English-only medical information limits accessibility in multilingual 
+regions, particularly across West Africa where English is a second language for the 
+majority of the population. 
+• Limited Accessibility: Users with lower literacy levels or visual impairments face 
+additional barriers in reading and understanding written medication instructions. 
+MedLens — Product Requirements Document   |   Team 1   |   April 2026 
+Confidential — Capstone 2026     Page 3 
+ 
+As a result, patients routinely make unsafe or uninformed decisions about their medications — 
+not because they are careless, but because the information they are given was never written for 
+them. 
+ 
+Product Vision and Goals 
+ 
+Vision 
+To become a trusted mobile platform that helps people understand their medications clearly, 
+safely, and confidently — in language that works for them. 
+ 
+Core Goals 
+• Clarity: Translate medical jargon into simple, human-friendly language anyone can 
+understand. 
+• Safety: Prevent harmful misinterpretation of medication instructions by providing 
+accurate, plain-language explanations grounded in verified drug data. 
+• Accessibility: Support voice playback and simplified language modes so no user is left 
+behind, regardless of literacy level or language background. 
+• Trust: Provide transparent, responsibly simplified information — always clearly sourced 
+from official drug data, never invented by AI. 
+• Empowerment: Enable users to make informed decisions about their medications and 
+have better conversations with their healthcare providers. 
+ 
+Target Users and Use Cases 
+ 
+Primary Target Users 
+• Adults managing their own prescriptions 
+• Caregivers assisting elderly parents, children, or family members with medications 
+• Individuals with moderate literacy challenges 
+• Non-native English speakers in multilingual regions 
+ 
+Key Use Cases 
+Use Case 1 — Understanding a Prescription 
+MedLens — Product Requirements Document   |   Team 1   |   April 2026 
+Confidential — Capstone 2026     Page 4 
+A user receives a new prescription and cannot understand the label. They open MedLens, type 
+the medication name, and receive a plain-language explanation of what the drug is for, how to 
+take it, and what to watch for. 
+ 
+Use Case 2 — Medication Management 
+A user saves multiple medications to their personal medicine cabinet. Each time they need a 
+reminder of how to take a specific drug, they open the cabinet and review the saved plain-
+language summary without re-searching. 
+ 
+Use Case 3 — Basic Interaction Awareness 
+A user is prescribed a new medication and wants to know if it is safe to take alongside their 
+existing drugs. They select both medications in the interaction checker and receive a plain-
+language flag if a known risky combination is detected. 
+ 
+Use Case 4 — Caregiver Support 
+A caregiver managing medications for an elderly parent generates an exportable summary card 
+for one of the parent's prescriptions and shares it via WhatsApp with another family member 
+helping with care. 
+ 
+Use Case 5 — Language Accessibility 
+A user who finds the standard plain-language summary still too complex activates the 'Explain 
+Like I'm 12' toggle and receives an even simpler version of the same information — shorter 
+sentences, no technical vocabulary, and relatable everyday language. 
+ 
+Key Features (MVP) 
+ 
+The Minimum Viable Product is defined by five core features, taken directly from the project 
+brief. These are the committed features for the first public release of the MedLens mobile app. 
+ 
+1. Drug Search with Autocomplete Suggestions 
+Users can search for any medication by typing its name into the search bar. The app displays 
+autocomplete suggestions as the user types, pulling from the OpenFDA Drug API in real time. 
+The search supports both brand names and generic names, and handles common spelling 
+variations. Once a medication is selected, the app retrieves the official drug label data and 
+passes it to the DeepSeek AI layer, which rewrites the information in plain, everyday language 
+and displays it as a structured summary card. 
+ 
+2. "Explain Like I'm 12" Toggle 
+MedLens — Product Requirements Document   |   Team 1   |   April 2026 
+Confidential — Capstone 2026     Page 5 
+Every drug summary screen includes an 'Explain Like I'm 12' toggle. When activated, DeepSeek 
+re-processes the current drug's information using an even simpler prompt — shorter sentences, 
+no technical vocabulary, and everyday analogies where helpful. The toggle is clearly labelled so 
+users understand it provides an additional simplification layer, not a different or reduced version 
+of the medical facts. 
+ 
+This feature is designed for users who find the standard plain-language summary still too 
+complex, including elderly users, low-literacy users, and users reading in their second language. 
+ 
+3. Personal Medicine Cabinet 
+Users can save any medication they have searched to their personal medicine cabinet — a 
+persistent list of their medications stored in their Supabase account. The medicine cabinet is 
+accessible from the home screen and allows users to view the full plain-language summary of 
+any saved medication at any time without re-searching. 
+ 
+The cabinet stores the drug name and its simplified explanation. It does not track dosage 
+schedules or make dosage recommendations in MVP. 
+ 
+4. Interaction Checker 
+Users can select multiple medications from their medicine cabinet and run an interaction check. 
+The system displays interaction warnings only when reliable data is available from OpenFDA. If 
+data is unavailable or inconclusive, the app clearly communicates this: 
+ 
+"We cannot confirm interactions between these medications. Please consult a healthcare 
+professional." 
+ 
+Interaction results are displayed in plain language — not clinical severity labels. The checker 
+does not guess or infer. It only surfaces interactions supported by verified data. 
+ 
+5. Exportable Summary Card 
+After viewing any drug summary, users can generate an exportable summary card. The card 
+includes the drug name, what it does, how to take it, and key warnings — formatted cleanly for 
+sharing. Users can share the card with a caregiver or family member directly from the app using 
+the native iOS and Android share sheet (WhatsApp, email, or any installed messaging app). 
+ 
+Future Features and Roadmap 
+ 
+As MedLens grows beyond MVP, the following capabilities are planned: 
+MedLens — Product Requirements Document   |   Team 1   |   April 2026 
+Confidential — Capstone 2026     Page 6 
+ 
+• Medication Label Scanning (OCR): A future release will introduce the ability to snap a 
+photo of a medication label or leaflet. The app will extract the drug name from the image 
+and run the same plain-language explanation flow — removing the need to type the 
+medication name manually. 
+• Expanded Language Support: Additional global languages will be added in post-MVP 
+releases, building on the English support available at launch. 
+• Advanced Interaction Checker: Integration with additional verified pharmaceutical 
+datasets to increase the coverage and reliability of interaction results. 
+• Medication Reminders: A scheduling feature that allows users to set daily reminders 
+for each medication in their cabinet. 
+• AI Conversational Assistant: A follow-up Q&A feature where users can ask questions 
+about a specific drug after viewing its summary — powered by DeepSeek with drug-
+specific context. 
+• Nigerian Drug Coverage: Integration with EMDEX API or DrugList.ng to cover 
+NAFDAC-registered Nigerian medications not found in the OpenFDA database, using 
+RxNorm as a drug name normalisation layer across both sources. 
+ 
+Free vs. Paid Feature Tiers 
+ 
+MedLens will adopt a freemium model. The core plain-language translation feature is always 
+free. Premium tiers unlock additional functionality for power users. 
+ 
+Feature Free Pro — $5/mo 
+Drug search & plain-language summary ✅ Unlimited ✅ Unlimited 
+'Explain Like I'm 12' toggle ✅ Included ✅ Included 
+Medicine cabinet (saved medications) Up to 5 drugs Unlimited 
+Interaction checker 2 drugs Up to 10 drugs 
+Exportable summary card ✅ Included ✅ Included 
+Medication reminders (V2) ❌ ✅ Included 
+Support Self-serve Email priority 
+ 
+Detailed User Flows 
+ 
+Flow 1 — Onboarding & Authentication 
+MedLens — Product Requirements Document   |   Team 1   |   April 2026 
+Confidential — Capstone 2026     Page 7 
+1. User downloads and opens MedLens for the first time. Splash screen displays briefly 
+before the onboarding screens load. 
+2. Onboarding screens walk the user through what MedLens does — three simple slides: 
+search a medication, get a plain-language explanation, save to your cabinet. 
+3. After the final onboarding slide, a brief loading spinner plays and the user is taken 
+directly to the home screen. No sign-up decision is required upfront. 
+4. User is already in guest mode and can immediately start searching for a medication and 
+viewing plain-language explanations. 
+5. When the user attempts to save a medication to their cabinet, they are prompted to 
+create a free account or log in. This is the only moment sign-up is introduced. 
+6. Returning users who have already signed up bypass onboarding and go directly to the 
+log-in screen. On successful login, they land on their home screen with their cabinet 
+restored. 
+ 
+Flow 2 — Medication Explanation 
+1. User opens MedLens. Home screen displays a search bar and their medicine cabinet. 
+2. User types a medication name. Autocomplete suggestions appear from OpenFDA as 
+they type. 
+3. User selects the medication from suggestions. 
+4. App retrieves the official FDA label data from OpenFDA API. 
+5. Backend passes the label data to DeepSeek API with a plain-language prompt. 
+6. AI returns a structured plain-language summary: what it is, how to take it, warnings, side 
+effects. 
+7. User reads the summary. They can toggle 'Explain Like I'm 12' for a further simplified 
+version. 
+8. User taps 'Save to Cabinet' to add the medication to their personal medicine cabinet. 
+ 
+Flow 3 — Medicine Cabinet & Interaction Check 
+1. User opens their medicine cabinet from the home screen. 
+2. Cabinet displays all saved medications with drug name and one-line summary. 
+3. User taps 'Check Interactions.' They select two or more medications from the cabinet. 
+4. App queries OpenFDA for known interaction data between the selected drugs. 
+5. Results display as a plain-language flag: safe, use caution, or consult a professional. 
+ 
+Flow 4 — Export & Share Summary Card 
+1. User views a drug summary screen. 
+2. User taps 'Export Summary.' App generates a formatted summary card. 
+3. Card includes: drug name, what it does, how to take it, key warnings. 
+4. User taps 'Share.' Native iOS/Android share sheet opens. 
+5. User selects WhatsApp, email, or any installed app to send the card. 
+MedLens — Product Requirements Document   |   Team 1   |   April 2026 
+Confidential — Capstone 2026     Page 8 
+ 
+Technical Requirements 
+ 
+Architecture Overview 
+MedLens is a mobile application built with React Native — the same framework used to build 
+the ChatGPT mobile app. React Native produces a fully native iOS and Android application from 
+a single codebase, delivering the smooth screen transitions, native keyboard behaviour, and 
+fluid scroll physics that define a professional mobile app experience. The app is distributed via 
+the Apple App Store and Google Play Store. 
+ 
+A branded splash screen — displaying the MedLens logo on a teal background — appears on 
+every app launch using the @notifee/react-native and react-native-splash-screen libraries, 
+configured natively for both platforms. 
+ 
+The architecture separates concerns cleanly across four layers: the React Native mobile 
+frontend, a lightweight Node.js/Express backend API, external data and AI services, and the 
+Supabase database. 
+ 
+Tech Stack 
+ 
+Layer Technology Role 
+Mobile Frontend React Native (Expo) Builds the native iOS and Android app from 
+a single codebase. Delivers ChatGPT-like 
+smooth navigation — no page reloads, 
+instant screen transitions, native feel 
+throughout. 
+Splash Screen react-native-splash-screen Branded splash screen shown on every 
+app launch — MedLens logo on teal 
+background — before the React Native UI 
+loads. 
+Backend Node.js + Express Lightweight API server. Orchestrates calls 
+to OpenFDA and DeepSeek, handles 
+Supabase auth, and returns structured 
+responses to the mobile app. 
+AI Engine DeepSeek API (free tier) Rewrites FDA label data into plain-
+language summaries. Handles both the 
+standard explanation and the 'Explain Like 
+I'm 12' mode via separate prompt 
+configurations. 
+Drug Data OpenFDA Drug API Free, no API key required for basic use. 
+Provides official FDA drug label data — 
+MedLens — Product Requirements Document   |   Team 1   |   April 2026 
+Confidential — Capstone 2026     Page 9 
+indications, dosage, warnings, side effects, 
+and adverse events — for all FDA-
+approved medications. 
+Database & Auth Supabase (free tier) PostgreSQL database for user accounts 
+and saved medicine cabinets. Supabase 
+Auth handles sign-up, login, and Google 
+OAuth. Free tier supports up to 50,000 
+monthly active users. 
+Export / Share react-native-view-shot + 
+Share API 
+Generates the exportable summary card as 
+an image or PDF. Triggers the native 
+iOS/Android share sheet for sending via 
+WhatsApp, email, or any installed app. 
+ 
+API Integrations 
+ 
+Endpoint Method Description 
+api.fda.gov/drug/label.json GET Retrieve official drug label data by brand or generic 
+name. Returns indications, dosage, warnings, adverse 
+reactions. 
+api.fda.gov/drug/event.json GET Retrieve adverse event data used to support the 
+interaction checker. 
+DeepSeek 
+/chat/completions 
+POST Send structured FDA label content. Receive plain-
+language summary JSON for standard mode and 
+ELI12 mode. 
+Supabase /auth/v1/signup POST Create a new user account via Supabase Auth. 
+Supabase /rest/v1/cabinet GET / 
+POST / 
+DELETE 
+Read and write the authenticated user's saved 
+medicine cabinet. 
+ 
+Security and Compliance 
+• Data in Transit: All API communication encrypted over HTTPS/TLS. Supabase 
+enforces SSL on all database connections. 
+• Authentication: Supabase Auth manages JWT-based sessions. Supports 
+email/password and Google OAuth sign-in. 
+• Data Minimization: MedLens stores only the drug names users explicitly save. No 
+sensitive medical records are stored beyond user inputs. No data is sold or shared with 
+third parties. 
+• AI Guardrails: DeepSeek is instructed via system prompt to only rewrite provided FDA 
+label data — never to generate new medical instructions, guess missing information, or 
+recommend treatments. If reliable data is unavailable, the app displays: 'We could not 
+find reliable information for this medication. Please consult a healthcare professional.' 
+MedLens — Product Requirements Document   |   Team 1   |   April 2026 
+Confidential — Capstone 2026     Page 10 
+• App Store Compliance: Both Apple App Store and Google Play Store submissions 
+include a Privacy Policy, Terms of Service, and health content disclaimer. MedLens is 
+categorised as a Health & Fitness utility — not a regulated medical device — at MVP 
+stage. 
+• Disclaimer: Displayed prominently on every summary screen: 'MedLens simplifies 
+medical information for understanding. It does not replace professional medical advice.' 
+ 
+Metrics of Success 
+ 
+Product Metrics 
+• Number of Active Users (DAU/MAU): Daily and monthly active users — the primary 
+indicator of adoption and sustained engagement. 
+• Number of Searches per User: Average drug searches per active user per session — 
+measures genuine utility. 
+• Feature Usage: Usage rates for ELI12 toggle, voice playback, cabinet saves, interaction 
+checker, and export card — identifies which features deliver the most value. 
+• Onboarding Completion Rate: Percentage of sign-ups that complete account setup 
+and run their first drug search. 
+ 
+Trust Metrics 
+• Explanation Helpfulness Rating: In-app 'Was this helpful? Yes / No' prompt shown 
+after each summary. Target: above 80% positive. 
+• Successful Explanation Rate: Percentage of searches that return a full plain-language 
+summary vs. a 'not found' result. 
+• Frequency of 'Data Not Found' Cases: Tracks coverage gaps in the OpenFDA 
+database — informs the prioritisation of additional data sources. 
+ 
+Accessibility Metrics 
+• ELI12 Toggle Usage Rate: How often users activate the simplified mode — signals 
+when standard plain language is still too complex. 
+• Text-to-Speech Usage Rate: Percentage of users who activate voice playback — 
+indicates the size of the low-literacy and visually impaired user segment. 
+• App Store Rating: Target 4.5 / 5 stars or above on both the Apple App Store and 
+Google Play Store within 3 months of launch. 
+ 
+Risks and Limitations 
+ 
+MedLens — Product Requirements Document   |   Team 1   |   April 2026 
+Confidential — Capstone 2026     Page 11 
+• AI Simplification Nuance: AI may occasionally miss nuance or simplify a warning in a 
+way that reduces its urgency. Mitigated by restricting DeepSeek to only rewrite provided 
+data and by displaying the FDA source alongside every summary. 
+• OpenFDA Data Coverage: OpenFDA covers FDA-approved medications and does not 
+include non-US drug brands. Mitigated in MVP by clearly communicating this limitation; 
+broader global drug coverage is on the roadmap. 
+• User Over-Reliance: Some users may treat MedLens summaries as a substitute for 
+professional medical advice. Mitigated by prominent disclaimers on every screen and 
+consistent 'consult your healthcare provider' messaging at key moments. 
+• Interaction Checker Coverage: The interaction checker only surfaces interactions 
+present in OpenFDA data. If data is unavailable, the app communicates this clearly 
+rather than guessing. 
+ 
+MVP Limitations 
+• English only at launch. Additional global languages are planned for post-MVP releases. 
+• Medicine cabinet stores drug name and simplified explanation only. Dosage tracking and 
+scheduling are not included in MVP. 
+• Interaction checker limited to data available in OpenFDA adverse event records. It is not 
+a comprehensive clinical pharmacology tool. 
+ 
+Competitive Landscape and Analysis 
+ 
+MedLens operates at the intersection of consumer health literacy and AI-powered medical 
+communication. The competitors below are evaluated against MedLens's core offering: a free, 
+direct-to-patient mobile app that translates medication information into plain language using 
+official FDA data. 
+ 
+Key Competitors 
+Vital.io 
+An AI-powered tool that translates clinical notes and lab results into plain language. Hospital-
+facing only — not available directly to patients. Does not focus on medication labels specifically. 
+ 
+Patiently AI 
+A UK-based tool that translates medical letters and clinical documents into everyday language. 
+Focused on documents and letters, not medication name search. UK/NHS-centric — not FDA-
+powered. 
+ 
+drugs.com / WebMD 
+MedLens — Product Requirements Document   |   Team 1   |   April 2026 
+Confidential — Capstone 2026     Page 12 
+The incumbent consumer drug information platforms. Comprehensive drug databases but 
+present information in clinical format, are ad-heavy, and have no AI plain-language simplification 
+layer. Their side-effect pages are a primary driver of patient health anxiety online. 
+ 
+GoodRx 
+A widely used drug pricing and discount platform with basic drug information pages. Focused on 
+cost savings, not health literacy. No AI simplification layer. 
+ 
+Competitive Matrix 
+Feature MedLens Vital.io Patiently 
+AI 
+drugs.com / 
+WebMD GoodRx 
+Plain-language 
+simplification 
+✅ ✅ ✅ ❌ ❌ 
+Medication-specific focus ✅ Partial ❌ ✅ Partial 
+Free & consumer-direct ✅ ❌ Partial ✅ ✅ 
+Official FDA data source ✅ ❌ ❌ Partial ❌ 
+AI-generated summaries ✅ ✅ ✅ ❌ ❌ 
+Mobile app (iOS & 
+Android) 
+✅ ❌ ❌ Partial ✅ 
+Ad-free experience ✅ ✅ ✅ ❌ Partial 
+Drug interaction checker ✅ ❌ ❌ ✅ ❌ 
+Exportable summary card ✅ ❌ ❌ ❌ ❌ 
+ 
+MedLens is the only free, consumer-facing, FDA-powered, AI plain-language medication 
+translator built as a native mobile app. Every competitor either requires institutional access, 
+focuses on a different input type, presents clinical data without simplification, or is not available 
+as a direct-to-patient mobile experience. 
