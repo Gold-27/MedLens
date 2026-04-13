@@ -2,8 +2,7 @@ import { Request, Response } from 'express';
 import { OpenFDAService, NormalizedDrugData } from '../services/openfda';
 import { DeepSeekService } from '../services/deepseek';
 
-const openfdaService = new OpenFDAService();
-const deepseekService = new DeepSeekService();
+
 
 export interface SearchResponse {
   drug_name: string;
@@ -31,7 +30,7 @@ export const searchMedication = async (req: Request, res: Response) => {
     console.log(`Searching for medication: ${query}`);
     
     // Step 1: Fetch data from OpenFDA
-    const normalizedData = await openfdaService.searchDrug(query.trim());
+    const normalizedData = await new OpenFDAService().searchDrug(query.trim());
     
     if (!normalizedData) {
       return res.status(404).json({ 
