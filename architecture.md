@@ -1,4 +1,4 @@
-# MedLens System Architecture (Production-Grade, Schema-First)
+# MedLens System Architecture Specification
 
 ---
 

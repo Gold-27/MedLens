@@ -1,5 +1,4 @@
-# MedLens Database Schema (Production-Grade, Schema-First)
-
+# MedLens Database Schema Specification
 ---
 
 ## 0. Purpose
@@ -85,7 +84,7 @@ Managed by:
 
 ---
 
-### 2.2 CabinetItem
+### 2.2 Cabinet Item
 
 Represents a saved medication.
 
