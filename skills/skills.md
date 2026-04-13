@@ -180,7 +180,7 @@ OR
 
 ## Design Tokens (PREFERRED)
 
-- Use tokens from design-tokens.css  
+- Use tokens from `design-tokens.css`  
 
 Example:
 ```css

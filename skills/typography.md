@@ -1,4 +1,4 @@
-# MedLens Typography Specification (Production-Grade)
+# MedLens Typography Specification 
 
 ---
 
@@ -35,7 +35,7 @@ Fallback:
 
 ## 2. Type Scale
 
-All font sizes MUST come from design-tokens.css.
+All font sizes MUST come from `design-tokens.css`.
 
 ---
 
@@ -305,7 +305,10 @@ text-black
   - body  
   - captions  
  
-
+ All text size must be measured in rem and not pixels
+- All heading  text must use the clamp function in css
+- Low constrast text combination are avoided 
+- Text placed on colored surfaces uses the matching "on-*" color token.
 ---
 
 ## 11. ELI12 Mode
@@ -337,7 +340,7 @@ text-black
 
 ---
 
-## 13. Loading & Skeleton Text (NEW)
+## 13. Loading & Skeleton Text 
 
 ---
 
@@ -347,7 +350,7 @@ text-black
 
 ---
 
-## 14. Error Text Behavior (NEW)
+## 14. Error Text Behavior 
 
 ---
 
@@ -359,7 +362,7 @@ Error messages MUST:
 
 ---
 
-## 15. Performance Considerations (NEW)
+## 15. Performance Considerations
 
 ---
 

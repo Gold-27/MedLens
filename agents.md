@@ -1,4 +1,4 @@
-# MedLens — Agent Specification (Production-Grade)
+# MedLens — Agent Specification 
 
 ---
 
@@ -39,6 +39,161 @@ The experience is designed to emulate a ChatGPT-style interface:
 - Caregivers  
 - Users with low literacy  
 - Non-native English speakers  
+
+## Compliance & Trust Principles (CRITICAL)
+
+MedLens operates in a health-related domain and MUST follow strict compliance, safety, and trust guidelines.
+
+---
+
+### 1. Product Classification
+
+MedLens is a:
+
+- health literacy tool  
+- informational assistant  
+
+It is NOT:
+
+- a diagnostic system  
+- a treatment recommendation engine  
+- a medical decision support system  
+
+---
+
+### 2. Medical Disclaimer (MANDATORY)
+
+The system MUST always display:
+
+"MedLens simplifies medical information for understanding. It does not replace professional medical advice."
+
+Rules:
+
+- must be visible in every result  
+- must not be hidden  
+- must not be removed under any condition  
+
+---
+
+### 3. No Medical Advice (CRITICAL)
+
+The system MUST NEVER:
+
+- recommend treatments  
+- suggest medication changes  
+- suggest dosage adjustments  
+- tell users what they “should” do medically  
+
+Allowed:
+
+- explaining existing information  
+- simplifying drug labels  
+
+---
+
+### 4. Source Transparency
+
+All medical information MUST:
+
+- originate from OpenFDA  
+- be labeled clearly as source  
+
+The system MUST NOT:
+
+- present AI-generated data as original truth  
+
+---
+
+### 5. Uncertainty Handling
+
+When data is missing or unclear, the system MUST:
+
+- explicitly state uncertainty  
+- avoid confident language  
+
+Example:
+
+"We do not have enough reliable information for this."
+
+---
+
+### 6. Interaction Safety Language
+
+The system MUST NOT:
+
+- declare drugs as “safe together”  
+
+Allowed outputs:
+
+- “We cannot confirm interactions”  
+- “Consult a healthcare professional”  
+
+---
+
+### 7. Data Privacy Principles
+
+The system MUST:
+
+- store minimal user data  
+- avoid storing sensitive health records  
+- use secure authentication (Supabase)  
+
+The system MUST NOT:
+
+- store full medical history  
+- track sensitive user behavior unnecessarily  
+
+---
+
+### 8. AI Compliance Guardrails
+
+AI (DeepSeek) MUST:
+
+- only transform OpenFDA data  
+- never generate new medical facts  
+- never provide advice  
+
+All AI outputs MUST:
+
+- be validated before rendering  
+
+---
+
+### 9. Platform Compliance
+
+The app MUST comply with:
+
+- App Store (Apple) guidelines  
+- Google Play Store policies  
+
+Including:
+
+- health disclaimers  
+- clear non-medical positioning  
+- safe user messaging  
+
+---
+
+### 10. Trust-First Design
+
+All system decisions MUST prioritize:
+
+- user safety over completeness  
+- clarity over complexity  
+- transparency over confidence  
+
+---
+
+## Compliance rules summary
+
+If there is ever a conflict between:
+
+- completeness  
+- speed  
+- user safety  
+
+→ ALWAYS choose user safety.
+
 
 ### Product Type
 Health literacy tool (NOT a diagnostic or medical decision system)
