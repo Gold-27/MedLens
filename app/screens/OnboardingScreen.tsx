@@ -20,7 +20,7 @@ const slides: Slide[] = [
   {
     id: '2',
     title: 'Search. Read. Understand.',
-    description: 'Type a medication name and receive a simple summary in seconds—no medical jargon.',
+    description: 'Type a medication name and receive a simple summary in seconds, no medical jargon.',
     image: require('../assets/img_onboard2.png'),
   },
   {
@@ -66,9 +66,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
 
   const renderSlide = ({ item }: { item: Slide }) => (
     <View style={[styles.slide, { width }]}>
-      <View style={styles.imageContainer}>
-        <Image source={item.image} style={styles.image} resizeMode="contain" />
-      </View>
+      <Image source={item.image} style={styles.image} resizeMode="contain" />
       <View style={styles.textContainer}>
         <Text style={[styles.title, { color: theme.colors.onSurface }]}>{item.title}</Text>
         <Text style={[styles.description, { color: theme.colors.onSurfaceVariant }]}>{item.description}</Text>
@@ -143,19 +141,16 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
   },
-  imageContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 40,
-    width: width,
-  },
   image: {
-    width: width,
-    height: width,
+    width: width * 0.85,
+    height: width * 0.85,
+    alignSelf: 'center',
+    marginBottom: 40,
   },
   textContainer: {
     alignItems: 'flex-start',
     paddingHorizontal: 40,
+    height: 170,
   },
   title: {
     fontSize: 28,
@@ -171,7 +166,7 @@ const styles = StyleSheet.create({
   },
   bottomSection: {
     paddingHorizontal: 40,
-    paddingBottom: 60,
+    paddingBottom: 90,
   },
   indicatorContainer: {
     flexDirection: 'row',
