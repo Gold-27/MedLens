@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Dimensions, Image } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -7,7 +7,7 @@ interface Slide {
   id: string;
   title: string;
   description: string;
-  icon: string;
+  image: any;
 }
 
 const slides: Slide[] = [
@@ -15,19 +15,19 @@ const slides: Slide[] = [
     id: '1',
     title: 'Understand your medication instantly',
     description: 'Get clear, plain‑language explanations of prescriptions, dosage, warnings, and side effects.',
-    icon: '💊',
+    image: require('../assets/onboarding1.png'),
   },
   {
     id: '2',
     title: 'Search. Read. Understand.',
     description: 'Type a medication name and receive a simple summary in seconds—no medical jargon.',
-    icon: '🔍',
+    image: require('../assets/onboarding2.png'),
   },
   {
     id: '3',
     title: 'Clear, safe, and easy to use',
     description: 'MedLens simplifies medical information for understanding. It does not replace professional medical advice.',
-    icon: '✅',
+    image: require('../assets/onboarding3.png'),
   },
 ];
 
@@ -66,11 +66,13 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
 
   const renderSlide = ({ item }: { item: Slide }) => (
     <View style={[styles.slide, { width }]}>
-      <View style={styles.iconContainer}>
-        <Text style={styles.icon}>{item.icon}</Text>
+      <View style={styles.imageContainer}>
+        <Image source={item.image} style={styles.image} resizeMode="cover" />
       </View>
-      <Text style={[styles.title, { color: theme.colors.onSurface }]}>{item.title}</Text>
-      <Text style={[styles.description, { color: theme.colors.onSurfaceVariant }]}>{item.description}</Text>
+      <View style={styles.textContainer}>
+        <Text style={[styles.title, { color: theme.colors.onSurface }]}>{item.title}</Text>
+        <Text style={[styles.description, { color: theme.colors.onSurfaceVariant }]}>{item.description}</Text>
+      </View>
     </View>
   );
 
@@ -139,26 +141,31 @@ const styles = StyleSheet.create({
   },
   slide: {
     flex: 1,
-    alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 40,
   },
-  iconContainer: {
-    marginBottom: 32,
+  imageContainer: {
+    alignItems: 'center',
+    marginBottom: 40,
   },
-  icon: {
-    fontSize: 80,
+  image: {
+    width: width * 0.8,
+    height: width * 0.8,
+    borderRadius: 24,
+  },
+  textContainer: {
+    alignItems: 'flex-start',
   },
   title: {
     fontSize: 28,
     fontWeight: '600',
-    textAlign: 'center',
+    textAlign: 'left',
     marginBottom: 16,
     lineHeight: 36,
   },
   description: {
     fontSize: 18,
-    textAlign: 'center',
+    textAlign: 'left',
     lineHeight: 26,
   },
   bottomSection: {
