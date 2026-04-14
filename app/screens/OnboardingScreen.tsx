@@ -15,19 +15,19 @@ const slides: Slide[] = [
     id: '1',
     title: 'Understand your medication instantly',
     description: 'Get clear, plain‑language explanations of prescriptions, dosage, warnings, and side effects.',
-    image: require('../assets/onboarding1.png'),
+    image: require('../assets/img_onboard1.png'),
   },
   {
     id: '2',
     title: 'Search. Read. Understand.',
     description: 'Type a medication name and receive a simple summary in seconds—no medical jargon.',
-    image: require('../assets/onboarding2.png'),
+    image: require('../assets/img_onboard2.png'),
   },
   {
     id: '3',
     title: 'Clear, safe, and easy to use',
     description: 'MedLens simplifies medical information for understanding. It does not replace professional medical advice.',
-    image: require('../assets/onboarding3.png'),
+    image: require('../assets/img_onboard3.png'),
   },
 ];
 
@@ -67,7 +67,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
   const renderSlide = ({ item }: { item: Slide }) => (
     <View style={[styles.slide, { width }]}>
       <View style={styles.imageContainer}>
-        <Image source={item.image} style={styles.image} resizeMode="cover" />
+        <Image source={item.image} style={styles.image} resizeMode="contain" />
       </View>
       <View style={styles.textContainer}>
         <Text style={[styles.title, { color: theme.colors.onSurface }]}>{item.title}</Text>
@@ -142,19 +142,20 @@ const styles = StyleSheet.create({
   slide: {
     flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: 40,
   },
   imageContainer: {
     alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 40,
+    width: width,
   },
   image: {
-    width: width * 0.8,
-    height: width * 0.8,
-    borderRadius: 24,
+    width: width,
+    height: width,
   },
   textContainer: {
     alignItems: 'flex-start',
+    paddingHorizontal: 40,
   },
   title: {
     fontSize: 28,
