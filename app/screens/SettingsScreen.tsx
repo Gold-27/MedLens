@@ -1,16 +1,32 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
+import { useAuth } from '../context/AuthContext';
+
+type SettingsItem = 
+  | { label: string; value: string; type: 'info' }
+  | { label: string; type: 'button'; action: () => void; destructive?: boolean };
+
+type SettingsSection = {
+  title: string;
+  items: SettingsItem[];
+};
 
 const SettingsScreen: React.FC = () => {
   const theme = useTheme();
+  const { user, signOut, isGuest } = useAuth();
 
   const handleSignOut = () => {
     Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign Out', style: 'destructive', onPress: () => {
-        // TODO: Implement sign out
-        Alert.alert('Signed out', 'You have been signed out.');
+      { text: 'Sign Out', style: 'destructive', onPress: async () => {
+        try {
+          await signOut();
+          Alert.alert('Signed out', 'You have been signed out.');
+        } catch (error) {
+          console.error('Sign out error:', error);
+          Alert.alert('Error', 'Failed to sign out. Please try again.');
+        }
       }},
     ]);
   };
@@ -23,12 +39,12 @@ const SettingsScreen: React.FC = () => {
     Alert.alert('Disclaimer', 'MedLens simplifies medical information for understanding. It does not replace professional medical advice.');
   };
 
-  const sections = [
+  const sections: SettingsSection[] = [
     {
       title: 'Account',
       items: [
-        { label: 'Email', value: 'user@example.com', type: 'info' },
-        { label: 'Account Type', value: 'Guest', type: 'info' },
+        { label: 'Email', value: user?.email || 'Not signed in', type: 'info' },
+        { label: 'Account Type', value: isGuest ? 'Guest' : 'Registered User', type: 'info' },
       ],
     },
     {

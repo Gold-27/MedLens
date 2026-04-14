@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, Alert, Share } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { MainTabParamList } from '../navigation/AppNavigator';
 import { useTheme } from '../theme/ThemeProvider';
 import { useAuth } from '../context/AuthContext';
 import SummaryCard, { SummaryCardProps } from '../components/SummaryCard';
@@ -15,7 +16,7 @@ type AppState = 'empty' | 'loading' | 'success' | 'partial' | 'notFound' | 'erro
 
 const HomeScreen: React.FC = () => {
   const theme = useTheme();
-  const { user, isGuest } = useAuth();
+  const { user, isGuest, getToken } = useAuth();
   const navigation = useNavigation();
   const styles = makeStyles(theme);
   
@@ -29,12 +30,30 @@ const HomeScreen: React.FC = () => {
 
   // Fetch cabinet items on mount
   useEffect(() => {
-    if (user) {
-      // TODO: Fetch user's saved drugs
-      // For now, mock
-      setSavedDrugs(new Set(['ibuprofen', 'atorvastatin']));
-    }
-  }, [user]);
+    const fetchCabinetItems = async () => {
+      if (!user) {
+        setSavedDrugs(new Set());
+        return;
+      }
+      
+      try {
+        const token = await getToken();
+        if (!token) {
+          console.warn('No auth token available');
+          return;
+        }
+        
+        const response = await api.getCabinetItems(token);
+        const drugNames = response.items.map(item => item.drug_name.toLowerCase());
+        setSavedDrugs(new Set(drugNames));
+      } catch (error) {
+        console.error('Failed to fetch cabinet items:', error);
+        // Keep existing mock or empty set on error
+      }
+    };
+    
+    fetchCabinetItems();
+  }, [user, getToken]);
 
   const handleSearch = useCallback(async (searchQuery: string) => {
     if (!searchQuery.trim()) return;
@@ -45,6 +64,7 @@ const HomeScreen: React.FC = () => {
     try {
       const response = await api.searchMedication(searchQuery.trim(), eli12Enabled);
       setResult(response);
+      setEli12Enabled(response.eli12.enabled);
       setState('success');
     } catch (error: any) {
       console.error('Search error:', error);
@@ -61,11 +81,24 @@ const HomeScreen: React.FC = () => {
     if (!result) return;
     
     setEli12Enabled(enabled);
+    
+    if (!enabled) {
+      // Turning off ELI12 - just use existing summary
+      setState('success');
+      return;
+    }
+    
+    // Turning on ELI12 - fetch simplified summary
     setState('loading');
     
     try {
-      const response = await api.getELI12(result.drug_name, result);
-      setResult(response);
+      const response = await api.getELI12(result.data || result);
+      // Merge ELI12 response with existing result
+      const updatedResult = {
+        ...result,
+        eli12: response.eli12,
+      };
+      setResult(updatedResult);
       setState('success');
     } catch (error) {
       console.error('ELI12 toggle error:', error);
@@ -73,7 +106,7 @@ const HomeScreen: React.FC = () => {
     }
   }, [result]);
 
-  const handleSave = useCallback(() => {
+  const handleSave = useCallback(async () => {
     if (!result) return;
     
     if (isGuest) {
@@ -82,12 +115,26 @@ const HomeScreen: React.FC = () => {
       return;
     }
     
-    // TODO: Save to cabinet via API
-    Alert.alert('Saved', `${result.drug_name} has been saved to your cabinet.`);
-    setSavedDrugs(prev => new Set([...prev, result.drug_name.toLowerCase()]));
-  }, [result, isGuest]);
+    try {
+      const token = await getToken();
+      if (!token) {
+        Alert.alert('Error', 'Authentication required. Please sign in again.');
+        return;
+      }
+      
+      // Generate a simple drug key from the name
+      const drugKey = result.drug_name.toLowerCase().replace(/\s+/g, '-');
+      await api.saveCabinetItem(result.drug_name, drugKey, token);
+      
+      Alert.alert('Saved', `${result.drug_name} has been saved to your cabinet.`);
+      setSavedDrugs(prev => new Set([...prev, result.drug_name.toLowerCase()]));
+    } catch (error: any) {
+      console.error('Failed to save cabinet item:', error);
+      Alert.alert('Error', `Failed to save medication: ${error.message || 'Please try again.'}`);
+    }
+  }, [result, isGuest, getToken]);
 
-  const handleExport = useCallback(() => {
+  const handleExport = useCallback(async () => {
     if (!result) return;
     
     if (isGuest) {
@@ -96,8 +143,48 @@ const HomeScreen: React.FC = () => {
       return;
     }
     
-    // TODO: Implement export/share
-    Alert.alert('Export', 'Export functionality will be implemented soon.');
+    try {
+      const shareContent = `
+MedLens Medication Summary: ${result.drug_name}
+
+Source: ${result.source}
+
+What it does:
+${result.summary.what_it_does || 'No information available.'}
+
+How to take it:
+${result.summary.how_to_take || 'No information available.'}
+
+Warnings:
+${result.summary.warnings || 'No information available.'}
+
+Side effects:
+${result.summary.side_effects || 'No information available.'}
+
+Disclaimer: MedLens simplifies medical information for understanding. It does not replace professional medical advice.
+      `.trim();
+      
+      const resultShare = await Share.share({
+        title: `MedLens: ${result.drug_name}`,
+        message: shareContent,
+      });
+      
+      if (resultShare.action === Share.sharedAction) {
+        if (resultShare.activityType) {
+          // Shared with specific activity type
+          console.log(`Shared via ${resultShare.activityType}`);
+        } else {
+          // Shared
+          console.log('Shared successfully');
+        }
+      } else if (resultShare.action === Share.dismissedAction) {
+        // Dismissed
+        console.log('Share dismissed');
+      }
+    } catch (error: any) {
+      console.error('Share failed:', error);
+      Alert.alert('Export Failed', 'Could not share the summary. Please try again.');
+    }
   }, [result, isGuest]);
 
   const handleAuthSuccess = useCallback(() => {
@@ -139,22 +226,36 @@ const HomeScreen: React.FC = () => {
       case 'partial':
         if (!result) return null;
         
-        const summaryProps: SummaryCardProps = {
-          drugName: result.drug_name,
-          source: result.source,
-          sections: {
-            whatItDoes: result.summary.what_it_does || null,
-            howToTake: result.summary.how_to_take || null,
-            warnings: result.summary.warnings || null,
-            sideEffects: result.summary.side_effects || null,
-          },
-          isEli12: eli12Enabled,
-          onSave: handleSave,
-          onExport: handleExport,
-          onToggleEli12: handleToggleELI12,
-          isSaved: savedDrugs.has(result.drug_name.toLowerCase()),
-          requiresAuth: isGuest,
-        };
+         let sections = {
+           whatItDoes: result.summary.what_it_does || null,
+           howToTake: result.summary.how_to_take || null,
+           warnings: result.summary.warnings || null,
+           sideEffects: result.summary.side_effects || null,
+         };
+         if (eli12Enabled && result.eli12.content) {
+           try {
+             const eli12Summary = JSON.parse(result.eli12.content);
+             sections = {
+               whatItDoes: eli12Summary.whatItDoes || null,
+               howToTake: eli12Summary.howToTake || null,
+               warnings: eli12Summary.warnings || null,
+               sideEffects: eli12Summary.sideEffects || null,
+             };
+           } catch (e) {
+             console.error('Failed to parse ELI12 content', e);
+           }
+         }
+         const summaryProps: SummaryCardProps = {
+           drugName: result.drug_name,
+           source: result.source,
+           sections,
+           isEli12: eli12Enabled,
+           onSave: handleSave,
+           onExport: handleExport,
+           onToggleEli12: handleToggleELI12,
+           isSaved: savedDrugs.has(result.drug_name.toLowerCase()),
+           requiresAuth: isGuest,
+         };
         
         return (
           <>

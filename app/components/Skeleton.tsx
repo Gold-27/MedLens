@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, StyleSheet, Animated } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 
 interface SkeletonProps {
@@ -17,6 +17,24 @@ const Skeleton: React.FC<SkeletonProps> = ({
 }) => {
   const theme = useTheme();
   const styles = makeStyles(theme);
+  const shimmerAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.timing(shimmerAnim, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      })
+    );
+    loop.start();
+    return () => loop.stop();
+  }, []);
+
+  const translateX = shimmerAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-200, 200],
+  });
 
   return (
     <View
@@ -24,15 +42,34 @@ const Skeleton: React.FC<SkeletonProps> = ({
         styles.skeleton,
         { width, height, borderRadius },
         style,
+        { overflow: 'hidden' },
       ]}
-    />
+    >
+      <Animated.View
+        style={[
+          styles.shimmer,
+          {
+            transform: [{ translateX }],
+          },
+        ]}
+      />
+    </View>
   );
 };
 
 const makeStyles = (theme: any) => StyleSheet.create({
   skeleton: {
     backgroundColor: theme.colors.surfaceContainerHigh,
-    overflow: 'hidden',
+    position: 'relative',
+  },
+  shimmer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    backgroundColor: theme.colors.surfaceContainerHighest,
+    opacity: 0.3,
   },
 });
 

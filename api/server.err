@@ -1,0 +1,13 @@
+DeepSeek API key not set. AI summaries will fail and fall back to raw data.
+Supabase environment variables are not set. Cabinet features will be mocked.
+Supabase environment variables not set, auth middleware will be disabled
+OpenFDA API error: Request failed with status code 403
+Search controller error: Error: OpenFDA search failed: Request failed with status code 403
+    at OpenFDAService.searchDrug (C:\Users\Admin\OneDrive\Desktop\MedLens\api\dist\services\openfda.js:37:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async searchMedication (C:\Users\Admin\OneDrive\Desktop\MedLens\api\dist\controllers\search.controller.js:14:32)
+OpenFDA API error: Request failed with status code 403
+Search controller error: Error: OpenFDA search failed: Request failed with status code 403
+    at OpenFDAService.searchDrug (C:\Users\Admin\OneDrive\Desktop\MedLens\api\dist\services\openfda.js:37:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async searchMedication (C:\Users\Admin\OneDrive\Desktop\MedLens\api\dist\controllers\search.controller.js:14:32)

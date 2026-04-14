@@ -9,22 +9,23 @@ import HomeScreen from '../screens/HomeScreen';
 import CabinetScreen from '../screens/CabinetScreen';
 import InteractionScreen from '../screens/InteractionScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import { Text } from 'react-native';
 
 export type RootStackParamList = {
   Splash: undefined;
   Onboarding: undefined;
-  Main: undefined;
-  Interaction: undefined;
+  Main: { screen?: keyof MainTabParamList; params?: any } | undefined;
+  Interaction: { drugKeys?: string[] };
 };
 
 export type MainTabParamList = {
-  Home: undefined;
+  Home: { drugKey?: string; drugName?: string } | undefined;
   Cabinet: undefined;
   Settings: undefined;
 };
 
-const Stack = createNativeStackNavigator<RootStackParamList>();
-const Tab = createBottomTabNavigator<MainTabParamList>();
+const Stack = createNativeStackNavigator();
+const Tab = createBottomTabNavigator();
 
 const MainTabs = () => {
   const theme = useTheme();
@@ -49,7 +50,7 @@ const MainTabs = () => {
         name="Home"
         component={HomeScreen}
         options={{
-          tabBarIcon: ({ color, size }) => (
+          tabBarIcon: ({ color, size }: { color: string; size: number }) => (
             <Text style={{ fontSize: size, color }}>🏠</Text>
           ),
         }}
@@ -58,7 +59,7 @@ const MainTabs = () => {
         name="Cabinet"
         component={CabinetScreen}
         options={{
-          tabBarIcon: ({ color, size }) => (
+          tabBarIcon: ({ color, size }: { color: string; size: number }) => (
             <Text style={{ fontSize: size, color }}>💊</Text>
           ),
         }}
@@ -67,7 +68,7 @@ const MainTabs = () => {
         name="Settings"
         component={SettingsScreen}
         options={{
-          tabBarIcon: ({ color, size }) => (
+          tabBarIcon: ({ color, size }: { color: string; size: number }) => (
             <Text style={{ fontSize: size, color }}>⚙️</Text>
           ),
         }}
@@ -93,7 +94,6 @@ const AppNavigator = () => {
   );
 };
 
-// Temporary Text component because we didn't import from react-native
-import { Text } from 'react-native';
+
 
 export default AppNavigator;
