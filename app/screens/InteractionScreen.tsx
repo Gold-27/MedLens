@@ -3,13 +3,10 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, ActivityIn
 import { useTheme } from '../theme/ThemeProvider';
 import { useAuth } from '../context/AuthContext';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
+import { RootStackParamList, MainTabParamList } from '../navigation/AppNavigator';
 import * as api from '../services/api';
 
-type RootStackParamList = {
-  Interaction: { drugKeys?: string[] };
-};
 
-type InteractionScreenRouteProp = RouteProp<RootStackParamList, 'Interaction'>;
 
 interface DrugItem {
   id: string;
@@ -20,7 +17,7 @@ interface DrugItem {
 const InteractionScreen: React.FC = () => {
   const theme = useTheme();
   const { user, getToken } = useAuth();
-  const route = useRoute<InteractionScreenRouteProp>();
+  const route = useRoute();
   const navigation = useNavigation();
   const [selectedDrugs, setSelectedDrugs] = useState<string[]>([]);
   const [availableDrugs, setAvailableDrugs] = useState<DrugItem[]>([]);
@@ -38,7 +35,7 @@ const InteractionScreen: React.FC = () => {
         const paramDrugKeys = route.params?.drugKeys;
         if (paramDrugKeys && paramDrugKeys.length > 0) {
           // Convert drug keys to DrugItem format
-          const drugItems = paramDrugKeys.map((key, index) => ({
+          const drugItems = paramDrugKeys.map((key: string, index: number) => ({
             id: `param-${index}`,
             name: key.charAt(0).toUpperCase() + key.slice(1),
             key,
@@ -153,7 +150,7 @@ const InteractionScreen: React.FC = () => {
           </Text>
           <TouchableOpacity
             style={[styles.cabinetButton, { backgroundColor: theme.colors.primary }]}
-            onPress={() => navigation.navigate(user ? 'Cabinet' : 'Settings')}
+            onPress={() => navigation.navigate('Main', { screen: user ? 'Cabinet' : 'Settings' })}
           >
             <Text style={[styles.cabinetButtonText, { color: theme.colors.onPrimary }]}>
               {user ? 'Go to Cabinet' : 'Go to Settings'}

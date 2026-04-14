@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { View, StyleSheet, Animated } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface SplashScreenProps {
   navigation: any;
@@ -27,18 +28,25 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
       ])
     ).start();
 
-    // Navigate after delay
-    const timer = setTimeout(() => {
-      // Check if onboarding seen (placeholder)
-      const hasSeenOnboarding = false; // TODO: load from AsyncStorage
-      if (hasSeenOnboarding) {
-        navigation.replace('Main');
-      } else {
+    // Check onboarding status and navigate
+    const checkOnboardingStatus = async () => {
+      try {
+        const hasSeenOnboarding = await AsyncStorage.getItem('hasSeenOnboarding');
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Minimum splash time
+        
+        if (hasSeenOnboarding === 'true') {
+          navigation.replace('Main');
+        } else {
+          navigation.replace('Onboarding');
+        }
+      } catch (error) {
+        console.error('Error checking onboarding status:', error);
+        // Default to onboarding on error
         navigation.replace('Onboarding');
       }
-    }, 1500);
+    };
 
-    return () => clearTimeout(timer);
+    checkOnboardingStatus();
   }, []);
 
   return (

@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Dimensions } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface Slide {
   id: string;
@@ -54,8 +55,12 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
     handleFinish();
   };
 
-  const handleFinish = () => {
-    // TODO: Save onboarding completion flag to AsyncStorage
+  const handleFinish = async () => {
+    try {
+      await AsyncStorage.setItem('hasSeenOnboarding', 'true');
+    } catch (error) {
+      console.error('Error saving onboarding status:', error);
+    }
     navigation.replace('Main');
   };
 

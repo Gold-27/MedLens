@@ -11,7 +11,7 @@ export const supabase = createClient(
       autoRefreshToken: true,
     },
   }
-);
+) as any;
 
 // Helper functions
-export const auth = supabase.auth;
+export const auth = supabase.auth as any;

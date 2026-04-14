@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndi
 import { useTheme } from '../theme/ThemeProvider';
 import { useAuth } from '../context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
+import { MainTabParamList, RootStackParamList } from '../navigation/AppNavigator';
 import * as api from '../services/api';
 import EmptyState from '../components/EmptyState';
 
@@ -17,6 +18,8 @@ interface CabinetItem {
   last_accessed_at?: string;
   deleted_at?: string;
 }
+
+
 
 const CabinetScreen: React.FC = () => {
   const theme = useTheme();
@@ -65,8 +68,8 @@ const CabinetScreen: React.FC = () => {
   const handleItemPress = (item: CabinetItem) => {
     // Navigate to Home with this drug pre-selected
     navigation.navigate('Home', { 
-      screen: 'Home',
-      params: { drugKey: item.drug_key, drugName: item.drug_name }
+      drugKey: item.drug_key,
+      drugName: item.drug_name
     });
   };
 

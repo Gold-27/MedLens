@@ -3,6 +3,7 @@ import { Config } from '../config';
 export interface SearchResponse {
   drug_name: string;
   source: string;
+  data?: any;
   summary: {
     what_it_does: string | null;
     how_to_take: string | null;
@@ -115,10 +116,10 @@ export async function getAutocomplete(query: string): Promise<AutocompleteRespon
 }
 
 // ELI12 toggle
-export async function getELI12(drugName: string, fdaData: any): Promise<SearchResponse> {
+export async function getELI12(drugData: any): Promise<SearchResponse> {
   return apiRequest<SearchResponse>(Config.ENDPOINTS.ELI12, {
     method: 'POST',
-    body: JSON.stringify({ drug_data: fdaData }),
+    body: JSON.stringify({ drug_data: drugData }),
   });
 }
 
