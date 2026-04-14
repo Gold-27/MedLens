@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, StyleSheet, Animated } from 'react-native';
+import { View, StyleSheet, Animated, Image } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -31,8 +31,11 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
     // Check onboarding status and navigate
     const checkOnboardingStatus = async () => {
       try {
+        // Clear status so you can preview the new onboarding screen!
+        await AsyncStorage.removeItem('hasSeenOnboarding');
+        
         const hasSeenOnboarding = await AsyncStorage.getItem('hasSeenOnboarding');
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Minimum splash time
+        await new Promise(resolve => setTimeout(resolve, 5000)); // Minimum splash time
         
         if (hasSeenOnboarding === 'true') {
           navigation.replace('Main');
@@ -53,8 +56,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
     <View style={[styles.container, { backgroundColor: theme.colors.primary }]}>
       <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
         <View style={styles.logoContainer}>
-          {/* Placeholder logo - replace with image */}
-          <View style={[styles.logo, { backgroundColor: theme.colors.onPrimary }]} />
+          <Image source={require('../assets/splash-icon.png')} style={styles.logo} />
           <View style={styles.logoTextContainer}>
             <View style={[styles.logoTextLine, { backgroundColor: theme.colors.onPrimary }]} />
             <View style={[styles.logoTextLineShort, { backgroundColor: theme.colors.onPrimary }]} />
