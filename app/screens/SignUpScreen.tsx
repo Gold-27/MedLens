@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Dimensions, TextInput, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
+import { MaterialIcons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
 
@@ -12,6 +13,7 @@ const SignUpScreen = ({ navigation }: { navigation: any }) => {
     password: '',
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -31,32 +33,42 @@ const SignUpScreen = ({ navigation }: { navigation: any }) => {
             <View style={styles.inputGroup}>
               <Text style={[styles.label, { color: theme.colors.onSurfaceVariant }]}>Full Name</Text>
               <TextInput
-                style={[styles.input, { 
-                  backgroundColor: theme.colors.surfaceContainer, 
-                  color: theme.colors.onSurface,
-                  borderColor: theme.colors.outlineVariant 
-                }]}
+                style={[
+                  styles.input,
+                  { 
+                    backgroundColor: focusedInput === 'name' ? theme.colors.primaryContainer : theme.colors.surfaceContainer, 
+                    color: theme.colors.onSurface,
+                    borderColor: focusedInput === 'name' ? theme.colors.primary : theme.colors.outlineVariant 
+                  }
+                ]}
                 placeholder="John Doe"
-                placeholderTextColor={theme.colors.onSurfaceVariant}
+                placeholderTextColor={theme.colors.outlineVariant}
                 value={form.name}
                 onChangeText={(text) => setForm({ ...form, name: text })}
+                onFocus={() => setFocusedInput('name')}
+                onBlur={() => setFocusedInput(null)}
               />
             </View>
 
             <View style={styles.inputGroup}>
               <Text style={[styles.label, { color: theme.colors.onSurfaceVariant }]}>Email</Text>
               <TextInput
-                style={[styles.input, { 
-                  backgroundColor: theme.colors.surfaceContainer, 
-                  color: theme.colors.onSurface,
-                  borderColor: theme.colors.outlineVariant 
-                }]}
+                style={[
+                  styles.input,
+                  { 
+                    backgroundColor: focusedInput === 'email' ? theme.colors.primaryContainer : theme.colors.surfaceContainer, 
+                    color: theme.colors.onSurface,
+                    borderColor: focusedInput === 'email' ? theme.colors.primary : theme.colors.outlineVariant 
+                  }
+                ]}
                 placeholder="johndoe@gmail.com"
-                placeholderTextColor={theme.colors.onSurfaceVariant}
+                placeholderTextColor={theme.colors.outlineVariant}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 value={form.email}
                 onChangeText={(text) => setForm({ ...form, email: text })}
+                onFocus={() => setFocusedInput('email')}
+                onBlur={() => setFocusedInput(null)}
               />
             </View>
 
@@ -64,22 +76,32 @@ const SignUpScreen = ({ navigation }: { navigation: any }) => {
               <Text style={[styles.label, { color: theme.colors.onSurfaceVariant }]}>Create Password</Text>
               <View style={styles.passwordContainer}>
                 <TextInput
-                  style={[styles.input, styles.passwordInput, { 
-                    backgroundColor: theme.colors.surfaceContainer, 
-                    color: theme.colors.onSurface,
-                    borderColor: theme.colors.outlineVariant 
-                  }]}
-                  placeholder="••••••••"
-                  placeholderTextColor={theme.colors.onSurfaceVariant}
+                  style={[
+                    styles.input,
+                    styles.passwordInput,
+                    { 
+                      backgroundColor: focusedInput === 'password' ? theme.colors.primaryContainer : theme.colors.surfaceContainer, 
+                      color: theme.colors.onSurface,
+                      borderColor: focusedInput === 'password' ? theme.colors.primary : theme.colors.outlineVariant 
+                    }
+                  ]}
+                  placeholder="password"
+                  placeholderTextColor={theme.colors.outlineVariant}
                   secureTextEntry={!showPassword}
                   value={form.password}
                   onChangeText={(text) => setForm({ ...form, password: text })}
+                  onFocus={() => setFocusedInput('password')}
+                  onBlur={() => setFocusedInput(null)}
                 />
                 <TouchableOpacity 
                   style={styles.eyeButton}
                   onPress={() => setShowPassword(!showPassword)}
                 >
-                  <Text style={styles.eyeIcon}>{showPassword ? '👁️' : '🔒'}</Text>
+                  <MaterialIcons 
+                    name={showPassword ? 'visibility' : 'visibility-off'} 
+                    size={24} 
+                    color={theme.colors.onSurfaceVariant} 
+                  />
                 </TouchableOpacity>
               </View>
             </View>
