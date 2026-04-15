@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Dimensions, TextInput, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Dimensions, TextInput, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, Image } from 'react-native';
 import { MaterialIcons, FontAwesome } from '@expo/vector-icons';
 import * as NativeStack from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
@@ -230,7 +230,11 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
                 style={[styles.socialButton, { backgroundColor: theme.colors.surfaceContainerHigh }]}
                 onPress={() => {}}
               >
-                <FontAwesome name="google" size={28} color="#EA4335" />
+                <Image 
+                  source={require('../assets/google_g_logo.png')} 
+                  style={{ width: 28, height: 28 }} 
+                  resizeMode="contain"
+                />
               </TouchableOpacity>
 
               <TouchableOpacity 
