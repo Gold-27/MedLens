@@ -139,8 +139,8 @@ const HomeScreen: React.FC = () => {
     if (state === 'empty') {
       return (
         <View style={[styles.emptyContent, { justifyContent: 'center', alignItems: 'center' }]}>
-          <Text style={[styles.headlineText, { color: theme.colors.onBackground }]}>
-            Search any medications to get clear answers ?
+          <Text style={[styles.headlineText, { color: theme.colors.onSurfaceVariant }]}>
+            How can i help you with your medication today ?
           </Text>
         </View>
       );
@@ -208,7 +208,9 @@ const HomeScreen: React.FC = () => {
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
         {/* Top Navigation */}
         <View style={styles.header}>
-          <View />
+          <TouchableOpacity onPress={() => {/* Handle Menu */}}>
+            <Ionicons name="menu-outline" size={28} color={theme.colors.onSurface} />
+          </TouchableOpacity>
           <View style={styles.headerActions}>
             <TouchableOpacity
               style={[styles.cabinetPill, { backgroundColor: theme.colors.primaryContainer, borderWidth: 0 }]}
@@ -218,10 +220,10 @@ const HomeScreen: React.FC = () => {
               <Text style={[styles.cabinetText, { color: theme.colors.onPrimaryContainer }]}>Cabinet</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.profileCircle, { backgroundColor: theme.colors.primary, borderWidth: 0 }]}
+              style={[styles.profileCircle, { backgroundColor: 'transparent', borderWidth: 0 }]}
               onPress={() => navigation.navigate('Settings')}
             >
-              <Ionicons name="person-circle" size={32} color={theme.colors.onPrimary} />
+              <Ionicons name="person-circle" size={32} color={theme.colors.onSurface} />
             </TouchableOpacity>
           </View>
         </View>
@@ -268,7 +270,7 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 24,
     paddingTop: 8,

@@ -135,7 +135,9 @@ const InputBar: React.FC<InputBarProps> = ({
           <TextInput
             style={[styles.input, { color: theme.colors.onSurface, textAlign: 'left' }]}
             placeholder="Search medication..."
-            placeholderTextColor={theme.colors.outline}
+            placeholderTextColor={theme.colors.outlineVariant}
+            cursorColor="#000000"
+            selectionColor="#000000"
             value={query}
             onChangeText={setQuery}
             onFocus={handleFocus}
