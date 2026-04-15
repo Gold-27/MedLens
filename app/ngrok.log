@@ -1,10 +1,9 @@
-t=2026-04-15T01:19:56+0100 lvl=info msg="no configuration paths supplied"
-t=2026-04-15T01:19:56+0100 lvl=info msg="using configuration at default config path" path=C:\\Users\\Admin\\AppData\\Local\\ngrok\\ngrok.yml
-t=2026-04-15T01:19:56+0100 lvl=info msg="open config file" path=C:\\Users\\Admin\\AppData\\Local\\ngrok\\ngrok.yml err=nil
-t=2026-04-15T01:19:56+0100 lvl=info msg="FIPS 140 mode" enabled=false
-t=2026-04-15T01:19:56+0100 lvl=info msg="starting web service" obj=web addr=127.0.0.1:4040 allow_hosts=[]
-t=2026-04-15T01:20:01+0100 lvl=warn msg="failed to check for update" obj=updater err="Post \"https://update.ngrok-agent.com/check\": context deadline exceeded"
-t=2026-04-15T01:20:06+0100 lvl=eror msg="failed to reconnect session" obj=tunnels.session err="failed to dial ngrok server with address \"connect.ngrok-agent.com:443\": dial tcp 3.125.234.140:443: i/o timeout"
-t=2026-04-15T01:20:17+0100 lvl=eror msg="failed to reconnect session" obj=tunnels.session err="failed to dial ngrok server with address \"connect.ngrok-agent.com:443\": dial tcp 3.125.234.140:443: i/o timeout"
-t=2026-04-15T01:20:28+0100 lvl=eror msg="failed to reconnect session" obj=tunnels.session err="failed to dial ngrok server with address \"connect.ngrok-agent.com:443\": dial tcp 3.125.234.140:443: i/o timeout"
-t=2026-04-15T01:20:40+0100 lvl=eror msg="failed to reconnect session" obj=tunnels.session err="failed to dial ngrok server with address \"connect.ngrok-agent.com:443\": dial tcp 3.125.234.140:443: i/o timeout"
+t=2026-04-15T01:25:36+0100 lvl=info msg="no configuration paths supplied"
+t=2026-04-15T01:25:36+0100 lvl=info msg="using configuration at default config path" path=C:\\Users\\Admin\\AppData\\Local\\ngrok\\ngrok.yml
+t=2026-04-15T01:25:36+0100 lvl=info msg="open config file" path=C:\\Users\\Admin\\AppData\\Local\\ngrok\\ngrok.yml err=nil
+t=2026-04-15T01:25:36+0100 lvl=info msg="FIPS 140 mode" enabled=false
+t=2026-04-15T01:25:36+0100 lvl=info msg="starting web service" obj=web addr=127.0.0.1:4040 allow_hosts=[]
+t=2026-04-15T01:25:37+0100 lvl=info msg="client session established" obj=tunnels.session
+t=2026-04-15T01:25:37+0100 lvl=info msg="tunnel session started" obj=tunnels.session
+t=2026-04-15T01:25:37+0100 lvl=info msg="started tunnel" obj=tunnels name=command_line addr=http://localhost:8081 url=https://sacrament-subarctic-buffoon.ngrok-free.dev
+t=2026-04-15T01:26:17+0100 lvl=info msg="join connections" obj=join id=b5fba3b124b0 l=[::1]:8081 r=105.115.6.34:48489
