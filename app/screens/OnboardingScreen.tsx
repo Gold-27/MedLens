@@ -21,7 +21,7 @@ const slides: Slide[] = [
   },
   {
     id: '2',
-    title: 'Search. Read. Understand with Clarity',
+    title: 'Search.Read.Understand with Clarity',
     description: 'Type a medication name and receive a simple summary in seconds, no medical jargon.',
     image: require('../assets/img_onboard2.png'),
   },
