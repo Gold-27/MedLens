@@ -1,4 +1,6 @@
-# MedLens — Agent Specification 
+do the following task in the onboarding 2 
+- add more text context to the headline that says Search.Read.Undertand now i want you to add this bwside the understand remove the dot "Undertsand with Clarity. 
+this is for better  text visual balance with the onboarding 1# MedLens — Agent Specification 
 
 ---
 
