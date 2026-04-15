@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Share, KeyboardAvoidingView, Platform } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Share, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 
 import { useTheme, ThemeContextType } from '../theme/ThemeProvider';
@@ -22,6 +22,7 @@ const HomeScreen: React.FC = () => {
   const theme = useTheme();
   const { user, isGuest, getToken } = useAuth();
   const navigation = useNavigation<any>();
+  const insets = useSafeAreaInsets();
   const styles = makeStyles(theme);
 
   const [query, setQuery] = useState('');
@@ -31,6 +32,20 @@ const HomeScreen: React.FC = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [pendingAction, setPendingAction] = useState<string>('');
   const [savedDrugs, setSavedDrugs] = useState<Set<string>>(new Set());
+  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    
+    const showSub = Keyboard.addListener(showEvent, () => setKeyboardVisible(true));
+    const hideSub = Keyboard.addListener(hideEvent, () => setKeyboardVisible(false));
+    
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   useEffect(() => {
     const initData = async () => {
@@ -190,7 +205,7 @@ const HomeScreen: React.FC = () => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
     >
-      <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
         {/* Top Navigation */}
         <View style={styles.header}>
           <View />
@@ -221,7 +236,7 @@ const HomeScreen: React.FC = () => {
         </ScrollView>
 
         {/* Floating Bottom Bar */}
-        <View style={styles.floatingFooter}>
+        <View style={[styles.floatingFooter, { paddingBottom: isKeyboardVisible ? 12 : Math.max(insets.bottom, 12) }]}>
           <InputBar
             onSubmit={handleSearch}
             loading={state === 'loading'}
@@ -317,7 +332,6 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
   },
   floatingFooter: {
     paddingHorizontal: 0,
-    paddingBottom: 12,
     paddingTop: 8,
     backgroundColor: 'transparent',
     gap: 10,
