@@ -190,7 +190,7 @@ const HomeScreen: React.FC = () => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
     >
-      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
         {/* Top Navigation */}
         <View style={styles.header}>
           <View />
@@ -304,7 +304,7 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingBottom: 120,
+    paddingBottom: 40,
   },
   emptyContent: {
     flex: 1,
@@ -323,8 +323,8 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
   },
   floatingFooter: {
     paddingHorizontal: 0,
-    paddingBottom: 0,
-    marginBottom: 80,
+    paddingBottom: 12,
+    paddingTop: 8,
     backgroundColor: 'transparent',
     gap: 10,
   },
