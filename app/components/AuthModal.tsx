@@ -64,9 +64,10 @@ const AuthModal: React.FC<AuthModalProps> = ({
           onSuccess();
         }
       }
-    } catch (error: any) {
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
       Alert.alert('Error', 'An unexpected error occurred. Please try again.');
-      console.error('Auth error:', error);
+      console.error('Auth error:', message);
     } finally {
       setLoading(false);
     }
@@ -90,7 +91,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
         onPress={onClose}
       >
         <View style={[styles.container, { backgroundColor: theme.colors.surface }]}>
-          <View style={styles.handle} />
+          <View style={[styles.handle, { backgroundColor: theme.colors.outlineVariant }]} />
 
           <View style={styles.header}>
             <Text style={[styles.title, { color: theme.colors.onSurface }]}>
@@ -173,7 +174,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
             </TouchableOpacity>
           </View>
 
-          <View style={styles.footer}>
+          <View style={[styles.footer, { borderTopColor: theme.colors.outlineVariant }]}>
             <Text style={[styles.footerText, { color: theme.colors.onSurfaceVariant }]}>
               Your data is secure and private. We never share personal information.
             </Text>
@@ -201,7 +202,6 @@ const styles = StyleSheet.create({
   handle: {
     width: 40,
     height: 4,
-    backgroundColor: '#ccc',
     borderRadius: 2,
     alignSelf: 'center',
     marginBottom: 20,
@@ -246,7 +246,6 @@ const styles = StyleSheet.create({
   footer: {
     paddingTop: 24,
     borderTopWidth: 1,
-    borderTopColor: '#eee',
   },
   footerText: {
     fontSize: 14,

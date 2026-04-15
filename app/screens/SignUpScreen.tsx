@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Dimensions, TextInput, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { useTheme } from '../theme/ThemeProvider';
-import { MaterialIcons } from '@expo/vector-icons';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Dimensions, TextInput, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { MaterialIcons, FontAwesome } from '@expo/vector-icons';
+import * as NativeStack from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/AppNavigator';
+import { useTheme, ThemeContextType } from '../theme/ThemeProvider';
 
-const { width } = Dimensions.get('window');
+type SignUpScreenProps = NativeStack.NativeStackScreenProps<RootStackParamList, 'SignUp'>;
 
-const SignUpScreen = ({ navigation }: { navigation: any }) => {
+const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
   const theme = useTheme();
   const [form, setForm] = useState({
     name: '',
@@ -14,6 +16,84 @@ const SignUpScreen = ({ navigation }: { navigation: any }) => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
+  const [errors, setErrors] = useState({
+    name: '',
+    email: '',
+    password: '',
+  });
+  const [loading, setLoading] = useState(false);
+
+  const getPasswordRequirements = (password: string) => ({
+    length: password.length >= 8,
+    uppercase: /[A-Z]/.test(password),
+    lowercase: /[a-z]/.test(password),
+    number: /[0-9]/.test(password),
+    special: /[!@#$%^&*(),.?":{}|<> ]/.test(password),
+  });
+
+  const requirements = getPasswordRequirements(form.password);
+
+  const handleBlur = (field: keyof typeof form) => {
+    setFocusedInput(null);
+    if (form[field].trim() === '') {
+      setErrors((prev) => ({ ...prev, [field]: 'Field must not be empty' }));
+    }
+  };
+
+  const handleChangeText = (field: keyof typeof form, value: string) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+    
+    if (field === 'email') {
+      if (value.trim() === '') {
+        setErrors((prev) => ({ ...prev, email: '' }));
+      } else {
+        const isValidDomain = value.toLowerCase().endsWith('@gmail.com') || 
+                              value.toLowerCase().endsWith('@yahoo.com') || 
+                              value.toLowerCase().endsWith('@icloud.com');
+        if (!isValidDomain) {
+          setErrors((prev) => ({ ...prev, email: 'Enter a valid email address' }));
+        } else {
+          setErrors((prev) => ({ ...prev, email: '' }));
+        }
+      }
+    } else if (field === 'name') {
+      const nameParts = value.trim().split(/\s+/);
+      const isValidName = nameParts.length >= 2 && nameParts.every(part => part.length >= 2);
+      
+      if (value.trim() === '') {
+        setErrors((prev) => ({ ...prev, name: '' }));
+      } else if (!isValidName) {
+        setErrors((prev) => ({ ...prev, name: 'Enter your full name' }));
+      } else {
+        setErrors((prev) => ({ ...prev, name: '' }));
+      }
+    } else {
+      if (value.trim() !== '') {
+        setErrors((prev) => ({ ...prev, [field]: '' }));
+      }
+    }
+  };
+
+  const handleSignUp = () => {
+    // Basic validation check before starting loading
+    const hasErrors = Object.values(errors).some(err => err !== '');
+    const isComplete = form.name && form.email && form.password;
+
+    if (!hasErrors && isComplete) {
+      setLoading(true);
+      setTimeout(() => {
+        setLoading(false);
+        navigation.replace('Main');
+      }, 3000);
+    } else {
+      // Trigger empty field errors if user tries to submit incomplete form
+      const newErrors = { ...errors };
+      if (!form.name) newErrors.name = 'Field must not be empty';
+      if (!form.email) newErrors.email = 'Field must not be empty';
+      if (!form.password) newErrors.password = 'Field must not be empty';
+      setErrors(newErrors);
+    }
+  };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -36,18 +116,21 @@ const SignUpScreen = ({ navigation }: { navigation: any }) => {
                 style={[
                   styles.input,
                   { 
-                    backgroundColor: focusedInput === 'name' ? theme.colors.primaryContainer : theme.colors.surfaceContainer, 
-                    color: theme.colors.onSurface,
-                    borderColor: focusedInput === 'name' ? theme.colors.primary : theme.colors.outlineVariant 
+                    backgroundColor: focusedInput === 'name' ? 'transparent' : theme.colors.surfaceContainerLow, 
+                    color: focusedInput === 'name' ? theme.colors.onPrimaryContainer : theme.colors.onSurface,
+                    borderColor: errors.name ? theme.colors.error : (focusedInput === 'name' ? theme.colors.primaryContainer : theme.colors.outlineVariant)
                   }
                 ]}
                 placeholder="John Doe"
                 placeholderTextColor={theme.colors.outlineVariant}
                 value={form.name}
-                onChangeText={(text) => setForm({ ...form, name: text })}
+                onChangeText={(text) => handleChangeText('name', text)}
                 onFocus={() => setFocusedInput('name')}
-                onBlur={() => setFocusedInput(null)}
+                onBlur={() => handleBlur('name')}
               />
+              {errors.name ? (
+                <Text style={[styles.errorText, { color: theme.colors.error }]}>{errors.name}</Text>
+              ) : null}
             </View>
 
             <View style={styles.inputGroup}>
@@ -56,9 +139,9 @@ const SignUpScreen = ({ navigation }: { navigation: any }) => {
                 style={[
                   styles.input,
                   { 
-                    backgroundColor: focusedInput === 'email' ? theme.colors.primaryContainer : theme.colors.surfaceContainer, 
-                    color: theme.colors.onSurface,
-                    borderColor: focusedInput === 'email' ? theme.colors.primary : theme.colors.outlineVariant 
+                    backgroundColor: focusedInput === 'email' ? 'transparent' : theme.colors.surfaceContainerLow, 
+                    color: focusedInput === 'email' ? theme.colors.onPrimaryContainer : theme.colors.onSurface,
+                    borderColor: errors.email ? theme.colors.error : (focusedInput === 'email' ? theme.colors.primaryContainer : theme.colors.outlineVariant)
                   }
                 ]}
                 placeholder="johndoe@gmail.com"
@@ -66,10 +149,13 @@ const SignUpScreen = ({ navigation }: { navigation: any }) => {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 value={form.email}
-                onChangeText={(text) => setForm({ ...form, email: text })}
+                onChangeText={(text) => handleChangeText('email', text)}
                 onFocus={() => setFocusedInput('email')}
-                onBlur={() => setFocusedInput(null)}
+                onBlur={() => handleBlur('email')}
               />
+              {errors.email ? (
+                <Text style={[styles.errorText, { color: theme.colors.error }]}>{errors.email}</Text>
+              ) : null}
             </View>
 
             <View style={styles.inputGroup}>
@@ -80,18 +166,18 @@ const SignUpScreen = ({ navigation }: { navigation: any }) => {
                     styles.input,
                     styles.passwordInput,
                     { 
-                      backgroundColor: focusedInput === 'password' ? theme.colors.primaryContainer : theme.colors.surfaceContainer, 
-                      color: theme.colors.onSurface,
-                      borderColor: focusedInput === 'password' ? theme.colors.primary : theme.colors.outlineVariant 
+                      backgroundColor: focusedInput === 'password' ? 'transparent' : theme.colors.surfaceContainerLow, 
+                      color: focusedInput === 'password' ? theme.colors.onPrimaryContainer : theme.colors.onSurface,
+                      borderColor: errors.password ? theme.colors.error : (focusedInput === 'password' ? theme.colors.primaryContainer : theme.colors.outlineVariant)
                     }
                   ]}
-                  placeholder="password"
+                  placeholder="Password"
                   placeholderTextColor={theme.colors.outlineVariant}
                   secureTextEntry={!showPassword}
                   value={form.password}
-                  onChangeText={(text) => setForm({ ...form, password: text })}
+                  onChangeText={(text) => handleChangeText('password', text)}
                   onFocus={() => setFocusedInput('password')}
-                  onBlur={() => setFocusedInput(null)}
+                  onBlur={() => handleBlur('password')}
                 />
                 <TouchableOpacity 
                   style={styles.eyeButton}
@@ -99,18 +185,36 @@ const SignUpScreen = ({ navigation }: { navigation: any }) => {
                 >
                   <MaterialIcons 
                     name={showPassword ? 'visibility' : 'visibility-off'} 
-                    size={24} 
+                    size={20} 
                     color={theme.colors.onSurfaceVariant} 
                   />
                 </TouchableOpacity>
               </View>
+              {errors.password ? (
+                <Text style={[styles.errorText, { color: theme.colors.error }]}>{errors.password}</Text>
+              ) : null}
+
+              {(form.password.length > 0 || focusedInput === 'password') && (
+                <View style={styles.requirementsContainer}>
+                  <RequirementRow met={requirements.length} label="At least 8 characters long" theme={theme} />
+                  <RequirementRow met={requirements.uppercase} label="At least one uppercase letter" theme={theme} />
+                  <RequirementRow met={requirements.lowercase} label="At least one lowercase letter" theme={theme} />
+                  <RequirementRow met={requirements.number} label="At least one number" theme={theme} />
+                  <RequirementRow met={requirements.special} label="At least one special character" theme={theme} />
+                </View>
+              )}
             </View>
 
             <TouchableOpacity 
               style={[styles.submitButton, { backgroundColor: theme.colors.primary }]}
-              onPress={() => {}}
+              onPress={handleSignUp}
+              disabled={loading}
             >
-              <Text style={[styles.submitButtonText, { color: theme.colors.onPrimary }]}>Sign Up</Text>
+              {loading ? (
+                <ActivityIndicator color={theme.colors.onPrimary} />
+              ) : (
+                <Text style={[styles.submitButtonText, { color: theme.colors.onPrimary }]}>Sign Up</Text>
+              )}
             </TouchableOpacity>
           </View>
 
@@ -126,14 +230,14 @@ const SignUpScreen = ({ navigation }: { navigation: any }) => {
                 style={[styles.socialButton, { backgroundColor: theme.colors.surfaceContainerHigh }]}
                 onPress={() => {}}
               >
-                <Text style={[styles.socialIconText, { color: '#EA4335' }]}>G</Text>
+                <FontAwesome name="google" size={28} color="#EA4335" />
               </TouchableOpacity>
 
               <TouchableOpacity 
                 style={[styles.socialButton, { backgroundColor: theme.colors.onSurface }]}
                 onPress={() => {}}
               >
-                <Text style={[styles.socialIconText, { color: theme.colors.surface }]}></Text>
+                <FontAwesome name="apple" size={28} color={theme.colors.surface} />
               </TouchableOpacity>
             </View>
           </View>
@@ -200,9 +304,6 @@ const styles = StyleSheet.create({
     right: 16,
     padding: 4,
   },
-  eyeIcon: {
-    fontSize: 20,
-  },
   submitButton: {
     marginTop: 12,
     paddingVertical: 18,
@@ -250,10 +351,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.05)',
   },
-  socialIconText: {
-    fontSize: 24,
-    fontWeight: '700',
-  },
   footer: {
     marginTop: 'auto',
     paddingTop: 40,
@@ -262,6 +359,41 @@ const styles = StyleSheet.create({
   footerText: {
     fontSize: 14,
   },
+  errorText: {
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 4,
+    fontFamily: 'Outfit',
+  },
+  requirementsContainer: {
+    marginTop: 12,
+    gap: 8,
+    paddingLeft: 4,
+  },
+  requirementRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  requirementText: {
+    fontSize: 13,
+    fontFamily: 'Outfit',
+  },
 });
+
+
+
+const RequirementRow = ({ met, label, theme }: { met: boolean; label: string; theme: ThemeContextType }) => (
+  <View style={styles.requirementRow}>
+    <MaterialIcons 
+      name={met ? "check-circle" : "radio-button-unchecked"} 
+      size={16} 
+      color={met ? theme.colors.success : theme.colors.outlineVariant} 
+    />
+    <Text style={[styles.requirementText, { color: met ? theme.colors.onSurface : theme.colors.onSurfaceVariant }]}>
+      {label}
+    </Text>
+  </View>
+);
 
 export default SignUpScreen;

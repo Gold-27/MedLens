@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, Alert, Share } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { MainTabParamList } from '../navigation/AppNavigator';
-import { useTheme } from '../theme/ThemeProvider';
+import { useTheme, ThemeContextType } from '../theme/ThemeProvider';
 import { useAuth } from '../context/AuthContext';
 import SummaryCard, { SummaryCardProps } from '../components/SummaryCard';
 import Skeleton from '../components/Skeleton';
@@ -66,10 +66,11 @@ const HomeScreen: React.FC = () => {
       setResult(response);
       setEli12Enabled(response.eli12.enabled);
       setState('success');
-    } catch (error: any) {
-      console.error('Search error:', error);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      console.error('Search error:', message);
       
-      if (error.message.includes('not found') || error.message.includes('404')) {
+      if (message.includes('not found') || message.includes('404')) {
         setState('notFound');
       } else {
         setState('error');
@@ -92,7 +93,10 @@ const HomeScreen: React.FC = () => {
     setState('loading');
     
     try {
-      const response = await api.getELI12(result.data || result);
+      if (!result.data) {
+        throw new Error('No drug data available for simplification');
+      }
+      const response = await api.getELI12(result.data);
       // Merge ELI12 response with existing result
       const updatedResult = {
         ...result,
@@ -128,9 +132,10 @@ const HomeScreen: React.FC = () => {
       
       Alert.alert('Saved', `${result.drug_name} has been saved to your cabinet.`);
       setSavedDrugs(prev => new Set([...prev, result.drug_name.toLowerCase()]));
-    } catch (error: any) {
-      console.error('Failed to save cabinet item:', error);
-      Alert.alert('Error', `Failed to save medication: ${error.message || 'Please try again.'}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      console.error('Failed to save cabinet item:', message);
+      Alert.alert('Error', `Failed to save medication: ${message || 'Please try again.'}`);
     }
   }, [result, isGuest, getToken]);
 
@@ -170,19 +175,13 @@ Disclaimer: MedLens simplifies medical information for understanding. It does no
       });
       
       if (resultShare.action === Share.sharedAction) {
-        if (resultShare.activityType) {
-          // Shared with specific activity type
-          console.log(`Shared via ${resultShare.activityType}`);
-        } else {
-          // Shared
-          console.log('Shared successfully');
-        }
+        // Shared successfully
       } else if (resultShare.action === Share.dismissedAction) {
         // Dismissed
-        console.log('Share dismissed');
       }
-    } catch (error: any) {
-      console.error('Share failed:', error);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      console.error('Share failed:', message);
       Alert.alert('Export Failed', 'Could not share the summary. Please try again.');
     }
   }, [result, isGuest]);
@@ -196,7 +195,7 @@ Disclaimer: MedLens simplifies medical information for understanding. It does no
     setPendingAction('');
   }, [pendingAction, result, handleSave, handleExport]);
 
-  const fetchSuggestions = useCallback(async (suggestionQuery: string): Promise<any[]> => {
+  const fetchSuggestions = useCallback(async (suggestionQuery: string): Promise<api.AutocompleteResponse['suggestions']> => {
     try {
       const response = await api.getAutocomplete(suggestionQuery);
       return response.suggestions;
@@ -327,7 +326,7 @@ Disclaimer: MedLens simplifies medical information for understanding. It does no
   );
 };
 
-const makeStyles = (theme: any) => StyleSheet.create({
+const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
