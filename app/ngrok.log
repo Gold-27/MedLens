@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 t=2026-04-15T11:58:12+0100 lvl=info msg="no configuration paths supplied"
 t=2026-04-15T11:58:12+0100 lvl=info msg="using configuration at default config path" path=C:\\Users\\Admin\\AppData\\Local\\ngrok\\ngrok.yml
 t=2026-04-15T11:58:12+0100 lvl=info msg="open config file" path=C:\\Users\\Admin\\AppData\\Local\\ngrok\\ngrok.yml err=nil
@@ -19,3 +20,33 @@ t=2026-04-15T12:42:41+0100 lvl=info msg="join connections" obj=join id=e44fb42e3
 t=2026-04-15T12:45:43+0100 lvl=info msg="received stop request" obj=app stopReq="{err:<nil> restart:false}"
 t=2026-04-15T12:45:43+0100 lvl=info msg="session closing" obj=tunnels.session err=nil
 t=2026-04-15T12:45:43+0100 lvl=info msg="accept failed" obj=tunnels.session obj=csess id=96894190131b err="reconnecting session closed"
+=======
+t=2026-04-15T13:09:32+0100 lvl=info msg="no configuration paths supplied"
+t=2026-04-15T13:09:32+0100 lvl=warn msg="ngrok config file found at legacy location, move to XDG location" xdg_path=C:\\Users\\user\\AppData\\Local\\ngrok\\ngrok.yml legacy_path=C:\\Users\\user\\.ngrok2\\ngrok.yml err="GetFileAttributesEx C:\\Users\\user\\AppData\\Local\\ngrok\\ngrok.yml: The system cannot find the path specified."
+t=2026-04-15T13:09:32+0100 lvl=info msg="using configuration at default config path" path=C:\\Users\\user\\.ngrok2\\ngrok.yml
+t=2026-04-15T13:09:32+0100 lvl=info msg="open config file" path=C:\\Users\\user\\.ngrok2\\ngrok.yml err=nil
+t=2026-04-15T13:09:32+0100 lvl=info msg="FIPS 140 mode" enabled=false
+t=2026-04-15T13:09:32+0100 lvl=info msg="starting web service" obj=web addr=127.0.0.1:4040 allow_hosts=[]
+t=2026-04-15T13:09:33+0100 lvl=info msg="client session established" obj=tunnels.session
+t=2026-04-15T13:09:33+0100 lvl=info msg="tunnel session started" obj=tunnels.session
+t=2026-04-15T13:09:34+0100 lvl=info msg="started tunnel" obj=tunnels name=command_line addr=http://localhost:8081 url=https://grandma-unwrapped-huntress.ngrok-free.dev
+t=2026-04-15T13:13:13+0100 lvl=info msg="join connections" obj=join id=de80531f493a l=[::1]:8081 r=102.89.83.96:23399
+t=2026-04-15T13:13:19+0100 lvl=info msg="join connections" obj=join id=b38e566cd641 l=[::1]:8081 r=102.89.83.96:42531
+t=2026-04-15T13:15:06+0100 lvl=info msg="join connections" obj=join id=c7a80ab5515f l=[::1]:8081 r=102.89.83.96:43340
+t=2026-04-15T13:21:21+0100 lvl=info msg="join connections" obj=join id=e2cec91cf2d9 l=[::1]:8081 r=102.89.83.96:43349
+t=2026-04-15T13:21:22+0100 lvl=info msg="join connections" obj=join id=1d1580c44eca l=[::1]:8081 r=102.89.83.96:60719
+t=2026-04-15T13:21:24+0100 lvl=info msg="join connections" obj=join id=8fd8cd774c9b l=[::1]:8081 r=102.89.83.96:60720
+t=2026-04-15T13:23:50+0100 lvl=info msg="join connections" obj=join id=46789bae0ad7 l=[::1]:8081 r=102.89.83.96:60726
+t=2026-04-15T13:23:51+0100 lvl=info msg="join connections" obj=join id=dbe3fc753dba l=[::1]:8081 r=102.89.83.96:60727
+t=2026-04-15T13:23:51+0100 lvl=info msg="join connections" obj=join id=f2ccb22bab24 l=[::1]:8081 r=102.89.83.96:60728
+t=2026-04-15T13:23:56+0100 lvl=info msg="join connections" obj=join id=129feb65f08c l=[::1]:8081 r=102.89.83.96:60728
+t=2026-04-15T13:23:56+0100 lvl=info msg="join connections" obj=join id=bd4743437f08 l=[::1]:8081 r=102.89.83.96:60728
+t=2026-04-15T13:23:56+0100 lvl=info msg="join connections" obj=join id=8e3d7c14b5c0 l=[::1]:8081 r=102.89.83.96:60728
+t=2026-04-15T13:36:49+0100 lvl=info msg="join connections" obj=join id=b6ba2aa6be1e l=[::1]:8081 r=102.89.83.96:24262
+t=2026-04-15T13:36:50+0100 lvl=info msg="join connections" obj=join id=9126e12616e0 l=[::1]:8081 r=102.89.83.96:27749
+t=2026-04-15T13:36:53+0100 lvl=info msg="join connections" obj=join id=06eb9f590913 l=[::1]:8081 r=102.89.83.96:27750
+t=2026-04-15T13:38:38+0100 lvl=info msg="join connections" obj=join id=1529a432303c l=[::1]:8081 r=102.89.83.96:27754
+t=2026-04-15T13:38:41+0100 lvl=info msg="join connections" obj=join id=c1aef724c649 l=[::1]:8081 r=102.89.83.96:27755
+t=2026-04-15T13:38:46+0100 lvl=info msg="join connections" obj=join id=f729821a846c l=[::1]:8081 r=102.89.83.96:27757
+t=2026-04-15T13:38:49+0100 lvl=info msg="join connections" obj=join id=937b14e6f7d5 l=[::1]:8081 r=102.89.83.96:27758
+>>>>>>> 503a3b1c7d7d4c646e8480bc3165c3ff34afb2c7
