@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeProvider';
 import { useAuth } from '../context/AuthContext';
 
@@ -64,10 +65,11 @@ const SettingsScreen: React.FC = () => {
   ];
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: theme.colors.onSurface }]}>Settings</Text>
-      </View>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <Text style={[styles.headerTitle, { color: theme.colors.onSurface }]}>Settings</Text>
+        </View>
 
       {sections.map((section, sectionIndex) => (
         <View key={sectionIndex} style={styles.section}>
@@ -109,7 +111,8 @@ const SettingsScreen: React.FC = () => {
           MedLens simplifies medical information for understanding. It does not replace professional medical advice.
         </Text>
       </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
