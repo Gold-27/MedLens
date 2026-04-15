@@ -301,3 +301,4 @@ t=2026-04-15T11:00:05+0100 lvl=info msg="join connections" obj=join id=9f7e66063
 t=2026-04-15T11:00:05+0100 lvl=info msg="join connections" obj=join id=363921e9fbfd l=[::1]:8081 r=102.88.54.157:1256
 t=2026-04-15T11:00:06+0100 lvl=info msg="join connections" obj=join id=cfa96915d99b l=[::1]:8081 r=102.88.54.157:7376
 t=2026-04-15T11:00:33+0100 lvl=info msg="join connections" obj=join id=adfca2003cff l=[::1]:8081 r=102.89.83.96:23429
+t=2026-04-15T11:01:06+0100 lvl=info msg="join connections" obj=join id=6a4ba507047a l=[::1]:8081 r=102.88.54.157:1040
