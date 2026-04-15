@@ -1,9 +1,12 @@
-t=2026-04-15T11:26:04+0100 lvl=info msg="no configuration paths supplied"
-t=2026-04-15T11:26:04+0100 lvl=warn msg="ngrok config file found at legacy location, move to XDG location" xdg_path=C:\\Users\\user\\AppData\\Local\\ngrok\\ngrok.yml legacy_path=C:\\Users\\user\\.ngrok2\\ngrok.yml err="GetFileAttributesEx C:\\Users\\user\\AppData\\Local\\ngrok\\ngrok.yml: The system cannot find the path specified."
-t=2026-04-15T11:26:04+0100 lvl=info msg="using configuration at default config path" path=C:\\Users\\user\\.ngrok2\\ngrok.yml
-t=2026-04-15T11:26:04+0100 lvl=info msg="open config file" path=C:\\Users\\user\\.ngrok2\\ngrok.yml err=nil
-t=2026-04-15T11:26:04+0100 lvl=info msg="FIPS 140 mode" enabled=false
-t=2026-04-15T11:26:04+0100 lvl=info msg="starting web service" obj=web addr=127.0.0.1:4040 allow_hosts=[]
-t=2026-04-15T11:26:04+0100 lvl=info msg="client session established" obj=tunnels.session
-t=2026-04-15T11:26:04+0100 lvl=info msg="tunnel session started" obj=tunnels.session
-t=2026-04-15T11:26:05+0100 lvl=info msg="started tunnel" obj=tunnels name=command_line addr=http://localhost:8081 url=https://grandma-unwrapped-huntress.ngrok-free.dev
+t=2026-04-15T13:09:32+0100 lvl=info msg="no configuration paths supplied"
+t=2026-04-15T13:09:32+0100 lvl=warn msg="ngrok config file found at legacy location, move to XDG location" xdg_path=C:\\Users\\user\\AppData\\Local\\ngrok\\ngrok.yml legacy_path=C:\\Users\\user\\.ngrok2\\ngrok.yml err="GetFileAttributesEx C:\\Users\\user\\AppData\\Local\\ngrok\\ngrok.yml: The system cannot find the path specified."
+t=2026-04-15T13:09:32+0100 lvl=info msg="using configuration at default config path" path=C:\\Users\\user\\.ngrok2\\ngrok.yml
+t=2026-04-15T13:09:32+0100 lvl=info msg="open config file" path=C:\\Users\\user\\.ngrok2\\ngrok.yml err=nil
+t=2026-04-15T13:09:32+0100 lvl=info msg="FIPS 140 mode" enabled=false
+t=2026-04-15T13:09:32+0100 lvl=info msg="starting web service" obj=web addr=127.0.0.1:4040 allow_hosts=[]
+t=2026-04-15T13:09:33+0100 lvl=info msg="client session established" obj=tunnels.session
+t=2026-04-15T13:09:33+0100 lvl=info msg="tunnel session started" obj=tunnels.session
+t=2026-04-15T13:09:34+0100 lvl=info msg="started tunnel" obj=tunnels name=command_line addr=http://localhost:8081 url=https://grandma-unwrapped-huntress.ngrok-free.dev
+t=2026-04-15T13:13:13+0100 lvl=info msg="join connections" obj=join id=de80531f493a l=[::1]:8081 r=102.89.83.96:23399
+t=2026-04-15T13:13:19+0100 lvl=info msg="join connections" obj=join id=b38e566cd641 l=[::1]:8081 r=102.89.83.96:42531
+t=2026-04-15T13:15:06+0100 lvl=info msg="join connections" obj=join id=c7a80ab5515f l=[::1]:8081 r=102.89.83.96:43340
