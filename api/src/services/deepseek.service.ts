@@ -1,0 +1,78 @@
+import axios from 'axios';
+import { NormalizedDrugData } from './openfda.service';
+
+export interface AISummary {
+  what_it_does: string;
+  how_to_take: string;
+  warnings: string;
+  side_effects: string;
+}
+
+export class DeepSeekService {
+  private readonly baseUrl = 'https://api.deepseek.com/v1/chat/completions';
+
+  private get apiKey(): string | undefined {
+    return process.env.DEEPSEEK_API_KEY;
+  }
+
+  async generateSummary(data: NormalizedDrugData, eli12: boolean = false): Promise<AISummary> {
+    if (!this.apiKey) {
+      throw new Error('DeepSeek API key is not configured');
+    }
+
+    const systemPrompt = `
+      You are MedLens, an AI assistant specialized in translating complex medical jargon into plain, everyday language.
+      
+      RULES:
+      1. ONLY rewrite the provided sections.
+      2. If a section is missing or empty, return "Information not provided in source data."
+      3. NEVER provide medical advice or tell the user what they "should" do.
+      4. NEVER guess or hallucinate information not present in the source.
+      5. Always maintain a calm, helpful, and non-alarmist tone.
+      6. ${eli12 ? 'Use extremely simple language suitable for a 12-year-old (ELI12).' : 'Use clear, plain language (Health Literacy focus).'}
+      
+      OUTPUT FORMAT:
+      You must return a JSON object with exactly these four keys:
+      - what_it_does: A simple explanation of what the medication is for.
+      - how_to_take: Plain-language instructions for use.
+      - warnings: Clear, simplified safety warnings and contraindications.
+      - side_effects: A list of common side effects in everyday terms.
+    `;
+
+    const userPrompt = `
+      Simplify the following medication information for ${data.drug_name}:
+      
+      Indications (What it does): ${data.indications || 'N/A'}
+      Dosage (How to take): ${data.dosage || 'N/A'}
+      Warnings: ${data.warnings || 'N/A'}
+      Side Effects: ${data.side_effects || 'N/A'}
+    `;
+
+    try {
+      const response = await axios.post(
+        this.baseUrl,
+        {
+          model: 'deepseek-chat',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ],
+          response_format: { type: 'json_object' }
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      return JSON.parse(response.data.choices[0].message.content);
+    } catch (error: any) {
+      console.error('DeepSeek AI error:', error.message);
+      throw new Error(`AI generation failed: ${error.message}`);
+    }
+  }
+}
+
+export default new DeepSeekService();
