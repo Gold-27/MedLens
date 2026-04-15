@@ -13,7 +13,7 @@ if ($portConn) {
 }
 
 # 3. Path to Ngrok Binary
-$ngrokBinaryPath = "C:\Users\Admin\AppData\Local\Microsoft\WinGet\Packages\Ngrok.Ngrok_Microsoft.Winget.Source_8wekyb3d8bbwe\ngrok.exe"
+$ngrokBinaryPath = Join-Path $PSScriptRoot "node_modules\ngrok\bin\ngrok.exe"
 
 # 4. Start Ngrok in the background
 Write-Host "Starting Ngrok tunnel on port 8081..." -ForegroundColor Cyan
