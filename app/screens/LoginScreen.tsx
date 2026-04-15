@@ -3,35 +3,24 @@ import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Dimensions, Tex
 import { MaterialIcons, FontAwesome } from '@expo/vector-icons';
 import * as NativeStack from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
-import { useTheme, ThemeContextType } from '../theme/ThemeProvider';
+import { useTheme } from '../theme/ThemeProvider';
 
-type SignUpScreenProps = NativeStack.NativeStackScreenProps<RootStackParamList, 'SignUp'>;
+type LoginScreenProps = NativeStack.NativeStackScreenProps<RootStackParamList, 'Login'>;
 
-const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
+const LoginScreen = ({ navigation }: LoginScreenProps) => {
   const theme = useTheme();
   const [form, setForm] = useState({
-    name: '',
     email: '',
     password: '',
   });
   const [showPassword, setShowPassword] = useState(false);
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
   const [errors, setErrors] = useState({
-    name: '',
     email: '',
     password: '',
+    general: '',
   });
   const [loading, setLoading] = useState(false);
-
-  const getPasswordRequirements = (password: string) => ({
-    length: password.length >= 8,
-    uppercase: /[A-Z]/.test(password),
-    lowercase: /[a-z]/.test(password),
-    number: /[0-9]/.test(password),
-    special: /[!@#$%^&*(),.?":{}|<> ]/.test(password),
-  });
-
-  const requirements = getPasswordRequirements(form.password);
 
   const handleBlur = (field: keyof typeof form) => {
     setFocusedInput(null);
@@ -42,7 +31,8 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
 
   const handleChangeText = (field: keyof typeof form, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
-    
+    setErrors((prev) => ({ ...prev, general: '' })); // Clear general error when user types
+
     if (field === 'email') {
       if (value.trim() === '') {
         setErrors((prev) => ({ ...prev, email: '' }));
@@ -56,17 +46,6 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
           setErrors((prev) => ({ ...prev, email: '' }));
         }
       }
-    } else if (field === 'name') {
-      const nameParts = value.trim().split(/\s+/);
-      const isValidName = nameParts.length >= 2 && nameParts.every(part => part.length >= 2);
-      
-      if (value.trim() === '') {
-        setErrors((prev) => ({ ...prev, name: '' }));
-      } else if (!isValidName) {
-        setErrors((prev) => ({ ...prev, name: 'Enter your full name' }));
-      } else {
-        setErrors((prev) => ({ ...prev, name: '' }));
-      }
     } else {
       if (value.trim() !== '') {
         setErrors((prev) => ({ ...prev, [field]: '' }));
@@ -74,25 +53,21 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
     }
   };
 
-  const handleSignUp = () => {
-    // Basic validation check before starting loading
-    const hasErrors = Object.values(errors).some(err => err !== '');
-    const isComplete = form.name && form.email && form.password;
-
-    if (!hasErrors && isComplete) {
-      setLoading(true);
-      setTimeout(() => {
-        setLoading(false);
-        navigation.replace('Main');
-      }, 3000);
-    } else {
-      // Trigger empty field errors if user tries to submit incomplete form
-      const newErrors = { ...errors };
-      if (!form.name) newErrors.name = 'Field must not be empty';
-      if (!form.email) newErrors.email = 'Field must not be empty';
-      if (!form.password) newErrors.password = 'Field must not be empty';
-      setErrors(newErrors);
+  const handleLogin = () => {
+    const isEmailValid = form.email.toLowerCase().endsWith('@gmail.com') || 
+                         form.email.toLowerCase().endsWith('@yahoo.com') || 
+                         form.email.toLowerCase().endsWith('@icloud.com');
+    
+    if (!form.email || !form.password || !isEmailValid) {
+      setErrors((prev) => ({ ...prev, general: 'Invalid email or password' }));
+      return;
     }
+
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      navigation.replace('Main');
+    }, 3000);
   };
 
   return (
@@ -106,32 +81,16 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.header}>
-            <Text style={[styles.title, { color: theme.colors.onSurface }]}>Sign up to MedLens</Text>
+            <Text style={[styles.title, { color: theme.colors.onSurface }]}>Log in to MedLens</Text>
           </View>
 
           <View style={styles.formContainer}>
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: theme.colors.onSurfaceVariant }]}>Full Name</Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  { 
-                    backgroundColor: focusedInput === 'name' ? 'transparent' : theme.colors.surfaceContainerLow, 
-                    color: focusedInput === 'name' ? theme.colors.onPrimaryContainer : theme.colors.onSurface,
-                    borderColor: errors.name ? theme.colors.error : (focusedInput === 'name' ? theme.colors.primaryContainer : theme.colors.outlineVariant)
-                  }
-                ]}
-                placeholder="John Doe"
-                placeholderTextColor={theme.colors.outlineVariant}
-                value={form.name}
-                onChangeText={(text) => handleChangeText('name', text)}
-                onFocus={() => setFocusedInput('name')}
-                onBlur={() => handleBlur('name')}
-              />
-              {errors.name ? (
-                <Text style={[styles.errorText, { color: theme.colors.error }]}>{errors.name}</Text>
-              ) : null}
-            </View>
+            {errors.general ? (
+              <View style={[styles.errorBox, { backgroundColor: theme.colors.errorContainer }]}>
+                <MaterialIcons name="error-outline" size={20} color={theme.colors.error} />
+                <Text style={[styles.generalErrorText, { color: theme.colors.error }]}>{errors.general}</Text>
+              </View>
+            ) : null}
 
             <View style={styles.inputGroup}>
               <Text style={[styles.label, { color: theme.colors.onSurfaceVariant }]}>Email</Text>
@@ -141,7 +100,7 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
                   { 
                     backgroundColor: focusedInput === 'email' ? 'transparent' : theme.colors.surfaceContainerLow, 
                     color: focusedInput === 'email' ? theme.colors.onPrimaryContainer : theme.colors.onSurface,
-                    borderColor: errors.email ? theme.colors.error : (focusedInput === 'email' ? theme.colors.primaryContainer : theme.colors.outlineVariant)
+                    borderColor: (errors.email || errors.general) ? theme.colors.error : (focusedInput === 'email' ? theme.colors.primaryContainer : theme.colors.outlineVariant)
                   }
                 ]}
                 placeholder="johndoe@gmail.com"
@@ -159,7 +118,7 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: theme.colors.onSurfaceVariant }]}>Create Password</Text>
+              <Text style={[styles.label, { color: theme.colors.onSurfaceVariant }]}>Enter Password</Text>
               <View style={styles.passwordContainer}>
                 <TextInput
                   style={[
@@ -168,7 +127,7 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
                     { 
                       backgroundColor: focusedInput === 'password' ? 'transparent' : theme.colors.surfaceContainerLow, 
                       color: focusedInput === 'password' ? theme.colors.onPrimaryContainer : theme.colors.onSurface,
-                      borderColor: errors.password ? theme.colors.error : (focusedInput === 'password' ? theme.colors.primaryContainer : theme.colors.outlineVariant)
+                      borderColor: (errors.password || errors.general) ? theme.colors.error : (focusedInput === 'password' ? theme.colors.primaryContainer : theme.colors.outlineVariant)
                     }
                   ]}
                   placeholder="Password"
@@ -193,28 +152,22 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
               {errors.password ? (
                 <Text style={[styles.errorText, { color: theme.colors.error }]}>{errors.password}</Text>
               ) : null}
-
-              {(form.password.length > 0 || focusedInput === 'password') && (
-                <View style={styles.requirementsContainer}>
-                  <RequirementRow met={requirements.length} label="At least 8 characters long" theme={theme} />
-                  <RequirementRow met={requirements.uppercase} label="At least one uppercase letter" theme={theme} />
-                  <RequirementRow met={requirements.lowercase} label="At least one lowercase letter" theme={theme} />
-                  <RequirementRow met={requirements.number} label="At least one number" theme={theme} />
-                  <RequirementRow met={requirements.special} label="At least one special character" theme={theme} />
-                </View>
-              )}
             </View>
 
             <TouchableOpacity 
               style={[styles.submitButton, { backgroundColor: theme.colors.primary }]}
-              onPress={handleSignUp}
+              onPress={handleLogin}
               disabled={loading}
             >
               {loading ? (
                 <ActivityIndicator color={theme.colors.onPrimary} />
               ) : (
-                <Text style={[styles.submitButtonText, { color: theme.colors.onPrimary }]}>Sign Up</Text>
+                <Text style={[styles.submitButtonText, { color: theme.colors.onPrimary }]}>Log In</Text>
               )}
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.forgotPassword}>
+              <Text style={[styles.forgotPasswordText, { color: theme.colors.primary }]}>Forgot Password?</Text>
             </TouchableOpacity>
           </View>
 
@@ -244,7 +197,7 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
 
           <View style={styles.footer}>
             <Text style={[styles.footerText, { color: theme.colors.onSurfaceVariant }]}>
-              Already have an account? <Text style={{ color: theme.colors.primary, fontWeight: '600' }} onPress={() => navigation.navigate('Login')}>Log In</Text>
+              Don't have an account? <Text style={{ color: theme.colors.primary, fontWeight: '600' }} onPress={() => navigation.navigate('SignUp')}>Sign Up</Text>
             </Text>
           </View>
         </ScrollView>
@@ -260,7 +213,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 60,
+    paddingTop: 80,
     paddingBottom: 40,
   },
   header: {
@@ -276,6 +229,19 @@ const styles = StyleSheet.create({
   formContainer: {
     gap: 20,
     marginBottom: 40,
+  },
+  errorBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 16,
+    gap: 12,
+    marginBottom: 8,
+  },
+  generalErrorText: {
+    fontSize: 14,
+    fontWeight: '600',
+    fontFamily: 'Outfit',
   },
   inputGroup: {
     gap: 8,
@@ -317,6 +283,14 @@ const styles = StyleSheet.create({
   },
   submitButtonText: {
     fontSize: 18,
+    fontWeight: '600',
+  },
+  forgotPassword: {
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  forgotPasswordText: {
+    fontSize: 14,
     fontWeight: '600',
   },
   socialSection: {
@@ -365,35 +339,6 @@ const styles = StyleSheet.create({
     marginLeft: 4,
     fontFamily: 'Outfit',
   },
-  requirementsContainer: {
-    marginTop: 12,
-    gap: 8,
-    paddingLeft: 4,
-  },
-  requirementRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  requirementText: {
-    fontSize: 13,
-    fontFamily: 'Outfit',
-  },
 });
 
-
-
-const RequirementRow = ({ met, label, theme }: { met: boolean; label: string; theme: ThemeContextType }) => (
-  <View style={styles.requirementRow}>
-    <MaterialIcons 
-      name={met ? "check-circle" : "radio-button-unchecked"} 
-      size={16} 
-      color={met ? theme.colors.success : theme.colors.outlineVariant} 
-    />
-    <Text style={[styles.requirementText, { color: met ? theme.colors.onSurface : theme.colors.onSurfaceVariant }]}>
-      {label}
-    </Text>
-  </View>
-);
-
-export default SignUpScreen;
+export default LoginScreen;
