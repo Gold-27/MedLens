@@ -340,7 +340,7 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
   },
   headlineText: {
     fontSize: 28,
-    fontWeight: '700',
+    fontWeight: '400',
     textAlign: 'center',
     paddingHorizontal: 32,
     lineHeight: 38,
