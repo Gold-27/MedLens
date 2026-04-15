@@ -82,6 +82,10 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
     }
   };
 
+  const handleSignUp = () => {
+    navigation.navigate('SignUp');
+  };
+
   const handleSkip = () => {
     handleFinish();
   };
@@ -139,14 +143,36 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
           {slides.map((_, index) => renderIndicator(index))}
         </View>
 
-        <TouchableOpacity
-          style={[styles.nextButton, { backgroundColor: theme.colors.primary }]}
-          onPress={handleNext}
-        >
-          <Text style={[styles.nextButtonText, { color: theme.colors.onPrimary }]}>
-            {currentIndex === slides.length - 1 ? 'Get Started' : 'Next'}
-          </Text>
-        </TouchableOpacity>
+        {currentIndex === slides.length - 1 ? (
+          <View style={styles.finishButtonsContainer}>
+            <TouchableOpacity
+              style={[styles.nextButton, { backgroundColor: theme.colors.primary, flex: 1.2 }]}
+              onPress={handleNext}
+            >
+              <Text style={[styles.nextButtonText, { color: theme.colors.onPrimary }]}>
+                Use as Guest
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[styles.signUpButton, { borderColor: theme.colors.primary, flex: 0.8 }]}
+              onPress={handleSignUp}
+            >
+              <Text style={[styles.signUpButtonText, { color: theme.colors.primary }]}>
+                Sign Up
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity
+            style={[styles.nextButton, { backgroundColor: theme.colors.primary }]}
+            onPress={handleNext}
+          >
+            <Text style={[styles.nextButtonText, { color: theme.colors.onPrimary }]}>
+              Next
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );
@@ -216,6 +242,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   nextButtonText: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  finishButtonsContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    alignItems: 'center',
+  },
+  signUpButton: {
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 1.5,
+  },
+  signUpButtonText: {
     fontSize: 18,
     fontWeight: '600',
   },
