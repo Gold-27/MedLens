@@ -104,7 +104,7 @@ const SettingsScreen: React.FC = () => {
         </View>
       ))}
 
-      <View style={styles.disclaimerContainer}>
+      <View style={[styles.disclaimerContainer, { backgroundColor: theme.colors.surfaceContainerLow }]}>
         <Text style={[styles.disclaimerText, { color: theme.colors.onSurfaceVariant }]}>
           MedLens simplifies medical information for understanding. It does not replace professional medical advice.
         </Text>
@@ -174,7 +174,6 @@ const styles = StyleSheet.create({
     marginBottom: 40,
     padding: 20,
     borderRadius: 12,
-    backgroundColor: '#f0f0f0',
   },
   disclaimerText: {
     fontSize: 14,
