@@ -9,11 +9,13 @@ import HomeScreen from '../screens/HomeScreen';
 import CabinetScreen from '../screens/CabinetScreen';
 import InteractionScreen from '../screens/InteractionScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import SignUpScreen from '../screens/SignUpScreen';
 import { Text } from 'react-native';
 
 export type RootStackParamList = {
   Splash: undefined;
   Onboarding: undefined;
+  SignUp: undefined;
   Main: { screen?: keyof MainTabParamList; params?: any } | undefined;
   Interaction: { drugKeys?: string[] };
 };
@@ -83,6 +85,7 @@ const AppNavigator = () => {
       <Stack.Navigator initialRouteName="Splash" screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Splash" component={SplashScreen} />
         <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+        <Stack.Screen name="SignUp" component={SignUpScreen} />
         <Stack.Screen name="Main" component={MainTabs} />
         <Stack.Screen
           name="Interaction"
