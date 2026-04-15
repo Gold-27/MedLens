@@ -123,8 +123,10 @@ const HomeScreen: React.FC = () => {
   const renderContent = () => {
     if (state === 'empty') {
       return (
-        <View style={styles.emptyContent}>
-          <TrustBadges />
+        <View style={[styles.emptyContent, { justifyContent: 'center', alignItems: 'center' }]}>
+          <Text style={[styles.headlineText, { color: theme.colors.onBackground }]}>
+            Search any medications to get clear answers ?
+          </Text>
         </View>
       );
     }
@@ -194,17 +196,17 @@ const HomeScreen: React.FC = () => {
           <View />
           <View style={styles.headerActions}>
             <TouchableOpacity
-              style={[styles.cabinetPill, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outlineVariant }]}
+              style={[styles.cabinetPill, { backgroundColor: theme.colors.primaryContainer, borderWidth: 0 }]}
               onPress={() => navigation.navigate('Cabinet')}
             >
-              <Ionicons name="briefcase" size={18} color={theme.colors.primary} />
-              <Text style={[styles.cabinetText, { color: theme.colors.onSurface }]}>Cabinet</Text>
+              <Ionicons name="briefcase" size={18} color={theme.colors.onPrimaryContainer} />
+              <Text style={[styles.cabinetText, { color: theme.colors.onPrimaryContainer }]}>Cabinet</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.profileCircle, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outlineVariant }]}
+              style={[styles.profileCircle, { backgroundColor: theme.colors.primary, borderWidth: 0 }]}
               onPress={() => navigation.navigate('Settings')}
             >
-              <Ionicons name="person-circle" size={32} color={theme.colors.primary} />
+              <Ionicons name="person-circle" size={32} color={theme.colors.onPrimary} />
             </TouchableOpacity>
           </View>
         </View>
@@ -274,7 +276,6 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 99,
-    borderWidth: 1.5,
     gap: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -292,7 +293,6 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1.5,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
@@ -324,7 +324,7 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
   floatingFooter: {
     paddingHorizontal: 0,
     paddingBottom: 0,
-    marginBottom: 32,
+    marginBottom: 80,
     backgroundColor: 'transparent',
     gap: 10,
   },
@@ -343,6 +343,13 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
   tipText: {
     fontSize: 13,
     fontWeight: '500',
+  },
+  headlineText: {
+    fontSize: 28,
+    fontWeight: '700',
+    textAlign: 'center',
+    paddingHorizontal: 32,
+    lineHeight: 38,
   },
 });
 

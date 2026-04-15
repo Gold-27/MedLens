@@ -133,11 +133,10 @@ const InputBar: React.FC<InputBarProps> = ({
             }
           ]}
         >
-          <Ionicons name="search" size={20} color={theme.colors.onSurfaceVariant} style={styles.searchIcon} />
           <TextInput
-            style={[styles.input, { color: theme.colors.onSurface }]}
+            style={[styles.input, { color: theme.colors.onSurface, textAlign: 'left' }]}
             placeholder="Search medication..."
-            placeholderTextColor={theme.colors.onSurfaceVariant}
+            placeholderTextColor={theme.colors.outline}
             value={query}
             onChangeText={setQuery}
             onFocus={handleFocus}
@@ -147,8 +146,8 @@ const InputBar: React.FC<InputBarProps> = ({
             returnKeyType="search"
             autoFocus={autoFocus}
           />
-          <TouchableOpacity style={styles.micButton}>
-            <Ionicons name="mic-outline" size={22} color={theme.colors.onSurfaceVariant} />
+          <TouchableOpacity style={styles.micButton} onPress={query.trim() ? handleSubmit : undefined}>
+            <Ionicons name={query.trim() ? "send" : "mic-outline"} size={22} color={theme.colors.onSurfaceVariant} />
           </TouchableOpacity>
         </Animated.View>
 
@@ -156,20 +155,15 @@ const InputBar: React.FC<InputBarProps> = ({
           style={[
             styles.eliButton, 
             { 
-              backgroundColor: eli12Enabled ? theme.colors.primary : theme.colors.surfaceContainerHigh,
+              backgroundColor: theme.colors.primary,
               shadowOpacity: eli12Enabled ? 0.2 : 0.05
             }
           ]}
           onPress={() => onToggleEli12?.(!eli12Enabled)}
         >
-          <MaterialCommunityIcons 
-            name="sparkles" 
-            size={16} 
-            color={eli12Enabled ? theme.colors.onPrimary : theme.colors.onSurfaceVariant} 
-          />
           <Animated.Text style={[
             styles.eliButtonText, 
-            { color: eli12Enabled ? theme.colors.onPrimary : theme.colors.onSurfaceVariant }
+            { color: theme.colors.onPrimary }
           ]}>
             ELI 12
           </Animated.Text>
