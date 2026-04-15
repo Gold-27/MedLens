@@ -1,12 +1,12 @@
 import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, Animated } from 'react-native';
-import { useTheme } from '../theme/ThemeProvider';
+import { View, StyleSheet, Animated, ViewStyle } from 'react-native';
+import { useTheme, ThemeContextType } from '../theme/ThemeProvider';
 
 interface SkeletonProps {
   width?: number | string;
   height?: number;
   borderRadius?: number;
-  style?: any;
+  style?: ViewStyle;
 }
 
 const Skeleton: React.FC<SkeletonProps> = ({
@@ -57,7 +57,7 @@ const Skeleton: React.FC<SkeletonProps> = ({
   );
 };
 
-const makeStyles = (theme: any) => StyleSheet.create({
+const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
   skeleton: {
     backgroundColor: theme.colors.surfaceContainerHigh,
     position: 'relative',

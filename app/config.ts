@@ -21,7 +21,7 @@ const getApiBaseUrl = (): string => {
       }
       
       // Otherwise use the detected IP for physical device
-      console.log(`[MedLens] Using backend at: http://${hostname}:3001 (detected from Expo Go)`);
+
       return `http://${hostname}:3001`;
     }
   }
@@ -32,10 +32,7 @@ const getApiBaseUrl = (): string => {
 
 const API_BASE_URL = getApiBaseUrl();
 
-// Log the backend URL in development for debugging
-if (__DEV__) {
-  console.log(`[MedLens] Backend URL: ${API_BASE_URL}`);
-}
+
 
 export const Config = {
   API_BASE_URL,
