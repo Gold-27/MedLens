@@ -96,7 +96,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
     } catch (error) {
       console.error('Error saving onboarding status:', error);
     }
-    navigation.replace('Main');
+    navigation.replace('Home');
   };
 
   const renderSlide = ({ item }: { item: Slide }) => (

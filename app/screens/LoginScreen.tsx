@@ -72,7 +72,7 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
-      navigation.replace('Main');
+      navigation.replace('Home');
     }, 3000);
   };
 

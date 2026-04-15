@@ -154,7 +154,7 @@ const InteractionScreen: React.FC = () => {
           </Text>
           <TouchableOpacity
             style={[styles.cabinetButton, { backgroundColor: theme.colors.primary }]}
-            onPress={() => navigation.navigate('Main', { screen: user ? 'Cabinet' : 'Settings' })}
+            onPress={() => navigation.navigate(user ? 'Cabinet' : 'Settings')}
           >
             <Text style={[styles.cabinetButtonText, { color: theme.colors.onPrimary }]}>
               {user ? 'Go to Cabinet' : 'Go to Settings'}
@@ -205,7 +205,7 @@ const InteractionScreen: React.FC = () => {
           styles.checkButton,
           { 
             backgroundColor: selectedDrugs.length >= 2 && !checking 
-              ? theme.colors.accent 
+              ? theme.colors.primary 
               : theme.colors.surfaceContainerHigh 
           },
         ]}
@@ -213,11 +213,11 @@ const InteractionScreen: React.FC = () => {
         disabled={selectedDrugs.length < 2 || checking}
       >
         {checking ? (
-          <ActivityIndicator size="small" color={theme.colors.onAccent} />
+          <ActivityIndicator size="small" color={theme.colors.onPrimary} />
         ) : (
           <Text style={[
             styles.checkButtonText,
-            { color: selectedDrugs.length >= 2 ? theme.colors.onAccent : theme.colors.onSurfaceVariant },
+            { color: selectedDrugs.length >= 2 ? theme.colors.onPrimary : theme.colors.onSurfaceVariant },
           ]}>
             Check Interactions
           </Text>

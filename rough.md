@@ -40,5 +40,58 @@ hange the get started text in the button to "use as guest"
 - if a user inputs the wrong password or email address, display an error message using the error color role saying "Invalid email or password" and remove the error message only when the user inputs the correct password or email address 
 - when the user has inputted all the required fields and clicks on the log in button, change the log in text in the button to a loading spinner that spins for 3 seconds and then navigates to the home screen 
 # home page
-- 
+- DO NOT change functionality. Only improve layout, hierarchy, spacing, and visual design.
+
+---
+
+LAYOUT CHANGES:
+
+1. Remove bottom navigation bar (Home, Cabinet, Settings)
+2. Move primary navigation to the top right:
+   - Add a "Cabinet" button (rounded pill with icon)
+   - Add a circular user profile icon beside it
+
+
+Above the search input field add 3 trust badges in a horizontal layout:
+   - “Source verified”
+   - “Private & secure”
+   - “Trusted by users”
+
+---
+
+SEARCH EXPERIENCE:
+
+5. Move the search input to the bottom as a floating input bar:
+   - Rounded, soft shadow
+   - Placeholder: “Search medication...”
+   - Add microphone icon inside input (right side)
+   - Add ELI12 button beside it (primary colored pill button)
+
+6. Add a tip card below search:
+   - “Tip: Try ‘paracetamol for fever’”
+
+---
+
+RECENT SEARCHES:
+
+7. Add “Recent searches” section above the search bar:
+   - Horizontal scroll chips
+   - Examples: Paracetamol, Amoxicillin, Metformin, Ibuprofen
+   - Add “View all” on the right
+
+---
+
+VISUAL STYLE:
+
+8. Use a soft, minimal, modern healthcare aesthetic:
+   - Light background (off-white)
+   - Primary color: soft medical green
+   - Rounded corners everywhere
+   - Soft shadows (not heavy)
+   - Clean spacing (generous padding)
+
+9. Improve typography hierarchy:
+   - Large bold headline
+   - Medium subtext
+   - Smaller supporting text
 - 

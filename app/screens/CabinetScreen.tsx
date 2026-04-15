@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndi
 import { useTheme, ThemeContextType } from '../theme/ThemeProvider';
 import { useAuth } from '../context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
-import { MainTabParamList, RootStackParamList } from '../navigation/AppNavigator';
+import { RootStackParamList } from '../navigation/AppNavigator';
 import * as api from '../services/api';
 import EmptyState from '../components/EmptyState';
 
@@ -254,10 +254,10 @@ const CabinetScreen: React.FC = () => {
           
           {selectedItems.size >= 2 && (
             <TouchableOpacity
-              style={[styles.interactionButton, { backgroundColor: theme.colors.accent }]}
+              style={[styles.interactionButton, { backgroundColor: theme.colors.primary }]}
               onPress={handleCheckInteractions}
             >
-              <Text style={[styles.interactionButtonText, { color: theme.colors.onAccent }]}>
+              <Text style={[styles.interactionButtonText, { color: theme.colors.onPrimary }]}>
                 Check Interactions ({selectedItems.size} medications)
               </Text>
             </TouchableOpacity>
