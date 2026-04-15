@@ -1,6 +1,5 @@
 # start-tunnel.ps1
-# This script manually manages a Cloudflare Tunnel and passes the URL to Expo.
-# Refactored for a zero-landing-page, seamless multi-user experience.
+# This script manages dual Cloudflare Tunnels (Frontend + Backend) and syncs the Backend URL to .env.
 
 # 1. Clean up old processes
 Write-Host "Cleaning up previous processes..." -ForegroundColor Cyan
@@ -11,47 +10,47 @@ foreach ($proc in $processesToKill) {
     Get-Process $proc -ErrorAction SilentlyContinue | Stop-Process -Force
 }
 
-# Clear port 8081 if occupied
-$portConn = Get-NetTCPConnection -LocalPort 8081 -State Listen -ErrorAction SilentlyContinue
-if ($portConn) {
-    Write-Host "Clearing port 8081 (held by process $($portConn.OwningProcess))..." -ForegroundColor Yellow
-    Stop-Process -Id $portConn.OwningProcess -Force -ErrorAction SilentlyContinue
-    Start-Sleep -Seconds 1
+# Clear ports 8081 and 3001 if occupied
+$ports = @(8081, 3001)
+foreach ($port in $ports) {
+    $portConn = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue
+    if ($portConn) {
+        Write-Host "Clearing port $port (held by process $($portConn.OwningProcess))..." -ForegroundColor Yellow
+        Stop-Process -Id $portConn.OwningProcess -Force -ErrorAction SilentlyContinue
+        Start-Sleep -Seconds 1
+    }
 }
 
 # 2. Handle log file cleanup
-$logFiles = @("tunnel.log", "tunnel.err", "ngrok.log")
+$logFiles = @("frontend.log", "backend.log", "tunnel.log", "backend_tunnel.log", "ngrok.log")
 foreach ($file in $logFiles) {
     if (Test-Path $file) {
         try { Remove-Item $file -Force -ErrorAction SilentlyContinue } catch { }
     }
 }
 
-# 3. Start Cloudflare Tunnel in the background
-Write-Host "Starting Cloudflare Quick Tunnel on port 8081..." -ForegroundColor Cyan
+# 3. Start Backend Tunnel (Port 3001)
+Write-Host "Starting Backend Tunnel on port 3001..." -ForegroundColor Cyan
 try {
-    # Using npx to run cloudflared. This will serve http://localhost:8081
-    # We redirect both stdout and stderr to the same log for easier parsing
-    $tunnelProcess = Start-Process -FilePath "npx.cmd" -ArgumentList "cloudflared", "tunnel", "--url", "http://localhost:8081", "--no-autoupdate" -NoNewWindow -PassThru -RedirectStandardError "tunnel.log"
+    Start-Process -FilePath "npx.cmd" -ArgumentList "cloudflared", "tunnel", "--url", "http://localhost:3001", "--no-autoupdate" -NoNewWindow -PassThru -RedirectStandardError "backend.log"
 } catch {
-    Write-Host "Error: Failed to launch cloudflared via npx." -ForegroundColor Red
+    Write-Host "Error: Failed to launch backend cloudflared." -ForegroundColor Red
     exit 1
 }
 
-# 4. Wait for URL to appear in logs
-Write-Host "Waiting for Cloudflare URL..." -ForegroundColor Gray
-$foundUrl = $null
-$maxWait = 45 # Cloudflare might take a moment to provision
+# 4. Wait for Backend URL
+Write-Host "Waiting for Backend URL..." -ForegroundColor Gray
+$backendUrl = $null
+$maxWait = 30
 $counter = 0
-while ($null -eq $foundUrl -and $counter -lt $maxWait) {
+while ($null -eq $backendUrl -and $counter -lt $maxWait) {
     Start-Sleep -Seconds 1
-    if (Test-Path "tunnel.log") {
+    if (Test-Path "backend.log") {
         try {
-            # Cloudflare prints the URL to the logs
-            $logs = Get-Content "tunnel.log" -ErrorAction SilentlyContinue
+            $logs = Get-Content "backend.log" -ErrorAction SilentlyContinue
             foreach ($line in $logs) {
                 if ($line -match "(https://[a-zA-Z0-9-]+\.trycloudflare\.com)") {
-                    $foundUrl = $matches[1]
+                    $backendUrl = $matches[1]
                     break
                 }
             }
@@ -60,22 +59,66 @@ while ($null -eq $foundUrl -and $counter -lt $maxWait) {
     $counter++
 }
 
-if ($null -eq $foundUrl) {
-    Write-Host "`nError: Could not retrieve Cloudflare URL within $maxWait seconds." -ForegroundColor Red
-    if (Test-Path "tunnel.log") {
-        Write-Host "Last few log lines from tunnel.log:" -ForegroundColor Yellow
-        Get-Content "tunnel.log" -Tail 10 | Write-Host
-    }
-    Write-Host "`nTip: Cloudflare might be blocked by your firewall or hit an SSL issue." -ForegroundColor Cyan
+if ($null -eq $backendUrl) {
+    Write-Host "Error: Could not retrieve Backend URL." -ForegroundColor Red
     exit 1
 }
 
-Write-Host "`nTunnel established: $foundUrl" -ForegroundColor Green
-Write-Host "Seamless access active: No landing pages or warnings." -ForegroundColor Cyan
+Write-Host "Backend Tunnel: $backendUrl" -ForegroundColor Green
 
-# 5. Start Expo with the proxy URL
-$env:EXPO_PACKAGER_PROXY_URL = $foundUrl
-Write-Host "Launching Expo..." -ForegroundColor Cyan
+# 5. Sync .env with Backend URL
+Write-Host "Updating app/.env with fresh Backend URL..." -ForegroundColor Cyan
+if (Test-Path ".env") {
+    $envContent = Get-Content ".env"
+    $newEnvContent = $envContent -replace "EXPO_PUBLIC_API_BASE_URL=.*", "EXPO_PUBLIC_API_BASE_URL=$backendUrl"
+    $newEnvContent | Set-Content ".env" -Encoding Utf8
+    Write-Host "Successfully synced .env!" -ForegroundColor Green
+} else {
+    Write-Host "Warning: .env file not found. Skipping auto-sync." -ForegroundColor Yellow
+}
 
-# We use the proxy URL for the manifest to ensure the QR code works properly
-npx expo start
+# 6. Start Frontend Tunnel (Port 8081)
+Write-Host "Starting Frontend Tunnel on port 8081..." -ForegroundColor Cyan
+try {
+    Start-Process -FilePath "npx.cmd" -ArgumentList "cloudflared", "tunnel", "--url", "http://localhost:8081", "--no-autoupdate" -NoNewWindow -PassThru -RedirectStandardError "frontend.log"
+} catch {
+    Write-Host "Error: Failed to launch frontend cloudflared." -ForegroundColor Red
+    exit 1
+}
+
+# 7. Wait for Frontend URL
+Write-Host "Waiting for Frontend URL..." -ForegroundColor Gray
+$frontendUrl = $null
+$counter = 0
+while ($null -eq $frontendUrl -and $counter -lt $maxWait) {
+    Start-Sleep -Seconds 1
+    if (Test-Path "frontend.log") {
+        try {
+            $logs = Get-Content "frontend.log" -ErrorAction SilentlyContinue
+            foreach ($line in $logs) {
+                if ($line -match "(https://[a-zA-Z0-9-]+\.trycloudflare\.com)") {
+                    $frontendUrl = $matches[1]
+                    break
+                }
+            }
+        } catch { }
+    }
+    $counter++
+}
+
+if ($null -eq $frontendUrl) {
+    Write-Host "Error: Could not retrieve Frontend URL." -ForegroundColor Red
+    exit 1
+}
+
+Write-Host "Frontend Tunnel: $frontendUrl" -ForegroundColor Green
+
+# 8. Launch Expo
+$env:EXPO_PACKAGER_PROXY_URL = $frontendUrl
+$env:EXPO_SKIP_DEPENDENCY_VALIDATION = "1"
+$expUrl = $frontendUrl -replace "https://", "exp://"
+
+Write-Host "`nTo scan manually, use this link: $expUrl" -ForegroundColor Green
+Write-Host "Launching Expo (Clearing cache)..." -ForegroundColor Cyan
+
+npx expo start -c

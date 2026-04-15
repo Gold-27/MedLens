@@ -29,10 +29,10 @@ export class OpenFDAService {
       
       return {
         drug_name: result.openfda?.brand_name?.[0] || result.openfda?.generic_name?.[0] || query,
-        indications: result.indications_and_usage?.[0],
-        dosage: result.dosage_and_administration?.[0],
-        warnings: result.warnings?.[0] || result.boxed_warning?.[0],
-        side_effects: result.adverse_reactions?.[0]
+        indications: result.indications_and_usage?.[0] || result.purpose?.[0] || result.description?.[0],
+        dosage: result.dosage_and_administration?.[0] || result.how_to_use?.[0] || result.instructions_for_use?.[0],
+        warnings: result.warnings?.[0] || result.boxed_warning?.[0] || result.precautions?.[0] || result.do_not_use?.[0],
+        side_effects: result.adverse_reactions?.[0] || result.side_effects?.[0]
       };
     } catch (error: any) {
       console.error('OpenFDA API error:', error.message);
