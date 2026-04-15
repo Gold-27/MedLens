@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import openFDAService from '../services/openfda.service';
-import deepSeekService from '../services/deepseek.service';
+import geminiService, { AISummary } from '../services/gemini.service';
 
 export const searchMedication = async (req: Request, res: Response) => {
   const { query, eli12 } = req.body;
@@ -25,10 +25,25 @@ export const searchMedication = async (req: Request, res: Response) => {
     }
     console.log('[Search] OpenFDA data received for:', fdaData.drug_name);
 
-    // Stage 2: Transform with DeepSeek
-    console.log('[Search] Transforming with DeepSeek...');
-    const summary = await deepSeekService.generateSummary(fdaData, !!eli12);
-    console.log('[Search] DeepSeek summary generated');
+    // Stage 2: Transform with Gemini (with Safe Mode Fallback)
+    console.log('[Search] Transforming with Gemini...');
+    let summary: AISummary;
+    
+    try {
+      summary = await geminiService.generateSummary(fdaData, !!eli12);
+      console.log('[Search] Gemini summary generated');
+    } catch (error: any) {
+      console.error('[Search] Gemini failed, switching to Safe Mode Fallback:', error.message);
+      
+      // Safety Fallback (Section 7, Step 6 of AGENTS.md)
+      summary = {
+        what_it_does: fdaData.indications || "Information not found in medical labels.",
+        how_to_take: fdaData.dosage || "Information not found in medical labels.",
+        warnings: fdaData.warnings || "Information not found in medical labels. Consult a professional.",
+        side_effects: fdaData.side_effects || "Information not found in medical labels."
+      };
+      console.log('[Search] Fallback summary created from raw FDA data');
+    }
 
     // Stage 3: Return structured response
     console.log('[Search] Returning success response');

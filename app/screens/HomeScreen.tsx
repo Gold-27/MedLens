@@ -214,6 +214,8 @@ Disclaimer: MedLens simplifies medical information for understanding. It does no
       case 'loading':
         return (
           <View style={styles.loadingState}>
+            <Skeleton width="60%" height={32} borderRadius={8} />
+            <View style={styles.skeletonSpacing} />
             <Skeleton width="100%" height={200} borderRadius={16} />
             <View style={styles.skeletonSpacing} />
             <Skeleton width="100%" height={100} borderRadius={16} />
@@ -311,6 +313,7 @@ Disclaimer: MedLens simplifies medical information for understanding. It does no
         onSubmit={handleSearch}
         loading={state === 'loading'}
         fetchSuggestions={fetchSuggestions}
+        autoFocus={true}
       />
 
       {/* Auth Modal */}
