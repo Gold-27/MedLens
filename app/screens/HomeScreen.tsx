@@ -1,16 +1,19 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Share } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Share, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { MainTabParamList } from '../navigation/AppNavigator';
+
 import { useTheme, ThemeContextType } from '../theme/ThemeProvider';
 import { useAuth } from '../context/AuthContext';
-import SummaryCard, { SummaryCardProps } from '../components/SummaryCard';
+import { Ionicons } from '@expo/vector-icons';
+
+import SummaryCard from '../components/SummaryCard';
 import Skeleton from '../components/Skeleton';
 import InputBar from '../components/InputBar';
 import EmptyState from '../components/EmptyState';
 import AuthModal from '../components/AuthModal';
 import Disclaimer from '../components/Disclaimer';
+import TrustBadges from '../components/TrustBadges';
 import * as api from '../services/api';
 
 type AppState = 'empty' | 'loading' | 'success' | 'partial' | 'notFound' | 'error';
@@ -18,9 +21,9 @@ type AppState = 'empty' | 'loading' | 'success' | 'partial' | 'notFound' | 'erro
 const HomeScreen: React.FC = () => {
   const theme = useTheme();
   const { user, isGuest, getToken } = useAuth();
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const styles = makeStyles(theme);
-  
+
   const [query, setQuery] = useState('');
   const [state, setState] = useState<AppState>('empty');
   const [result, setResult] = useState<api.SearchResponse | null>(null);
@@ -29,39 +32,28 @@ const HomeScreen: React.FC = () => {
   const [pendingAction, setPendingAction] = useState<string>('');
   const [savedDrugs, setSavedDrugs] = useState<Set<string>>(new Set());
 
-  // Fetch cabinet items on mount
   useEffect(() => {
-    const fetchCabinetItems = async () => {
-      if (!user) {
-        setSavedDrugs(new Set());
-        return;
-      }
-      
+    const initData = async () => {
       try {
-        const token = await getToken();
-        if (!token) {
-          console.warn('No auth token available');
-          return;
+        if (user) {
+          const token = await getToken();
+          if (token) {
+            const response = await api.getCabinetItems(token);
+            const drugNames = response.items.map(item => item.drug_name.toLowerCase());
+            setSavedDrugs(new Set(drugNames));
+          }
         }
-        
-        const response = await api.getCabinetItems(token);
-        const drugNames = response.items.map(item => item.drug_name.toLowerCase());
-        setSavedDrugs(new Set(drugNames));
       } catch (error) {
-        console.error('Failed to fetch cabinet items:', error);
-        // Keep existing mock or empty set on error
+        console.error('Initial data fetch failed:', error);
       }
     };
-    
-    fetchCabinetItems();
+    initData();
   }, [user, getToken]);
 
   const handleSearch = useCallback(async (searchQuery: string) => {
     if (!searchQuery.trim()) return;
-    
     setQuery(searchQuery);
     setState('loading');
-    
     try {
       const response = await api.searchMedication(searchQuery.trim(), eli12Enabled);
       setResult(response);
@@ -69,8 +61,6 @@ const HomeScreen: React.FC = () => {
       setState('success');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
-      console.error('Search error:', message);
-      
       if (message.includes('not found') || message.includes('404')) {
         setState('notFound');
       } else {
@@ -80,305 +70,281 @@ const HomeScreen: React.FC = () => {
   }, [eli12Enabled]);
 
   const handleToggleELI12 = useCallback(async (enabled: boolean) => {
-    if (!result) return;
-    
     setEli12Enabled(enabled);
-    
-    if (!enabled) {
-      // Turning off ELI12 - just use existing summary
-      setState('success');
-      return;
-    }
-    
-    // Turning on ELI12 - fetch simplified summary
+    if (!result) return;
+    if (!enabled) { setState('success'); return; }
     setState('loading');
-    
     try {
-      if (!result.data) {
-        throw new Error('No drug data available for simplification');
-      }
+      if (!result.data) throw new Error('No drug data available');
       const response = await api.getELI12(result.data);
-      // Merge ELI12 response with existing result
-      const updatedResult = {
-        ...result,
-        eli12: response.eli12,
-      };
-      setResult(updatedResult);
+      setResult({ ...result, eli12: response.eli12 });
       setState('success');
     } catch (error) {
-      console.error('ELI12 toggle error:', error);
       setState('error');
     }
   }, [result]);
 
   const handleSave = useCallback(async () => {
     if (!result) return;
-    
-    if (isGuest) {
-      setPendingAction('save this medication to your cabinet');
-      setShowAuthModal(true);
-      return;
-    }
-    
+    if (isGuest) { setPendingAction('save this medication to your cabinet'); setShowAuthModal(true); return; }
     try {
       const token = await getToken();
-      if (!token) {
-        Alert.alert('Error', 'Authentication required. Please sign in again.');
-        return;
-      }
-      
-      // Generate a simple drug key from the name
+      if (!token) return;
       const drugKey = result.drug_name.toLowerCase().replace(/\s+/g, '-');
       await api.saveCabinetItem(result.drug_name, drugKey, token);
-      
       Alert.alert('Saved', `${result.drug_name} has been saved to your cabinet.`);
       setSavedDrugs(prev => new Set([...prev, result.drug_name.toLowerCase()]));
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
-      console.error('Failed to save cabinet item:', message);
-      Alert.alert('Error', `Failed to save medication: ${message || 'Please try again.'}`);
+      console.error('Save failed:', error);
     }
   }, [result, isGuest, getToken]);
 
   const handleExport = useCallback(async () => {
     if (!result) return;
-    
-    if (isGuest) {
-      setPendingAction('export this summary');
-      setShowAuthModal(true);
-      return;
-    }
-    
-    try {
-      const shareContent = `
-MedLens Medication Summary: ${result.drug_name}
-
-Source: ${result.source}
-
-What it does:
-${result.summary.what_it_does || 'No information available.'}
-
-How to take it:
-${result.summary.how_to_take || 'No information available.'}
-
-Warnings:
-${result.summary.warnings || 'No information available.'}
-
-Side effects:
-${result.summary.side_effects || 'No information available.'}
-
-Disclaimer: MedLens simplifies medical information for understanding. It does not replace professional medical advice.
-      `.trim();
-      
-      const resultShare = await Share.share({
-        title: `MedLens: ${result.drug_name}`,
-        message: shareContent,
-      });
-      
-      if (resultShare.action === Share.sharedAction) {
-        // Shared successfully
-      } else if (resultShare.action === Share.dismissedAction) {
-        // Dismissed
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
-      console.error('Share failed:', message);
-      Alert.alert('Export Failed', 'Could not share the summary. Please try again.');
-    }
+    if (isGuest) { setPendingAction('export this summary'); setShowAuthModal(true); return; }
+    const shareContent = `MedLens Summary: ${result.drug_name}\n\nWhat it does: ${result.summary.what_it_does}\n\nDisclaimer: Not medical advice.`;
+    try { await Share.share({ title: result.drug_name, message: shareContent }); }
+    catch (error) { console.error('Share failed:', error); }
   }, [result, isGuest]);
 
   const handleAuthSuccess = useCallback(() => {
-    if (pendingAction.includes('save') && result) {
-      handleSave();
-    } else if (pendingAction.includes('export') && result) {
-      handleExport();
-    }
+    if (pendingAction.includes('save')) handleSave();
+    else if (pendingAction.includes('export')) handleExport();
     setPendingAction('');
   }, [pendingAction, result, handleSave, handleExport]);
 
-  const fetchSuggestions = useCallback(async (suggestionQuery: string): Promise<api.AutocompleteResponse['suggestions']> => {
+  const fetchSuggestions = useCallback(async (suggestionQuery: string) => {
     try {
       const response = await api.getAutocomplete(suggestionQuery);
       return response.suggestions;
-    } catch (error) {
-      console.error('Autocomplete error:', error);
-      return [];
-    }
+    } catch (error) { return []; }
   }, []);
 
   const renderContent = () => {
+    if (state === 'empty') {
+      return (
+        <View style={styles.emptyContent}>
+          <TrustBadges />
+        </View>
+      );
+    }
+
     switch (state) {
-      case 'empty':
-        return <EmptyState type="initial" />;
-      
       case 'loading':
         return (
           <View style={styles.loadingState}>
             <Skeleton width="60%" height={32} borderRadius={8} />
             <View style={styles.skeletonSpacing} />
-            <Skeleton width="100%" height={200} borderRadius={16} />
-            <View style={styles.skeletonSpacing} />
-            <Skeleton width="100%" height={100} borderRadius={16} />
-            <View style={styles.skeletonSpacing} />
-            <Skeleton width="100%" height={150} borderRadius={16} />
+            <Skeleton width="100%" height={300} borderRadius={24} />
           </View>
         );
-      
+
       case 'success':
       case 'partial':
         if (!result) return null;
-        
-         let sections = {
-           whatItDoes: result.summary.what_it_does || null,
-           howToTake: result.summary.how_to_take || null,
-           warnings: result.summary.warnings || null,
-           sideEffects: result.summary.side_effects || null,
-         };
-         if (eli12Enabled && result.eli12.content) {
-           try {
-             const eli12Summary = JSON.parse(result.eli12.content);
-             sections = {
-               whatItDoes: eli12Summary.whatItDoes || null,
-               howToTake: eli12Summary.howToTake || null,
-               warnings: eli12Summary.warnings || null,
-               sideEffects: eli12Summary.sideEffects || null,
-             };
-           } catch (e) {
-             console.error('Failed to parse ELI12 content', e);
-           }
-         }
-         const summaryProps: SummaryCardProps = {
-           drugName: result.drug_name,
-           source: result.source,
-           sections,
-           isEli12: eli12Enabled,
-           onSave: handleSave,
-           onExport: handleExport,
-           onToggleEli12: handleToggleELI12,
-           isSaved: savedDrugs.has(result.drug_name.toLowerCase()),
-           requiresAuth: isGuest,
-         };
-        
+        let sections = {
+          whatItDoes: result.summary.what_it_does || null,
+          howToTake: result.summary.how_to_take || null,
+          warnings: result.summary.warnings || null,
+          sideEffects: result.summary.side_effects || null,
+        };
+        if (eli12Enabled && result.eli12.content) {
+          try { sections = { ...JSON.parse(result.eli12.content) }; } catch (e) {}
+        }
         return (
-          <>
-            <SummaryCard {...summaryProps} />
+          <View style={styles.resultContainer}>
+            <SummaryCard
+              drugName={result.drug_name}
+              source={result.source}
+              sections={sections}
+              isEli12={eli12Enabled}
+              onSave={handleSave}
+              onExport={handleExport}
+              onToggleEli12={handleToggleELI12}
+              isSaved={savedDrugs.has(result.drug_name.toLowerCase())}
+              requiresAuth={isGuest}
+            />
             <Disclaimer />
-          </>
+          </View>
         );
-      
+
       case 'notFound':
-        return (
-          <EmptyState
-            type="not_found"
-            onRetry={() => query.trim() && handleSearch(query)}
-          />
-        );
-      
       case 'error':
         return (
           <EmptyState
-            type="error"
+            type={state === 'notFound' ? 'not_found' : 'error'}
             onRetry={() => query.trim() && handleSearch(query)}
           />
         );
-      
+
       default:
         return null;
     }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Top Bar */}
-      <View style={styles.topBar}>
-        <TouchableOpacity style={styles.cabinetButton} onPress={() => navigation.navigate('Cabinet')}>
-          <Text style={styles.cabinetButtonText}>Cabinet</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.profileIcon} onPress={() => navigation.navigate('Settings')}>
-          <Text style={styles.profileIconText}>{user ? '👤' : '👤'}</Text>
-        </TouchableOpacity>
-      </View>
+    <KeyboardAvoidingView
+      style={styles.keyboardView}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
+    >
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+        {/* Top Navigation */}
+        <View style={styles.header}>
+          <View />
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              style={[styles.cabinetPill, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outlineVariant }]}
+              onPress={() => navigation.navigate('Cabinet')}
+            >
+              <Ionicons name="briefcase" size={18} color={theme.colors.primary} />
+              <Text style={[styles.cabinetText, { color: theme.colors.onSurface }]}>Cabinet</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.profileCircle, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outlineVariant }]}
+              onPress={() => navigation.navigate('Settings')}
+            >
+              <Ionicons name="person-circle" size={32} color={theme.colors.primary} />
+            </TouchableOpacity>
+          </View>
+        </View>
 
-      {/* Dynamic Content Area */}
-      <ScrollView 
-        style={styles.contentArea}
-        contentContainerStyle={styles.contentAreaContainer}
-        showsVerticalScrollIndicator={false}
-      >
-        {renderContent()}
-      </ScrollView>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {renderContent()}
+        </ScrollView>
 
-      {/* Bottom Input Bar */}
-      <InputBar
-        onSubmit={handleSearch}
-        loading={state === 'loading'}
-        fetchSuggestions={fetchSuggestions}
-        autoFocus={true}
-      />
+        {/* Floating Bottom Bar */}
+        <View style={styles.floatingFooter}>
+          <InputBar
+            onSubmit={handleSearch}
+            loading={state === 'loading'}
+            fetchSuggestions={fetchSuggestions}
+            eli12Enabled={eli12Enabled}
+            onToggleEli12={handleToggleELI12}
+          />
+          <View style={[styles.tipCard, { backgroundColor: theme.colors.primaryContainer }]}>
+            <Ionicons name="bulb-outline" size={16} color={theme.colors.primary} style={styles.tipIcon} />
+            <Text style={[styles.tipText, { color: theme.colors.primary }]}>
+              Tip: Try <Text style={{ fontWeight: '700' }}>'paracetamol for fever'</Text>
+            </Text>
+          </View>
+        </View>
+      </SafeAreaView>
 
-      {/* Auth Modal */}
       <AuthModal
         visible={showAuthModal}
-        onClose={() => {
-          setShowAuthModal(false);
-          setPendingAction('');
-        }}
+        onClose={() => { setShowAuthModal(false); setPendingAction(''); }}
         onSuccess={handleAuthSuccess}
         pendingAction={pendingAction}
       />
-    </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 };
 
 const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
+  keyboardView: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
   },
-  topBar: {
+  header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     alignItems: 'center',
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.outlineVariant,
+    paddingHorizontal: 24,
+    paddingTop: 8,
+    paddingBottom: 8,
   },
-  cabinetButton: {
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: theme.spacing.xs,
-    backgroundColor: theme.colors.surfaceContainer,
-    borderRadius: theme.borderRadius.sm,
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
-  cabinetButtonText: {
-    ...theme.typography.labelMedium,
-    color: theme.colors.onSurface,
+  cabinetPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 99,
+    borderWidth: 1.5,
+    gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 2,
   },
-  profileIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: theme.colors.surfaceContainer,
+  cabinetText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  profileCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1.5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 2,
   },
-  profileIconText: {
-    fontSize: 20,
-  },
-  contentArea: {
+  scrollView: {
     flex: 1,
-    marginBottom: 80, // Space for input bar
   },
-  contentAreaContainer: {
+  scrollContent: {
     flexGrow: 1,
-    padding: theme.spacing.md,
+    paddingBottom: 120,
+  },
+  emptyContent: {
+    flex: 1,
+    justifyContent: 'flex-start',
+    paddingTop: 32,
+  },
+  resultContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
   },
   loadingState: {
-    flex: 1,
+    padding: 24,
   },
   skeletonSpacing: {
-    height: theme.spacing.md,
+    height: 20,
+  },
+  floatingFooter: {
+    paddingHorizontal: 0,
+    paddingBottom: 0,
+    marginBottom: 32,
+    backgroundColor: 'transparent',
+    gap: 10,
+  },
+  tipCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    borderRadius: 99,
+    marginHorizontal: 20,
+  },
+  tipIcon: {
+    marginRight: 6,
+  },
+  tipText: {
+    fontSize: 13,
+    fontWeight: '500',
   },
 });
+
 
 export default HomeScreen;

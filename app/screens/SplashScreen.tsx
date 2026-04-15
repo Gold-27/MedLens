@@ -38,7 +38,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
         await new Promise(resolve => setTimeout(resolve, 5000)); // Minimum splash time
         
         if (hasSeenOnboarding === 'true') {
-          navigation.replace('Main');
+          navigation.replace('Home');
         } else {
           navigation.replace('Onboarding');
         }

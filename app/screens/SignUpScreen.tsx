@@ -84,7 +84,7 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
       setLoading(true);
       setTimeout(() => {
         setLoading(false);
-        navigation.replace('Main');
+        navigation.replace('Home');
       }, 3000);
     } else {
       // Trigger empty field errors if user tries to submit incomplete form

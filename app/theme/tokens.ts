@@ -3,24 +3,24 @@
 
 // Color Tokens
 export const colors = {
-  // Primary
+  // Primary - Brand Blue (from design-tokens.css)
   primary: '#4077f1',
   onPrimary: '#ffffff',
   primaryContainer: '#d0ddfb',
   onPrimaryContainer: '#0b348e',
-  
+
   // Secondary
   secondary: '#485f85',
   onSecondary: '#ffffff',
   secondaryContainer: '#e0e4eb',
   onSecondaryContainer: '#3a4c6a',
-  
+
   // Tertiary
   tertiary: '#73428a',
   onTertiary: '#ffffff',
   tertiaryContainer: '#e9ddee',
   onTertiaryContainer: '#563267',
-  
+
   // Surface
   surface: '#fafafa',
   onSurface: '#18181b',
@@ -31,58 +31,58 @@ export const colors = {
   surfaceContainer: '#efeff1',
   surfaceContainerLow: '#f4f4f5',
   surfaceContainerLowest: '#ffffff',
-  
+
   // Background
   background: '#fafafa',
   onBackground: '#18181b',
-  
+
   // Outline
   outline: '#7a7a85',
   outlineVariant: '#cacace',
-  
+
   // Error
   error: '#ef4444',
   onError: '#ffffff',
   errorContainer: '#fbd0d0',
   onErrorContainer: '#601b1b',
-  
+
   // Success
   success: '#10b981',
   onSuccess: '#ffffff',
   successContainer: '#d0fbed',
   onSuccessContainer: '#0c8d62',
-  
+
   // Accent
   accent: '#ec7b18',
   onAccent: '#ffffff',
   accentContainer: '#fbe4d0',
   onAccentContainer: '#bd600f',
-  
+
   // Inverse
   inverseSurface: '#313135',
   inverseOnSurface: '#f2f2f3',
   inversePrimary: '#a0bcf8',
-  
+
   // Scrim & Shadow
   scrim: '#000000',
   shadow: '#000000',
-  
-  // Fixed colors (optional)
+
+  // Fixed colors
   primaryFixed: '#d0ddfb',
   onPrimaryFixed: '#07235f',
   primaryFixedDim: '#a0bcf8',
   onPrimaryFixedVariant: '#0b348e',
-  
+
   secondaryFixed: '#e0e4eb',
   onSecondaryFixed: '#2b3950',
   secondaryFixedDim: '#c1c9d7',
   onSecondaryFixedVariant: '#485f85',
-  
+
   tertiaryFixed: '#e9ddee',
   onTertiaryFixed: '#3a2145',
   tertiaryFixedDim: '#d3bade',
   onTertiaryFixedVariant: '#73428a',
-  
+
   // Surface brightness
   surfaceBright: '#fafafa',
   surfaceDim: '#e4e4e7',
