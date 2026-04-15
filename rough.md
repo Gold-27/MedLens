@@ -32,10 +32,13 @@ hange the get started text in the button to "use as guest"
 - Do not display all the password requirements at once. Display them as the user types in their password and they meet each requirement, display a green check mark next to the requirement.
 - Display "Enter a valid email address" the moment the users starts typing in the email field. Remove the error messages only when the extension in the email address that follows the @ symbol does ends with "@gmail.com"
 - when the user has inputted all the required fields and clicks on the signup button, change the sign up text in the button to a loading spinner that spins for 3 seconds and then navigates to the home screen
-- replace the current social media icons for the "Google" logo and "Apple" logo with the iconify plugins for the "Google" logo and "Apple" logo 
+- replace the current social media icons for the "Google" logo and "Apple" logo with the icons from the icon folder for the "Google" logo and "Apple" logo  
 - display "Enter your full name" the moment the user starts typing in the full name input field and remove the error message only when the user has inputted all the full name (eg. "Jessica Obianuju Nnadi")
 # log in screen
 - create a log in screen, when a user clicks on "Log in" in the sign up screen, it should navigate the user to the log in screen
 - add the input group for the log in screen (email with the input field and a placeholder inside e.g johndoe@gmail.com) (Enter password with the input field and an actionable eye icon for viewing and unviewing  the password ) just like we did for the sign up screen, use the validation error messages that was used for the sign up screen 
 - if a user inputs the wrong password or email address, display an error message using the error color role saying "Invalid email or password" and remove the error message only when the user inputs the correct password or email address 
 - when the user has inputted all the required fields and clicks on the log in button, change the log in text in the button to a loading spinner that spins for 3 seconds and then navigates to the home screen 
+# home page
+- 
+- 
