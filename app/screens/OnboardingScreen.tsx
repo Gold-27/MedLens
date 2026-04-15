@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Dimensions, Image } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Dimensions, Image, Animated, Easing } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -19,13 +19,13 @@ const slides: Slide[] = [
   },
   {
     id: '2',
-    title: 'Search. Read. Understand.',
+    title: 'Search. Read. Understand with Clarity',
     description: 'Type a medication name and receive a simple summary in seconds, no medical jargon.',
     image: require('../assets/img_onboard2.png'),
   },
   {
     id: '3',
-    title: 'Clear, safe, and easy to use',
+    title: 'Clear, safe, and easy to use for everyone',
     description: 'MedLens simplifies medical information for understanding. It does not replace professional medical advice.',
     image: require('../assets/img_onboard3.png'),
   },
@@ -36,6 +36,37 @@ interface OnboardingScreenProps {
 }
 
 const { width } = Dimensions.get('window');
+
+const AnimatedIllustration = ({ source, style }: { source: any; style: any }) => {
+  const scale = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(scale, {
+          toValue: 1.04,
+          duration: 2000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(scale, {
+          toValue: 1,
+          duration: 2000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, [scale]);
+
+  return (
+    <Animated.Image
+      source={source}
+      style={[style, { transform: [{ scale }] }]}
+      resizeMode="contain"
+    />
+  );
+};
 
 const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
   const theme = useTheme();
@@ -66,7 +97,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
 
   const renderSlide = ({ item }: { item: Slide }) => (
     <View style={[styles.slide, { width }]}>
-      <Image source={item.image} style={styles.image} resizeMode="contain" />
+      <AnimatedIllustration source={item.image} style={styles.image} />
       <View style={styles.textContainer}>
         <Text style={[styles.title, { color: theme.colors.onSurface }]}>{item.title}</Text>
         <Text style={[styles.description, { color: theme.colors.onSurfaceVariant }]}>{item.description}</Text>
@@ -145,12 +176,12 @@ const styles = StyleSheet.create({
     width: width * 0.85,
     height: width * 0.85,
     alignSelf: 'center',
-    marginBottom: 40,
+    marginBottom: 30,
   },
   textContainer: {
     alignItems: 'flex-start',
-    paddingHorizontal: 40,
-    height: 170,
+    paddingHorizontal: 30,
+    height: 130,
   },
   title: {
     fontSize: 28,
@@ -165,14 +196,14 @@ const styles = StyleSheet.create({
     lineHeight: 26,
   },
   bottomSection: {
-    paddingHorizontal: 40,
+    paddingHorizontal: 30,
     paddingBottom: 90,
   },
   indicatorContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 8,
-    marginBottom: 40,
+    marginBottom: 30,
   },
   indicator: {
     width: 8,
