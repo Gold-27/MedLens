@@ -1,11 +1,7 @@
 {
   "extends": "expo/tsconfig.base.json",
   "compilerOptions": {
-    "strict": true,
-    "typeRoots": [
-      "./node_modules/@types",
-      "./node_modules/@react-navigation"
-    ]
+    "strict": true
   },
   "exclude": [
     "node_modules",
