@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, TextInput, TouchableOpacity, StyleSheet, FlatList, KeyboardAvoidingView, Platform, Animated } from 'react-native';
+import { View, TextInput, TouchableOpacity, StyleSheet, FlatList, Platform, Animated } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -118,8 +118,7 @@ const InputBar: React.FC<InputBarProps> = ({
   });
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    <View
       style={styles.container}
     >
       <View style={styles.mainWrapper}>
@@ -182,7 +181,7 @@ const InputBar: React.FC<InputBarProps> = ({
           />
         </View>
       )}
-    </KeyboardAvoidingView>
+    </View>
   );
 };
 
