@@ -6,7 +6,7 @@
     "start": "npx expo start",
     "android": "npx expo start --android",
     "ios": "npx expo start",
-    "tunnel": "powershell -ExecutionPolicy Bypass -File ./start-tunnel.ps1",
+    "tunnel": "npx expo start --tunnel",
     "web": "npx expo start --web",
     "typecheck": "npx tsc --noEmit"
   },
