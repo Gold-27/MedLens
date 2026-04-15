@@ -13,6 +13,7 @@ interface InputBarProps {
   loading?: boolean;
   onSuggestionSelect?: (suggestion: Suggestion) => void;
   fetchSuggestions?: (query: string) => Promise<Suggestion[]>;
+  autoFocus?: boolean;
 }
 
 const InputBar: React.FC<InputBarProps> = ({
@@ -20,6 +21,7 @@ const InputBar: React.FC<InputBarProps> = ({
   loading = false,
   onSuggestionSelect,
   fetchSuggestions,
+  autoFocus = false,
 }) => {
   const theme = useTheme();
   const [query, setQuery] = useState('');
@@ -107,6 +109,7 @@ const InputBar: React.FC<InputBarProps> = ({
           onSubmitEditing={handleSubmit}
           editable={!loading}
           returnKeyType="search"
+          autoFocus={autoFocus}
         />
         <TouchableOpacity
           style={[

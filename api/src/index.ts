@@ -20,7 +20,7 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
     env: {
       openfda: !!process.env.OPENFDA_API_KEY,
-      deepseek: !!process.env.DEEPSEEK_API_KEY,
+      gemini: !!process.env.GEMINI_API_KEY,
       supabase: !!process.env.SUPABASE_URL
     }
   });
