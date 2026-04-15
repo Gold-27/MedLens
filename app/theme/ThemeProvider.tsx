@@ -1,7 +1,7 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 import { tokens } from './tokens';
 
-type ThemeContextType = typeof tokens;
+export type ThemeContextType = typeof tokens;
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 

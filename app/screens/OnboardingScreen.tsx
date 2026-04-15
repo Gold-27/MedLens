@@ -1,13 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Dimensions, Image, Animated, Easing } from 'react-native';
-import { useTheme } from '../theme/ThemeProvider';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Dimensions, Image, Animated, Easing, ImageSourcePropType } from 'react-native';
+import { useTheme, ThemeContextType } from '../theme/ThemeProvider';
+import * as NativeStack from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/AppNavigator';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface Slide {
   id: string;
   title: string;
   description: string;
-  image: any;
+  image: ImageSourcePropType;
 }
 
 const slides: Slide[] = [
@@ -31,13 +33,11 @@ const slides: Slide[] = [
   },
 ];
 
-interface OnboardingScreenProps {
-  navigation: any;
-}
+type OnboardingScreenProps = NativeStack.NativeStackScreenProps<RootStackParamList, 'Onboarding'>;
 
 const { width } = Dimensions.get('window');
 
-const AnimatedIllustration = ({ source, style }: { source: any; style: any }) => {
+const AnimatedIllustration = ({ source, style }: { source: ImageSourcePropType; style: any }) => {
   const scale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {

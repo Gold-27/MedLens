@@ -2,10 +2,10 @@ import React, { useEffect } from 'react';
 import { View, StyleSheet, Animated, Image } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as NativeStack from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/AppNavigator';
 
-interface SplashScreenProps {
-  navigation: any;
-}
+type SplashScreenProps = NativeStack.NativeStackScreenProps<RootStackParamList, 'Splash'>;
 
 const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
   const theme = useTheme();

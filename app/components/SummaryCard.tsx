@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { useTheme } from '../theme/ThemeProvider';
+import { useTheme, ThemeContextType } from '../theme/ThemeProvider';
 
 export interface SummaryCardProps {
   drugName: string;
@@ -47,7 +47,6 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
   const handleSave = () => {
     if (requiresAuth) {
       // TODO: Trigger auth modal
-      console.log('Auth required for save');
     } else {
       onSave?.();
     }
@@ -56,7 +55,6 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
   const handleExport = () => {
     if (requiresAuth) {
       // TODO: Trigger auth modal
-      console.log('Auth required for export');
     } else {
       onExport?.();
     }
@@ -141,7 +139,7 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
   );
 };
 
-const makeStyles = (theme: any) => StyleSheet.create({
+const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
   card: {
     backgroundColor: theme.colors.surface,
     borderRadius: theme.borderRadius.lg,

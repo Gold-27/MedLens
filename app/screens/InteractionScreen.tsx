@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
-import { useTheme } from '../theme/ThemeProvider';
+
 import { useAuth } from '../context/AuthContext';
-import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
-import { RootStackParamList, MainTabParamList } from '../navigation/AppNavigator';
+import * as ReactNavigation from '@react-navigation/native';
+import * as NativeStack from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/AppNavigator';
 import * as api from '../services/api';
+import { useTheme, ThemeContextType } from '../theme/ThemeProvider';
 
 
 
@@ -17,8 +19,8 @@ interface DrugItem {
 const InteractionScreen: React.FC = () => {
   const theme = useTheme();
   const { user, getToken } = useAuth();
-  const route = useRoute();
-  const navigation = useNavigation();
+  const route = ReactNavigation.useRoute() as ReactNavigation.RouteProp<RootStackParamList, 'Interaction'>;
+  const navigation = ReactNavigation.useNavigation() as NativeStack.NativeStackNavigationProp<RootStackParamList>;
   const [selectedDrugs, setSelectedDrugs] = useState<string[]>([]);
   const [availableDrugs, setAvailableDrugs] = useState<DrugItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,8 +75,9 @@ const InteractionScreen: React.FC = () => {
         if (drugItems.length >= 2 && drugItems.length <= 5) {
           setSelectedDrugs([drugItems[0].key, drugItems[1].key]);
         }
-      } catch (error: any) {
-        console.error('Failed to load drugs:', error);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        console.error('Failed to load drugs:', message);
         Alert.alert('Error', 'Failed to load medications. Please try again.');
         setAvailableDrugs([]);
       } finally {
@@ -106,8 +109,9 @@ const InteractionScreen: React.FC = () => {
     try {
       const response = await api.checkInteractions(selectedDrugs);
       setResult(response);
-    } catch (error: any) {
-      console.error('Interaction check failed:', error);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      console.error('Interaction check failed:', message);
       Alert.alert('Error', 'Failed to check interactions. Please try again.');
     } finally {
       setChecking(false);

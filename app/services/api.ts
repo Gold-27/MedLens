@@ -3,7 +3,7 @@ import { Config } from '../config';
 export interface SearchResponse {
   drug_name: string;
   source: string;
-  data?: any;
+  data?: DrugData;
   summary: {
     what_it_does: string | null;
     how_to_take: string | null;
@@ -48,6 +48,15 @@ export interface CabinetItem {
   deleted_at?: string;
 }
 
+export interface DrugData {
+  drug_name?: string;
+  indications_and_usage?: string[];
+  dosage_and_administration?: string[];
+  warnings?: string[];
+  adverse_reactions?: string[];
+  [key: string]: unknown;
+}
+
 const DEFAULT_TIMEOUT = 8000; // 8 seconds
 const MAX_RETRIES = 2;
 
@@ -67,11 +76,12 @@ async function fetchWithRetry(url: string, options: RequestInit, retries = MAX_R
     }
 
     return response;
-  } catch (error: any) {
+  } catch (error) {
     clearTimeout(timeoutId);
 
-    if (retries > 0 && error.name !== 'AbortError') {
-      console.log(`Retrying request to ${url}, ${retries} retries left`);
+    const isAbortError = error instanceof Error && error.name === 'AbortError';
+
+    if (retries > 0 && !isAbortError) {
       // Wait before retry (exponential backoff)
       await new Promise(resolve => setTimeout(resolve, 1000 * (MAX_RETRIES - retries + 1)));
       return fetchWithRetry(url, options, retries - 1);
@@ -94,9 +104,9 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
     });
 
     return await response.json();
-  } catch (error: any) {
-    console.error('API request failed:', error);
-    throw new Error(`API request failed: ${error.message}`);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    throw new Error(`API request failed: ${message}`);
   }
 }
 
@@ -116,7 +126,7 @@ export async function getAutocomplete(query: string): Promise<AutocompleteRespon
 }
 
 // ELI12 toggle
-export async function getELI12(drugData: any): Promise<SearchResponse> {
+export async function getELI12(drugData: DrugData): Promise<SearchResponse> {
   return apiRequest<SearchResponse>(Config.ENDPOINTS.ELI12, {
     method: 'POST',
     body: JSON.stringify({ drug_data: drugData }),

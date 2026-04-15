@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
-import { useTheme } from '../theme/ThemeProvider';
+import { useTheme, ThemeContextType } from '../theme/ThemeProvider';
 import { useAuth } from '../context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
 import { MainTabParamList, RootStackParamList } from '../navigation/AppNavigator';
@@ -42,8 +42,9 @@ const CabinetScreen: React.FC = () => {
       
       const response = await api.getCabinetItems(token);
       setItems(response.items);
-    } catch (error: any) {
-      console.error('Failed to fetch cabinet items:', error);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      console.error('Failed to fetch cabinet items:', message);
       Alert.alert('Error', 'Failed to load your cabinet. Please try again.');
     }
   }, [user, getToken]);
@@ -97,8 +98,9 @@ const CabinetScreen: React.FC = () => {
                 newSet.delete(item.id);
                 return newSet;
               });
-            } catch (error: any) {
-              console.error('Failed to delete item:', error);
+            } catch (error) {
+              const message = error instanceof Error ? error.message : 'Unknown error';
+              console.error('Failed to delete item:', message);
               Alert.alert('Error', 'Failed to remove medication. Please try again.');
             }
           },
@@ -198,7 +200,7 @@ const CabinetScreen: React.FC = () => {
   if (loading) {
     return (
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <View style={styles.header}>
+        <View style={[styles.header, { borderBottomColor: theme.colors.outlineVariant }]}>
           <Text style={[styles.headerTitle, { color: theme.colors.onSurface }]}>My Cabinet</Text>
         </View>
         <View style={styles.loadingContainer}>
@@ -214,7 +216,7 @@ const CabinetScreen: React.FC = () => {
   if (!user) {
     return (
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <View style={styles.header}>
+        <View style={[styles.header, { borderBottomColor: theme.colors.outlineVariant }]}>
           <Text style={[styles.headerTitle, { color: theme.colors.onSurface }]}>My Cabinet</Text>
         </View>
         <EmptyState
@@ -230,7 +232,7 @@ const CabinetScreen: React.FC = () => {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: theme.colors.outlineVariant }]}>
         <Text style={[styles.headerTitle, { color: theme.colors.onSurface }]}>My Cabinet</Text>
         <Text style={[styles.headerSubtitle, { color: theme.colors.onSurfaceVariant }]}>
           {items.length} medication{items.length !== 1 ? 's' : ''}
@@ -277,7 +279,6 @@ const styles = StyleSheet.create({
     paddingTop: 24,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
   },
   headerTitle: {
     fontSize: 32,
