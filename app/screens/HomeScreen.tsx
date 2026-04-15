@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Share, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Share, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 
@@ -31,6 +31,20 @@ const HomeScreen: React.FC = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [pendingAction, setPendingAction] = useState<string>('');
   const [savedDrugs, setSavedDrugs] = useState<Set<string>>(new Set());
+  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    
+    const showSub = Keyboard.addListener(showEvent, () => setKeyboardVisible(true));
+    const hideSub = Keyboard.addListener(hideEvent, () => setKeyboardVisible(false));
+    
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   useEffect(() => {
     const initData = async () => {
@@ -221,7 +235,7 @@ const HomeScreen: React.FC = () => {
         </ScrollView>
 
         {/* Floating Bottom Bar */}
-        <View style={styles.floatingFooter}>
+        <View style={[styles.floatingFooter, { marginBottom: isKeyboardVisible ? 0 : 80 }]}>
           <InputBar
             onSubmit={handleSearch}
             loading={state === 'loading'}
@@ -229,12 +243,6 @@ const HomeScreen: React.FC = () => {
             eli12Enabled={eli12Enabled}
             onToggleEli12={handleToggleELI12}
           />
-          <View style={[styles.tipCard, { backgroundColor: theme.colors.primaryContainer }]}>
-            <Ionicons name="bulb-outline" size={16} color={theme.colors.primary} style={styles.tipIcon} />
-            <Text style={[styles.tipText, { color: theme.colors.primary }]}>
-              Tip: Try <Text style={{ fontWeight: '700' }}>'paracetamol for fever'</Text>
-            </Text>
-          </View>
         </View>
       </SafeAreaView>
 
@@ -327,22 +335,6 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
     paddingTop: 8,
     backgroundColor: 'transparent',
     gap: 10,
-  },
-  tipCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'center',
-    paddingHorizontal: 18,
-    paddingVertical: 8,
-    borderRadius: 99,
-    marginHorizontal: 20,
-  },
-  tipIcon: {
-    marginRight: 6,
-  },
-  tipText: {
-    fontSize: 13,
-    fontWeight: '500',
   },
   headlineText: {
     fontSize: 28,
