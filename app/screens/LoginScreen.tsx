@@ -209,6 +209,7 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
                 <Image 
                   source={require('../assets/google_g_logo.png')} 
                   style={styles.googleIcon} 
+                  fadeDuration={0}
                   resizeMode="contain"
                 />
               </TouchableOpacity>
