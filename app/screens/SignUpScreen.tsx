@@ -10,6 +10,7 @@ type SignUpScreenProps = NativeStack.NativeStackScreenProps<RootStackParamList, 
 
 const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
   const theme = useTheme();
+  const styles = makeStyles(theme);
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -261,7 +262,7 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
   container: {
     flex: 1,
   },
