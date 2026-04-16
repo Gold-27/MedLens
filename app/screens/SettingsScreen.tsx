@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeProvider';
 import { useAuth } from '../context/AuthContext';
@@ -66,7 +66,7 @@ const SettingsScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <View style={styles.container}>
         <View style={styles.header}>
           <Text style={[styles.headerTitle, { color: theme.colors.onSurface }]}>Settings</Text>
         </View>
@@ -111,7 +111,7 @@ const SettingsScreen: React.FC = () => {
           MedLens simplifies medical information for understanding. It does not replace professional medical advice.
         </Text>
       </View>
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 };
