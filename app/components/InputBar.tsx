@@ -114,7 +114,7 @@ const InputBar: React.FC<InputBarProps> = ({
 
   const shadowOpacity = inputShadow.interpolate({
     inputRange: [0, 1],
-    outputRange: [0.08, 0.15],
+    outputRange: [0.04, 0.08],
   });
 
   return (
@@ -209,7 +209,7 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 10,
-    elevation: 5,
+    elevation: 2,
   },
   searchIcon: {
     marginRight: 10,
