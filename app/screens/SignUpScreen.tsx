@@ -107,7 +107,7 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.header}>
-            <Text style={[styles.title, { color: theme.colors.onSurface }]}>Sign up to MedLens</Text>
+            <Text style={[styles.title, { color: theme.colors.onSurface }]}>Create your Medlens Account</Text>
           </View>
 
           <View style={styles.formContainer}>
@@ -214,7 +214,7 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
               {loading ? (
                 <ActivityIndicator color={theme.colors.onPrimary} />
               ) : (
-                <Text style={[styles.submitButtonText, { color: theme.colors.onPrimary }]}>Sign Up</Text>
+                <Text style={[styles.submitButtonText, { color: theme.colors.onPrimary }]}>Create Account</Text>
               )}
             </TouchableOpacity>
           </View>
