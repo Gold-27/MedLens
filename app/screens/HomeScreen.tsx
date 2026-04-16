@@ -140,7 +140,7 @@ const HomeScreen: React.FC = () => {
       return (
         <View style={[styles.emptyContent, { justifyContent: 'center', alignItems: 'center' }]}>
           <Text style={[styles.headlineText, { color: theme.colors.onSurfaceVariant }]}>
-            How can i help you with your medication today ?
+            How can I help you with your medication today?
           </Text>
         </View>
       );
@@ -340,7 +340,7 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
   },
   headlineText: {
     fontSize: 28,
-    fontWeight: '400',
+    fontWeight: '300',
     textAlign: 'center',
     paddingHorizontal: 32,
     lineHeight: 38,
