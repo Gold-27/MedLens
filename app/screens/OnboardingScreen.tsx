@@ -151,7 +151,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
         {currentIndex === slides.length - 1 ? (
           <View style={styles.finishButtonsContainer}>
             <TouchableOpacity
-              style={[styles.nextButton, { backgroundColor: theme.colors.onPrimary, borderColor: theme.colors.primary, borderWidth: 1.5, flex: 1.2 }]}
+              style={[styles.nextButton, { backgroundColor: theme.colors.onPrimary, borderColor: theme.colors.primary, borderWidth: 1.5, flex: 0.8 }]}
               onPress={handleNext}
             >
               <Text style={[styles.nextButtonText, { color: theme.colors.primary }]}>
@@ -160,7 +160,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
             </TouchableOpacity>
             
             <TouchableOpacity
-              style={[styles.signUpButton, { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary, flex: 1 }]}
+              style={[styles.signUpButton, { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary, flex: 1.2 }]}
               onPress={handleSignUp}
             >
               <Text style={[styles.signUpButtonText, { color: theme.colors.onPrimary }]}>
