@@ -105,9 +105,12 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
         <ScrollView 
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          bounces={false}
+          scrollEnabled={false} // Disable scrolling when idle
+          keyboardShouldPersistTaps="handled"
         >
           <View style={styles.header}>
-            <Text style={[styles.title, { color: theme.colors.onSurface }]}>Create your Medlens Account</Text>
+            <Text style={[styles.title, { color: theme.colors.onSurface }]}>Create your Account</Text>
           </View>
 
           <View style={styles.formContainer}>
@@ -233,7 +236,7 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
               >
                 <Image 
                   source={require('../assets/google_g_logo.png')} 
-                  style={{ width: 28, height: 28 }} 
+                  style={styles.googleIcon} 
                   resizeMode="contain"
                 />
               </TouchableOpacity>
@@ -265,7 +268,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 60,
+    justifyContent: 'center',
     paddingBottom: 40,
   },
   header: {
@@ -348,13 +351,17 @@ const styles = StyleSheet.create({
     gap: 20,
   },
   socialButton: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
+    width: 60,
+    height: 60,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.05)',
+    borderColor: theme.colors.outlineVariant,
+  },
+  googleIcon: {
+    width: 24,
+    height: 24,
   },
   footer: {
     marginTop: 'auto',
