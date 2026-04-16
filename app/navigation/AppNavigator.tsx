@@ -30,7 +30,11 @@ const AppNavigator = () => {
         <Stack.Screen name="Splash" component={SplashScreen} />
         <Stack.Screen name="Onboarding" component={OnboardingScreen} />
         <Stack.Screen name="SignUp" component={SignUpScreen} />
-        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen 
+          name="Login" 
+          component={LoginScreen} 
+          options={{ gestureEnabled: false, headerBackVisible: false }} 
+        />
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="Cabinet" component={CabinetScreen} />
         <Stack.Screen name="Settings" component={SettingsScreen} />

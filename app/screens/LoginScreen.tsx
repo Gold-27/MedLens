@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, TextInput, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, TextInput, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, Image, BackHandler } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons, FontAwesome } from '@expo/vector-icons';
 import * as NativeStack from '@react-navigation/native-stack';
+import { useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useTheme } from '../theme/ThemeProvider';
 
@@ -10,6 +11,20 @@ type LoginScreenProps = NativeStack.NativeStackScreenProps<RootStackParamList, '
 
 const LoginScreen = ({ navigation }: LoginScreenProps) => {
   const theme = useTheme();
+
+  useFocusEffect(
+    React.useCallback(() => {
+      const onBackPress = () => {
+        return true;
+      };
+
+      BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+      return () =>
+        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+    }, [])
+  );
+
   const [form, setForm] = useState({
     email: '',
     password: '',
@@ -207,7 +222,7 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
 
           <View style={styles.footer}>
             <Text style={[styles.footerText, { color: theme.colors.onSurfaceVariant }]}>
-              Don't have an account? <Text style={{ color: theme.colors.primary, fontWeight: '600' }} onPress={() => navigation.navigate('SignUp')}>Sign Up</Text>
+              Don't have an account? <Text style={{ color: theme.colors.primary, fontWeight: '600' }} onPress={() => navigation.navigate('SignUp')}>Create Account</Text>
             </Text>
           </View>
         </ScrollView>
