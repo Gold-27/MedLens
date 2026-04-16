@@ -5,12 +5,13 @@ import { MaterialIcons, FontAwesome } from '@expo/vector-icons';
 import * as NativeStack from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/AppNavigator';
-import { useTheme } from '../theme/ThemeProvider';
+import { useTheme, ThemeContextType } from '../theme/ThemeProvider';
 
 type LoginScreenProps = NativeStack.NativeStackScreenProps<RootStackParamList, 'Login'>;
 
 const LoginScreen = ({ navigation }: LoginScreenProps) => {
   const theme = useTheme();
+  const styles = makeStyles(theme);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -234,7 +235,7 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
   container: {
     flex: 1,
   },
