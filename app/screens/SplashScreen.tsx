@@ -63,6 +63,11 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
           </View>
         </View>
       </Animated.View>
+      
+      {/* Preload assets for subsequent screens */}
+      <View style={{ opacity: 0, position: 'absolute', width: 1, height: 1 }}>
+        <Image source={require('../assets/google_g_logo.png')} />
+      </View>
     </View>
   );
 };

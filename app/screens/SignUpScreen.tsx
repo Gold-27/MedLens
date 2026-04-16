@@ -238,6 +238,7 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
                 <Image 
                   source={require('../assets/google_g_logo.png')} 
                   style={styles.googleIcon} 
+                  fadeDuration={0}
                   resizeMode="contain"
                 />
               </TouchableOpacity>
