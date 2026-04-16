@@ -82,8 +82,13 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
     }
   };
 
-  const handleSignUp = () => {
-    navigation.navigate('SignUp');
+  const handleSignUp = async () => {
+    try {
+      await AsyncStorage.setItem('hasSeenOnboarding', 'true');
+    } catch (error) {
+      console.error('Error saving onboarding status:', error);
+    }
+    navigation.replace('SignUp');
   };
 
   const handleSkip = () => {
