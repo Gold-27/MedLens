@@ -131,7 +131,7 @@ const HomeScreen: React.FC = () => {
   const fetchSuggestions = useCallback(async (suggestionQuery: string) => {
     try {
       const response = await api.getAutocomplete(suggestionQuery);
-      return response.suggestions;
+      return response.suggestions || [];
     } catch (error) { return []; }
   }, []);
 
