@@ -99,6 +99,9 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
         <ScrollView 
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          bounces={false}
+          scrollEnabled={false}
+          keyboardShouldPersistTaps="handled"
         >
           <View style={styles.header}>
             <Text style={[styles.title, { color: theme.colors.onSurface }]}>Log in to MedLens</Text>
@@ -237,7 +240,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 80,
+    justifyContent: 'center',
     paddingBottom: 40,
   },
   header: {
