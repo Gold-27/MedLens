@@ -208,7 +208,7 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
               >
                 <Image 
                   source={require('../assets/google_g_logo.png')} 
-                  style={{ width: 28, height: 28 }} 
+                  style={styles.googleIcon} 
                   resizeMode="contain"
                 />
               </TouchableOpacity>
@@ -345,13 +345,17 @@ const styles = StyleSheet.create({
     gap: 20,
   },
   socialButton: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
+    width: 60,
+    height: 60,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.05)',
+    borderColor: theme.colors.outlineVariant,
+  },
+  googleIcon: {
+    width: 24,
+    height: 24,
   },
   footer: {
     marginTop: 'auto',
