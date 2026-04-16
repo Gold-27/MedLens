@@ -151,20 +151,20 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
         {currentIndex === slides.length - 1 ? (
           <View style={styles.finishButtonsContainer}>
             <TouchableOpacity
-              style={[styles.signUpButton, { backgroundColor: theme.colors.primaryContainer, borderColor: theme.colors.primaryContainer, flex: 1.2 }]}
-              onPress={handleSignUp}
-            >
-              <Text style={[styles.signUpButtonText, { color: theme.colors.onPrimaryContainer }]}>
-                Create Account
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.nextButton, { backgroundColor: 'transparent', borderColor: theme.colors.outline, borderWidth: 1.5, flex: 0.8 }]}
+              style={[styles.nextButton, { backgroundColor: theme.colors.onPrimary, borderColor: theme.colors.primary, borderWidth: 1.5, flex: 0.8 }]}
               onPress={handleNext}
             >
-              <Text style={[styles.nextButtonText, { color: theme.colors.onSurfaceVariant }]}>
+              <Text style={[styles.nextButtonText, { color: theme.colors.primary }]}>
                 Use as Guest
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[styles.signUpButton, { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary, flex: 1.2 }]}
+              onPress={handleSignUp}
+            >
+              <Text style={[styles.signUpButtonText, { color: theme.colors.onPrimary }]}>
+                Create Account
               </Text>
             </TouchableOpacity>
           </View>

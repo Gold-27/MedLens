@@ -5,12 +5,13 @@ import { MaterialIcons, FontAwesome } from '@expo/vector-icons';
 import * as NativeStack from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/AppNavigator';
-import { useTheme } from '../theme/ThemeProvider';
+import { useTheme, ThemeContextType } from '../theme/ThemeProvider';
 
 type LoginScreenProps = NativeStack.NativeStackScreenProps<RootStackParamList, 'Login'>;
 
 const LoginScreen = ({ navigation }: LoginScreenProps) => {
   const theme = useTheme();
+  const styles = makeStyles(theme);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -208,7 +209,8 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
               >
                 <Image 
                   source={require('../assets/google_g_logo.png')} 
-                  style={{ width: 28, height: 28 }} 
+                  style={styles.googleIcon} 
+                  fadeDuration={0}
                   resizeMode="contain"
                 />
               </TouchableOpacity>
@@ -233,7 +235,7 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -345,13 +347,17 @@ const styles = StyleSheet.create({
     gap: 20,
   },
   socialButton: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
+    width: 60,
+    height: 60,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.05)',
+    borderColor: theme.colors.outlineVariant,
+  },
+  googleIcon: {
+    width: 24,
+    height: 24,
   },
   footer: {
     marginTop: 'auto',
