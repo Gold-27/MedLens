@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, TextInput, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, Image, BackHandler } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, TextInput, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, Image, BackHandler, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons, FontAwesome } from '@expo/vector-icons';
 import * as NativeStack from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useTheme, ThemeContextType } from '../theme/ThemeProvider';
+import { useAuth } from '../context/AuthContext';
 
 type LoginScreenProps = NativeStack.NativeStackScreenProps<RootStackParamList, 'Login'>;
 
@@ -37,6 +38,8 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
     general: '',
   });
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const { signInWithGoogle } = useAuth();
 
   const handleBlur = (field: keyof typeof form) => {
     setFocusedInput(null);
@@ -89,6 +92,18 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
       setLoading(false);
       navigation.replace('Home');
     }, 3000);
+  };
+
+  const handleGoogleAuth = async () => {
+    setGoogleLoading(true);
+    const { error } = await signInWithGoogle();
+    setGoogleLoading(false);
+    
+    if (error && error.message !== 'User cancelled sign-in') {
+      Alert.alert('Authentication Failed', error.message);
+    } else if (!error) {
+       navigation.replace('Home');
+    }
   };
 
   return (
@@ -211,15 +226,22 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
                 }
               ]}
               activeOpacity={0.7}
-              onPress={() => {}}
+              onPress={handleGoogleAuth}
+              disabled={loading || googleLoading}
             >
-              <Image 
-                source={require('../assets/google_g_logo.png')} 
-                style={styles.googleIcon} 
-                fadeDuration={0}
-                resizeMode="contain"
-              />
-              <Text style={[styles.socialButtonText, { color: theme.colors.primary }]}>Continue with Google</Text>
+              {googleLoading ? (
+                <ActivityIndicator color={theme.colors.primary} />
+              ) : (
+                <>
+                  <Image 
+                    source={require('../assets/google_g_logo.png')} 
+                    style={styles.googleIcon} 
+                    fadeDuration={0}
+                    resizeMode="contain"
+                  />
+                  <Text style={[styles.socialButtonText, { color: theme.colors.primary }]}>Continue with Google</Text>
+                </>
+              )}
             </TouchableOpacity>
           </View>
 

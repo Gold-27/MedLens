@@ -146,7 +146,6 @@ Write-Host "==========================================================" -Foregro
 Write-Host "POP-UP: Opening QR Code for Expo Go" -ForegroundColor Yellow
 Write-Host "==========================================================" -ForegroundColor Red
 
-npm install --no-save qrcode@1.5.3 | Out-Null
 node -e "const qrcode = require('qrcode'); qrcode.toFile('qrcode.png', '$expUrl', (err) => { if(!err) require('child_process').exec('start qrcode.png') })"
 
 Write-Host "A QR Code image window should pop up shortly." -ForegroundColor Cyan

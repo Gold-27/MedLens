@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, TextInput, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, TextInput, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, Image, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons, FontAwesome } from '@expo/vector-icons';
 import * as NativeStack from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useTheme, ThemeContextType } from '../theme/ThemeProvider';
+import { useAuth } from '../context/AuthContext';
 
 type SignUpScreenProps = NativeStack.NativeStackScreenProps<RootStackParamList, 'SignUp'>;
 
@@ -24,6 +25,8 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
     password: '',
   });
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const { signInWithGoogle } = useAuth();
 
   const getPasswordRequirements = (password: string) => ({
     length: password.length >= 8,
@@ -92,8 +95,18 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
       const newErrors = { ...errors };
       if (!form.name) newErrors.name = 'Field must not be empty';
       if (!form.email) newErrors.email = 'Field must not be empty';
-      if (!form.password) newErrors.password = 'Field must not be empty';
-      setErrors(newErrors);
+      }
+  };
+
+  const handleGoogleAuth = async () => {
+    setGoogleLoading(true);
+    const { error } = await signInWithGoogle();
+    setGoogleLoading(false);
+    
+    if (error && error.message !== 'User cancelled sign-in') {
+      Alert.alert('Authentication Failed', error.message);
+    } else if (!error) {
+       navigation.replace('Home');
     }
   };
 
@@ -239,15 +252,22 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
                 }
               ]}
               activeOpacity={0.7}
-              onPress={() => {}}
+              onPress={handleGoogleAuth}
+              disabled={loading || googleLoading}
             >
-              <Image 
-                source={require('../assets/google_g_logo.png')} 
-                style={styles.googleIcon} 
-                fadeDuration={0}
-                resizeMode="contain"
-              />
-              <Text style={[styles.socialButtonText, { color: theme.colors.onSurfaceVariant }]}>Continue with Google</Text>
+              {googleLoading ? (
+                <ActivityIndicator color={theme.colors.primary} />
+              ) : (
+                <>
+                  <Image 
+                    source={require('../assets/google_g_logo.png')} 
+                    style={styles.googleIcon} 
+                    fadeDuration={0}
+                    resizeMode="contain"
+                  />
+                  <Text style={[styles.socialButtonText, { color: theme.colors.onSurfaceVariant }]}>Continue with Google</Text>
+                </>
+              )}
             </TouchableOpacity>
           </View>
 
