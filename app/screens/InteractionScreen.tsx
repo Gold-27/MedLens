@@ -30,31 +30,30 @@ const InteractionScreen: React.FC = () => {
   // Load cabinet items for selection
   useEffect(() => {
     const loadCabinetItems = async () => {
+      // If drugKeys provided via params, use those directly — no DB call needed
+      const paramDrugKeys = route.params?.drugKeys;
+      if (paramDrugKeys && paramDrugKeys.length > 0) {
+        const drugItems = paramDrugKeys.map((key: string, index: number) => ({
+          id: `param-${index}`,
+          name: key.charAt(0).toUpperCase() + key.slice(1),
+          key,
+        }));
+        setAvailableDrugs(drugItems);
+        setSelectedDrugs(paramDrugKeys);
+        setLoading(false);
+        return;
+      }
+      
+      // No user = no cabinet = no DB call needed
+      if (!user) {
+        setAvailableDrugs([]);
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       
       try {
-        // If drugKeys provided via params, use those
-        const paramDrugKeys = route.params?.drugKeys;
-        if (paramDrugKeys && paramDrugKeys.length > 0) {
-          // Convert drug keys to DrugItem format
-          const drugItems = paramDrugKeys.map((key: string, index: number) => ({
-            id: `param-${index}`,
-            name: key.charAt(0).toUpperCase() + key.slice(1),
-            key,
-          }));
-          setAvailableDrugs(drugItems);
-          setSelectedDrugs(paramDrugKeys);
-          setLoading(false);
-          return;
-        }
-        
-        // Otherwise, load from cabinet
-        if (!user) {
-          setAvailableDrugs([]);
-          setLoading(false);
-          return;
-        }
-        
         const token = await getToken();
         if (!token) {
           Alert.alert('Error', 'Authentication required.');
