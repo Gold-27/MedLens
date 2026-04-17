@@ -1,6 +1,6 @@
 # start-tunnel.ps1
 # This script manages EVERYTHING: Backend Server, Fresh Tunnels, and App Startup.
-# Refactored for absolute reliability (Stateless Mode).
+# Refactored for absolute reliability (Stateless Mode + Network Hardening).
 
 # 0. Helper Functions
 function Get-SafeContent($path) {
@@ -42,14 +42,20 @@ function Kill-ProcessOnPort {
     }
 }
 
-# 1. HARD RESET
-Write-Host "--- MedLens Tunnel System (Stateless Reset) ---" -ForegroundColor Magenta
-Write-Host "Performing aggressive cleanup to ensure fresh connection..." -ForegroundColor Cyan
+# 1. HARD RESET & NETWORK HARDENING
+Write-Host "--- MedLens Tunnel System (Stabilized Reset) ---" -ForegroundColor Magenta
+Write-Host "Hardening network settings and cleaning ports..." -ForegroundColor Cyan
+
+# Fix for Node 18+ / Node 24 experimental network issues
+$env:NODE_OPTIONS = "--dns-result-order=ipv4first --max-old-space-size=4096"
+$env:EXPO_SKIP_DEPENDENCY_VALIDATION = "1"
+$env:EXPO_NO_TELEMETRY = "1"
 
 # Kill all cloudflared and existing dev servers
 Get-Process "cloudflared" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 Kill-ProcessOnPort 3001
 Kill-ProcessOnPort 8081
+Kill-ProcessOnPort 8082 # Clear fallback port too
 
 # Wipe stale logs
 @("backend.log", "frontend.log", "qrcode.png") | ForEach-Object {
@@ -112,8 +118,6 @@ Write-Host "Frontend Tunnel: $frontendUrl" -ForegroundColor Green
 # 6. Launch Expo
 Write-Host "`n[4/4] Launching Expo Bundler..." -ForegroundColor Cyan
 $env:EXPO_PACKAGER_PROXY_URL = $frontendUrl
-$env:EXPO_SKIP_DEPENDENCY_VALIDATION = "1"
-$env:NODE_OPTIONS = "--max-old-space-size=4096"
 
 # Build the correct Expo Go URL
 $encodedUrl = [System.Uri]::EscapeDataString($frontendUrl)
@@ -140,4 +144,5 @@ Write-Host "==========================================================" -Foregro
 Write-Host ""
 
 # Start Metro Bundler in the current terminal
+# We must use --offline because Node 24's fetch is breaking Expo's call-home components
 npx.cmd expo start --offline --clear
