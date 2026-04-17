@@ -164,4 +164,4 @@ Write-Host "Scan the image to bypass terminal formatting issues." -ForegroundCol
 Write-Host "Fallback link (type manually): $expUrl" -ForegroundColor Green
 Write-Host "==========================================================" -ForegroundColor Red
 
-npx.cmd expo start -c
+npx.cmd expo start -c --offline
