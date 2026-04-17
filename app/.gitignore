@@ -43,3 +43,7 @@ yarn-error.*
 # ngrok logs
 ngrok.log
 *.log
+
+# temp and generated files
+qrcode.png
+*.bak
