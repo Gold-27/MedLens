@@ -2,8 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { useTheme, ThemeContextType } from '../theme/ThemeProvider';
 import { useAuth } from '../context/AuthContext';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, DrawerActions } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { Ionicons } from '@expo/vector-icons';
 import * as api from '../services/api';
 import EmptyState from '../components/EmptyState';
 
@@ -230,15 +231,20 @@ const CabinetScreen: React.FC = () => {
     );
   }
 
-  return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <View style={[styles.header, { borderBottomColor: theme.colors.outlineVariant }]}>
-        <Text style={[styles.headerTitle, { color: theme.colors.onSurface }]}>My Cabinet</Text>
-        <Text style={[styles.headerSubtitle, { color: theme.colors.onSurfaceVariant }]}>
-          {items.length} medication{items.length !== 1 ? 's' : ''}
-          {selectedItems.size > 0 && ` • ${selectedItems.size} selected`}
-        </Text>
-      </View>
+return (
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <View style={[styles.header, { borderBottomColor: theme.colors.outlineVariant }]}>
+          <View style={styles.headerRow}>
+            <TouchableOpacity onPress={() => navigation.dispatch(DrawerActions.openDrawer())} style={styles.menuButton}>
+              <Ionicons name="menu" size={24} color={theme.colors.onSurface} />
+            </TouchableOpacity>
+            <Text style={[styles.headerTitle, { color: theme.colors.onSurface }]}>My Cabinet</Text>
+          </View>
+          <Text style={[styles.headerSubtitle, { color: theme.colors.onSurfaceVariant }]}>
+            {items.length} medication{items.length !== 1 ? 's' : ''}
+            {selectedItems.size > 0 && ` • ${selectedItems.size} selected`}
+          </Text>
+        </View>
 
       {items.length > 0 ? (
         <>
@@ -279,6 +285,15 @@ const styles = StyleSheet.create({
     paddingTop: 24,
     paddingBottom: 16,
     borderBottomWidth: 1,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  menuButton: {
+    marginRight: 16,
+    padding: 4,
   },
   headerTitle: {
     fontSize: 32,
