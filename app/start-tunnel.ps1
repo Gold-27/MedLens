@@ -140,17 +140,25 @@ $expUrl = $frontendUrl -replace "https://", "exps://"
 
 # Restart Packager
 $expoConn = Get-NetTCPConnection -LocalPort 8081 -State Listen -ErrorAction SilentlyContinue
-if ($expoConn) { Stop-Process -Id $expoConn.OwningProcess -Force -ErrorAction SilentlyContinue; Start-Sleep -Seconds 1 }
+if ($expoConn) { 
+    Write-Host "Cleaning up old Expo process..." -ForegroundColor Gray
+    Stop-Process -Id $expoConn.OwningProcess -Force -ErrorAction SilentlyContinue 
+    Start-Sleep -Seconds 2 
+}
+
+# Fix Heap Memory Error
+$env:NODE_OPTIONS = "--max-old-space-size=4096"
+$env:EXPO_NODE_OPTIONS = "--max-old-space-size=4096"
 
 Write-Host "==========================================================" -ForegroundColor Red
 Write-Host "POP-UP: Opening QR Code for Expo Go" -ForegroundColor Yellow
 Write-Host "==========================================================" -ForegroundColor Red
 
-node -e "const qrcode = require('qrcode'); qrcode.toFile('qrcode.png', '$expUrl', (err) => { if(!err) require('child_process').exec('start qrcode.png') })"
+node -e "const qrcode = require('qrcode'); qrcode.toFile('qrcode.png', '$expUrl', { width: 600, margin: 4 }, (err) => { if(!err) { const { exec } = require('child_process'); exec('start qrcode.png'); } else { console.error(err); } })"
 
 Write-Host "A QR Code image window should pop up shortly." -ForegroundColor Cyan
 Write-Host "Scan the image to bypass terminal formatting issues." -ForegroundColor Cyan
 Write-Host "Fallback link (type manually): $expUrl" -ForegroundColor Green
 Write-Host "==========================================================" -ForegroundColor Red
 
-npx expo start -c
+npx.cmd expo start -c
