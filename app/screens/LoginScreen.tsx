@@ -202,26 +202,25 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
               <View style={[styles.divider, { backgroundColor: theme.colors.outlineVariant }]} />
             </View>
 
-            <View style={styles.socialButtonsRow}>
-              <TouchableOpacity 
-                style={[styles.socialButton, { backgroundColor: theme.colors.surfaceContainerHigh }]}
-                onPress={() => {}}
-              >
-                <Image 
-                  source={require('../assets/google_g_logo.png')} 
-                  style={styles.googleIcon} 
-                  fadeDuration={0}
-                  resizeMode="contain"
-                />
-              </TouchableOpacity>
-
-              <TouchableOpacity 
-                style={[styles.socialButton, { backgroundColor: theme.colors.onSurface }]}
-                onPress={() => {}}
-              >
-                <FontAwesome name="apple" size={28} color={theme.colors.surface} />
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity 
+              style={[
+                styles.socialButton, 
+                { 
+                  backgroundColor: theme.colors.background,
+                  borderColor: theme.colors.outlineVariant,
+                }
+              ]}
+              activeOpacity={0.7}
+              onPress={() => {}}
+            >
+              <Image 
+                source={require('../assets/google_g_logo.png')} 
+                style={styles.googleIcon} 
+                fadeDuration={0}
+                resizeMode="contain"
+              />
+              <Text style={[styles.socialButtonText, { color: theme.colors.primary }]}>Continue with Google</Text>
+            </TouchableOpacity>
           </View>
 
           <View style={styles.footer}>
@@ -341,19 +340,19 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
-  socialButtonsRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 20,
-  },
   socialButton: {
-    width: 60,
-    height: 60,
+    flexDirection: 'row',
+    width: '100%',
+    paddingVertical: 16,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: theme.colors.outlineVariant,
+    gap: 12,
+  },
+  socialButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
   googleIcon: {
     width: 24,
