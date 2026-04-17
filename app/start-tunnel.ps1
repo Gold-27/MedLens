@@ -19,7 +19,7 @@ function Get-SafeContent($path) {
 
 function Get-UrlFromLog($logPath) {
     $content = Get-SafeContent $logPath
-    $lines = $content -split "\n"
+    $lines = $content -split "`n"
     # Search from bottom for most recent URL
     for ($i = $lines.Count - 1; $i -ge 0; $i--) {
         if ($lines[$i] -match "(https://[a-zA-Z0-9-]+\.trycloudflare\.com)") {
@@ -136,11 +136,22 @@ Write-Host "Frontend Tunnel: $frontendUrl" -ForegroundColor Green
 Write-Host "`n[4/4] Launching Expo..." -ForegroundColor Cyan
 $env:EXPO_PACKAGER_PROXY_URL = $frontendUrl
 $env:EXPO_SKIP_DEPENDENCY_VALIDATION = "1"
-$expUrl = $frontendUrl -replace "https://", "exp://"
+$expUrl = $frontendUrl -replace "https://", "exps://"
 
 # Restart Packager
 $expoConn = Get-NetTCPConnection -LocalPort 8081 -State Listen -ErrorAction SilentlyContinue
 if ($expoConn) { Stop-Process -Id $expoConn.OwningProcess -Force -ErrorAction SilentlyContinue; Start-Sleep -Seconds 1 }
 
-Write-Host "To scan manually, use this link: $expUrl" -ForegroundColor Green
+Write-Host "==========================================================" -ForegroundColor Red
+Write-Host "POP-UP: Opening QR Code for Expo Go" -ForegroundColor Yellow
+Write-Host "==========================================================" -ForegroundColor Red
+
+npm install --no-save qrcode@1.5.3 | Out-Null
+node -e "const qrcode = require('qrcode'); qrcode.toFile('qrcode.png', '$expUrl', (err) => { if(!err) require('child_process').exec('start qrcode.png') })"
+
+Write-Host "A QR Code image window should pop up shortly." -ForegroundColor Cyan
+Write-Host "Scan the image to bypass terminal formatting issues." -ForegroundColor Cyan
+Write-Host "Fallback link (type manually): $expUrl" -ForegroundColor Green
+Write-Host "==========================================================" -ForegroundColor Red
+
 npx expo start -c
