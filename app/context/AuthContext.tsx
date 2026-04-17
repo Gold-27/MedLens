@@ -35,14 +35,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Check active sessions and subscribe to auth changes
     const checkSession = async () => {
       setLoading(true);
-      
+
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
-        
+
         if (error) {
           console.error('Session check error:', error);
         }
-        
+
         setUser(session?.user ?? null);
         setSession(session);
         setIsGuest(!session?.user);
@@ -106,12 +106,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         useProxy: true,
       });
       console.log('AuthSession Redirect URL:', redirectUrl);
-      
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: redirectUrl,
-          skipBrowserRedirect: true,
         },
       });
 
@@ -124,7 +123,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.log('Opening browser for Google Login...');
         const res = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
         console.log('WebBrowser result:', res.type);
-        
+
         if (res.type === 'success' && res.url) {
           console.log('Login successful, parsing tokens...');
           const paramsStr = res.url.split('#')[1] || res.url.split('?')[1];
@@ -132,7 +131,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             const searchParams = new URLSearchParams(paramsStr.replace(/\?/g, '&'));
             const access_token = searchParams.get('access_token');
             const refresh_token = searchParams.get('refresh_token');
-            
+
             if (access_token && refresh_token) {
               const { error: sessionError } = await supabase.auth.setSession({
                 access_token,
