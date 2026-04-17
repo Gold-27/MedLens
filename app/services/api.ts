@@ -94,6 +94,8 @@ async function fetchWithRetry(url: string, options: RequestInit, retries = MAX_R
 async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const headers = {
     'Content-Type': 'application/json',
+    'Bypass-Tunnel-Reminder': 'true',
+    'User-Agent': 'MedLens-App',
     ...options.headers,
   };
 
