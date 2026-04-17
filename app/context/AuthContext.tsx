@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { User, Session, AuthError } from '@supabase/supabase-js';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
+import * as AuthSession from 'expo-auth-session';
 import { supabase } from '../services/supabase';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -101,9 +102,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signInWithGoogle = async () => {
     try {
       console.log('Starting Google Auth...');
-      // Use Linking.createURL('') so it works seamlessly in both Expo Go and Production
-      const redirectUrl = Linking.createURL('');
-      console.log('Redirect URL:', redirectUrl);
+      const redirectUrl = AuthSession.makeRedirectUri({
+        useProxy: true,
+      });
+      console.log('AuthSession Redirect URL:', redirectUrl);
       
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
