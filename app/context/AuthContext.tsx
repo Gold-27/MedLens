@@ -101,8 +101,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signInWithGoogle = async () => {
     try {
       console.log('Starting Google Auth...');
-      // Use the 'app://' scheme from app.json
-      const redirectUrl = Linking.createURL('/', { scheme: 'app' });
+      // Use Linking.createURL('') so it works seamlessly in both Expo Go and Production
+      const redirectUrl = Linking.createURL('');
       console.log('Redirect URL:', redirectUrl);
       
       const { data, error } = await supabase.auth.signInWithOAuth({
