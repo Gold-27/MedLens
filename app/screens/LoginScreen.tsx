@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, TextInput, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, Image, BackHandler } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, TextInput, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, Image, BackHandler, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons, FontAwesome } from '@expo/vector-icons';
 import * as NativeStack from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useTheme, ThemeContextType } from '../theme/ThemeProvider';
+import { useAuth } from '../context/AuthContext';
 
 type LoginScreenProps = NativeStack.NativeStackScreenProps<RootStackParamList, 'Login'>;
 
@@ -37,6 +38,8 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
     general: '',
   });
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const { signInWithGoogle } = useAuth();
 
   const handleBlur = (field: keyof typeof form) => {
     setFocusedInput(null);
@@ -89,6 +92,18 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
       setLoading(false);
       navigation.replace('Home');
     }, 3000);
+  };
+
+  const handleGoogleAuth = async () => {
+    setGoogleLoading(true);
+    const { error } = await signInWithGoogle();
+    setGoogleLoading(false);
+    
+    if (error && error.message !== 'User cancelled sign-in') {
+      Alert.alert('Authentication Failed', error.message);
+    } else if (!error) {
+       navigation.replace('Home');
+    }
   };
 
   return (
@@ -202,26 +217,32 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
               <View style={[styles.divider, { backgroundColor: theme.colors.outlineVariant }]} />
             </View>
 
-            <View style={styles.socialButtonsRow}>
-              <TouchableOpacity 
-                style={[styles.socialButton, { backgroundColor: theme.colors.surfaceContainerHigh }]}
-                onPress={() => {}}
-              >
-                <Image 
-                  source={require('../assets/google_g_logo.png')} 
-                  style={styles.googleIcon} 
-                  fadeDuration={0}
-                  resizeMode="contain"
-                />
-              </TouchableOpacity>
-
-              <TouchableOpacity 
-                style={[styles.socialButton, { backgroundColor: theme.colors.onSurface }]}
-                onPress={() => {}}
-              >
-                <FontAwesome name="apple" size={28} color={theme.colors.surface} />
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity 
+              style={[
+                styles.socialButton, 
+                { 
+                  backgroundColor: theme.colors.background,
+                  borderColor: theme.colors.outlineVariant,
+                }
+              ]}
+              activeOpacity={0.7}
+              onPress={handleGoogleAuth}
+              disabled={loading || googleLoading}
+            >
+              {googleLoading ? (
+                <ActivityIndicator color={theme.colors.primary} />
+              ) : (
+                <>
+                  <Image 
+                    source={require('../assets/google_g_logo.png')} 
+                    style={styles.googleIcon} 
+                    fadeDuration={0}
+                    resizeMode="contain"
+                  />
+                  <Text style={[styles.socialButtonText, { color: theme.colors.primary }]}>Continue with Google</Text>
+                </>
+              )}
+            </TouchableOpacity>
           </View>
 
           <View style={styles.footer}>
@@ -341,19 +362,19 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
-  socialButtonsRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 20,
-  },
   socialButton: {
-    width: 60,
-    height: 60,
+    flexDirection: 'row',
+    width: '100%',
+    paddingVertical: 16,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: theme.colors.outlineVariant,
+    gap: 12,
+  },
+  socialButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
   googleIcon: {
     width: 24,

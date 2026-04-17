@@ -19,7 +19,7 @@ function Get-SafeContent($path) {
 
 function Get-UrlFromLog($logPath) {
     $content = Get-SafeContent $logPath
-    $lines = $content -split "\n"
+    $lines = $content -split "`n"
     # Search from bottom for most recent URL
     for ($i = $lines.Count - 1; $i -ge 0; $i--) {
         if ($lines[$i] -match "(https://[a-zA-Z0-9-]+\.trycloudflare\.com)") {
@@ -136,11 +136,32 @@ Write-Host "Frontend Tunnel: $frontendUrl" -ForegroundColor Green
 Write-Host "`n[4/4] Launching Expo..." -ForegroundColor Cyan
 $env:EXPO_PACKAGER_PROXY_URL = $frontendUrl
 $env:EXPO_SKIP_DEPENDENCY_VALIDATION = "1"
-$expUrl = $frontendUrl -replace "https://", "exp://"
+$expUrl = $frontendUrl -replace "https://", "exps://"
 
 # Restart Packager
 $expoConn = Get-NetTCPConnection -LocalPort 8081 -State Listen -ErrorAction SilentlyContinue
-if ($expoConn) { Stop-Process -Id $expoConn.OwningProcess -Force -ErrorAction SilentlyContinue; Start-Sleep -Seconds 1 }
+if ($expoConn) { 
+    Write-Host "Cleaning up old Expo process..." -ForegroundColor Gray
+    Stop-Process -Id $expoConn.OwningProcess -Force -ErrorAction SilentlyContinue 
+    Start-Sleep -Seconds 2 
+}
 
-Write-Host "To scan manually, use this link: $expUrl" -ForegroundColor Green
-npx expo start -c
+# Fix Heap Memory Error
+$env:NODE_OPTIONS = "--max-old-space-size=4096"
+$env:EXPO_NODE_OPTIONS = "--max-old-space-size=4096"
+
+Write-Host "==========================================================" -ForegroundColor Red
+Write-Host "POP-UP: Opening QR Code for Expo Go" -ForegroundColor Yellow
+Write-Host "==========================================================" -ForegroundColor Red
+
+node -e "const qrcode = require('qrcode'); const { exec } = require('child_process'); qrcode.toFile('qrcode.png', '$expUrl', { width: 600, margin: 4 }, (err) => { if (err) { console.error('QR Error:', err); } else { console.log('QR Code generated: qrcode.png'); exec('start qrcode.png', (e) => { if (e) exec('explorer qrcode.png'); }); } })"
+
+Write-Host "`nQR URL: $expUrl" -ForegroundColor Cyan
+Write-Host "==========================================================" -ForegroundColor Red
+
+Write-Host "A QR Code image window should pop up shortly." -ForegroundColor Cyan
+Write-Host "Scan the image to bypass terminal formatting issues." -ForegroundColor Cyan
+Write-Host "Fallback link (type manually): $expUrl" -ForegroundColor Green
+Write-Host "==========================================================" -ForegroundColor Red
+
+npx.cmd expo start -c --offline

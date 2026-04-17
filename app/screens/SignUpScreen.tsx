@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, TextInput, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, TextInput, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, Image, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons, FontAwesome } from '@expo/vector-icons';
 import * as NativeStack from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useTheme, ThemeContextType } from '../theme/ThemeProvider';
+import { useAuth } from '../context/AuthContext';
 
 type SignUpScreenProps = NativeStack.NativeStackScreenProps<RootStackParamList, 'SignUp'>;
 
@@ -24,6 +25,8 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
     password: '',
   });
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const { signInWithGoogle } = useAuth();
 
   const getPasswordRequirements = (password: string) => ({
     length: password.length >= 8,
@@ -92,8 +95,18 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
       const newErrors = { ...errors };
       if (!form.name) newErrors.name = 'Field must not be empty';
       if (!form.email) newErrors.email = 'Field must not be empty';
-      if (!form.password) newErrors.password = 'Field must not be empty';
-      setErrors(newErrors);
+      }
+  };
+
+  const handleGoogleAuth = async () => {
+    setGoogleLoading(true);
+    const { error } = await signInWithGoogle();
+    setGoogleLoading(false);
+    
+    if (error && error.message !== 'User cancelled sign-in') {
+      Alert.alert('Authentication Failed', error.message);
+    } else if (!error) {
+       navigation.replace('Home');
     }
   };
 
@@ -226,30 +239,36 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
           <View style={styles.socialSection}>
             <View style={styles.dividerContainer}>
               <View style={[styles.divider, { backgroundColor: theme.colors.outlineVariant }]} />
-              <Text style={[styles.dividerText, { color: theme.colors.onSurfaceVariant }]}>or continue with</Text>
+              <Text style={[styles.dividerText, { color: theme.colors.onSurfaceVariant }]}>or</Text>
               <View style={[styles.divider, { backgroundColor: theme.colors.outlineVariant }]} />
             </View>
 
-            <View style={styles.socialButtonsRow}>
-              <TouchableOpacity 
-                style={[styles.socialButton, { backgroundColor: theme.colors.surfaceContainerHigh }]}
-                onPress={() => {}}
-              >
-                <Image 
-                  source={require('../assets/google_g_logo.png')} 
-                  style={styles.googleIcon} 
-                  fadeDuration={0}
-                  resizeMode="contain"
-                />
-              </TouchableOpacity>
-
-              <TouchableOpacity 
-                style={[styles.socialButton, { backgroundColor: theme.colors.onSurface }]}
-                onPress={() => {}}
-              >
-                <FontAwesome name="apple" size={28} color={theme.colors.surface} />
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity 
+              style={[
+                styles.socialButton, 
+                { 
+                  backgroundColor: theme.colors.background,
+                  borderColor: theme.colors.onSurfaceVariant,
+                }
+              ]}
+              activeOpacity={0.7}
+              onPress={handleGoogleAuth}
+              disabled={loading || googleLoading}
+            >
+              {googleLoading ? (
+                <ActivityIndicator color={theme.colors.primary} />
+              ) : (
+                <>
+                  <Image 
+                    source={require('../assets/google_g_logo.png')} 
+                    style={styles.googleIcon} 
+                    fadeDuration={0}
+                    resizeMode="contain"
+                  />
+                  <Text style={[styles.socialButtonText, { color: theme.colors.onSurfaceVariant }]}>Continue with Google</Text>
+                </>
+              )}
+            </TouchableOpacity>
           </View>
 
           <View style={styles.footer}>
@@ -286,7 +305,7 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
   },
   formContainer: {
     gap: 20,
-    marginBottom: 40,
+    marginBottom: 0,
   },
   inputGroup: {
     gap: 8,
@@ -331,7 +350,7 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
     fontWeight: '600',
   },
   socialSection: {
-    marginTop: 20,
+    marginTop: 24,
   },
   dividerContainer: {
     flexDirection: 'row',
@@ -348,19 +367,19 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
-  socialButtonsRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 20,
-  },
   socialButton: {
-    width: 60,
-    height: 60,
+    flexDirection: 'row',
+    width: '100%',
+    paddingVertical: 16,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: theme.colors.outlineVariant,
+    gap: 8,
+  },
+  socialButtonText: {
+    fontSize: 18,
+    fontWeight: '600',
   },
   googleIcon: {
     width: 24,
@@ -398,17 +417,20 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
 
 
 
-const RequirementRow = ({ met, label, theme }: { met: boolean; label: string; theme: ThemeContextType }) => (
-  <View style={styles.requirementRow}>
-    <MaterialIcons 
-      name={met ? "check-circle" : "radio-button-unchecked"} 
-      size={16} 
-      color={met ? theme.colors.success : theme.colors.outlineVariant} 
-    />
-    <Text style={[styles.requirementText, { color: met ? theme.colors.onSurface : theme.colors.onSurfaceVariant }]}>
-      {label}
-    </Text>
-  </View>
-);
+const RequirementRow = ({ met, label, theme }: { met: boolean; label: string; theme: ThemeContextType }) => {
+  const styles = makeStyles(theme);
+  return (
+    <View style={styles.requirementRow}>
+      <MaterialIcons 
+        name={met ? "check-circle" : "radio-button-unchecked"} 
+        size={16} 
+        color={met ? theme.colors.success : theme.colors.outlineVariant} 
+      />
+      <Text style={[styles.requirementText, { color: met ? theme.colors.onSurface : theme.colors.onSurfaceVariant }]}>
+        {label}
+      </Text>
+    </View>
+  );
+};
 
 export default SignUpScreen;
