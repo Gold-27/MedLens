@@ -97,10 +97,10 @@ const SlideView = ({ item, theme }: { item: Slide; theme: any }) => {
         fadeDuration={0}
       />
       <View style={styles.textContainer}>
-        <Text style={[styles.title, { color: theme.colors.onSurface }]}>
+        <Text style={[styles.title, { color: theme.colors.onSurfaceVariant }]}>
           {item.title}
         </Text>
-        <Text style={[styles.description, { color: theme.colors.onSurfaceVariant }]}>
+        <Text style={[styles.description, { color: theme.colors.outlineVariant }]}>
           {item.description}
         </Text>
       </View>
@@ -209,34 +209,25 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
           <View style={styles.finishButtonsContainer}>
             <TouchableOpacity
               style={[
-                styles.nextButton,
-                {
-                  backgroundColor: theme.colors.onPrimary,
-                  borderColor: theme.colors.primary,
-                  borderWidth: 1.5,
-                  flex: 0.8,
-                },
-              ]}
-              onPress={handleNext}
-            >
-              <Text style={[styles.nextButtonText, { color: theme.colors.primary }]}>
-                Use as Guest
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
                 styles.signUpButton,
                 {
                   backgroundColor: theme.colors.primary,
-                  borderColor: theme.colors.primary,
-                  flex: 1.2,
+                  width: '100%',
                 },
               ]}
               onPress={handleSignUp}
             >
               <Text style={[styles.signUpButtonText, { color: theme.colors.onPrimary }]}>
                 Create Account
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.guestLinkButton}
+              onPress={handleNext}
+            >
+              <Text style={[styles.guestLinkText, { color: theme.colors.outlineVariant }]}>
+                Use as Guest
               </Text>
             </TouchableOpacity>
           </View>
@@ -328,19 +319,28 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   finishButtonsContainer: {
-    flexDirection: 'row',
-    gap: 12,
+    flexDirection: 'column',
+    gap: 16,
     alignItems: 'center',
+    width: '100%',
   },
   signUpButton: {
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
-    borderWidth: 1.5,
+    width: '100%',
   },
   signUpButtonText: {
     fontSize: 18,
     fontWeight: '600',
+  },
+  guestLinkButton: {
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  guestLinkText: {
+    fontSize: 16,
+    fontWeight: '500',
   },
 });
 
