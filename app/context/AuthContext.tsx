@@ -4,8 +4,11 @@ import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import * as AuthSession from 'expo-auth-session';
 import { supabase } from '../services/supabase';
+import { Platform } from 'react-native';
 
-WebBrowser.maybeCompleteAuthSession();
+if (Platform.OS === 'web') {
+  WebBrowser.maybeCompleteAuthSession();
+}
 
 interface AuthContextType {
   user: User | null;
@@ -37,7 +40,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setLoading(true);
 
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
+        // Race the session check against a timeout to prevent hanging
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Session check timeout')), 3000)
+        );
+
+        const { data: { session }, error } = await Promise.race([sessionPromise, timeoutPromise]);
 
         if (error) {
           console.error('Session check error:', error);
@@ -48,6 +57,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setIsGuest(!session?.user);
       } catch (error) {
         console.error('Auth initialization error:', error);
+        // On timeout/error, set as guest and continue
+        setUser(null);
+        setSession(null);
+        setIsGuest(true);
       } finally {
         setLoading(false);
       }
@@ -74,7 +87,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       return { error };
     } catch (error) {
       console.error('Sign in error:', error);
-      return { error };
+      return { error: error as AuthError };
     }
   };
 
@@ -84,7 +97,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       return { error };
     } catch (error) {
       console.error('Sign up error:', error);
-      return { error };
+      return { error: error as AuthError };
     }
   };
 
@@ -102,9 +115,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signInWithGoogle = async () => {
     try {
       console.log('Starting Google Auth...');
-      const redirectUrl = AuthSession.makeRedirectUri({
-        useProxy: true,
-      });
+      const redirectUrl = AuthSession.makeRedirectUri({});
       console.log('AuthSession Redirect URL:', redirectUrl);
 
       const { data, error } = await supabase.auth.signInWithOAuth({

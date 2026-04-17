@@ -3,11 +3,11 @@ import { View, StyleSheet, Animated, Image } from 'react-native';
 import { Asset } from 'expo-asset';
 import { useTheme } from '../theme/ThemeProvider';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as NativeStack from '@react-navigation/native-stack';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useAuth } from '../context/AuthContext';
 
-type SplashScreenProps = NativeStack.NativeStackScreenProps<RootStackParamList, 'Splash'>;
+type SplashScreenProps = any;
 
 const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
   const theme = useTheme();
@@ -38,33 +38,60 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
       require('../assets/img_onboard2.png'),
       require('../assets/img_onboard3.png'),
     ]).catch(() => {/* silent — local assets always available */});
+  }, []);
+
+  useEffect(() => {
+    let hasNavigated = false;
+
+    const navigate = (screen: keyof RootStackParamList) => {
+      if (hasNavigated) return;
+      hasNavigated = true;
+      navigation.replace(screen as any);
+    };
 
     // Check onboarding status and navigate
     const checkStatus = async () => {
       try {
-        // Wait for auth to initialize
+        // Wait for auth to initialize — but don't wait if it's still loading
         if (authLoading) return;
 
         const hasSeenOnboarding = await AsyncStorage.getItem('hasSeenOnboarding');
-        await new Promise(resolve => setTimeout(resolve, 3000)); // Minimum splash time (reduced from 5s)
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Minimum splash time
         
         if (user) {
-          // If logged in, always go home
-          navigation.replace('Home');
+          navigate('Home');
         } else if (hasSeenOnboarding === 'true') {
-          navigation.replace('Login'); // Changed to Login instead of Home for better UX
+          navigate('Login');
         } else {
-          navigation.replace('Onboarding');
+          navigate('Onboarding');
         }
       } catch (error) {
         console.error('Error checking status:', error);
-        navigation.replace('Onboarding');
+        navigate('Onboarding');
       }
     };
 
     if (!authLoading) {
       checkStatus();
     }
+
+    // Safety timeout: if auth never resolves, force navigation after 5 seconds
+    const safetyTimer = setTimeout(async () => {
+      if (hasNavigated) return;
+      console.warn('Splash safety timeout reached — forcing navigation');
+      try {
+        const hasSeenOnboarding = await AsyncStorage.getItem('hasSeenOnboarding');
+        if (hasSeenOnboarding === 'true') {
+          navigate('Login');
+        } else {
+          navigate('Onboarding');
+        }
+      } catch {
+        navigate('Onboarding');
+      }
+    }, 5000);
+
+    return () => clearTimeout(safetyTimer);
   }, [authLoading, user]);
 
   return (

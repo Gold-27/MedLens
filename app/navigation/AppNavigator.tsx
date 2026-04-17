@@ -31,8 +31,8 @@ export type DrawerParamList = {
   SettingsDrawer: undefined;
 };
 
-const Stack = createNativeStackNavigator<RootStackParamList>();
-const Drawer = createDrawerNavigator<DrawerParamList>();
+const Stack = (createNativeStackNavigator as any)();
+const Drawer = (createDrawerNavigator as any)();
 
 const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
   const theme = useTheme();
@@ -56,7 +56,7 @@ const DrawerNavigator: React.FC = () => {
   const theme = useTheme();
   return (
     <Drawer.Navigator
-      drawerContent={(props) => <CustomDrawerContent {...props} />}
+      drawerContent={(props: DrawerContentComponentProps) => <CustomDrawerContent {...props} />}
       screenOptions={{
         headerShown: false,
         drawerActiveBackgroundColor: theme.colors.primaryContainer,
@@ -71,7 +71,7 @@ const DrawerNavigator: React.FC = () => {
         component={HomeScreen}
         options={{
           drawerLabel: 'Home',
-          drawerIcon: ({ color, size }) => <Ionicons name="home-outline" size={size} color={color} />,
+          drawerIcon: ({ color, size }: { color: string; size: number }) => <Ionicons name="home-outline" size={size} color={color} />,
         }}
       />
       <Drawer.Screen
@@ -79,7 +79,7 @@ const DrawerNavigator: React.FC = () => {
         component={CabinetScreen}
         options={{
           drawerLabel: 'My Cabinet',
-          drawerIcon: ({ color, size }) => <Ionicons name="briefcase-outline" size={size} color={color} />,
+          drawerIcon: ({ color, size }: { color: string; size: number }) => <Ionicons name="briefcase-outline" size={size} color={color} />,
         }}
       />
       <Drawer.Screen
@@ -87,7 +87,7 @@ const DrawerNavigator: React.FC = () => {
         component={SettingsScreen}
         options={{
           drawerLabel: 'Settings',
-          drawerIcon: ({ color, size }) => <Ionicons name="settings-outline" size={size} color={color} />,
+          drawerIcon: ({ color, size }: { color: string; size: number }) => <Ionicons name="settings-outline" size={size} color={color} />,
         }}
       />
     </Drawer.Navigator>
