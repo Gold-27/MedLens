@@ -1,6 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, Session, AuthError } from '@supabase/supabase-js';
+import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
 import { supabase } from '../services/supabase';
+
+WebBrowser.maybeCompleteAuthSession();
 
 interface AuthContextType {
   user: User | null;
@@ -9,6 +13,7 @@ interface AuthContextType {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
   signUp: (email: string, password: string) => Promise<{ error: AuthError | null }>;
+  signInWithGoogle: () => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   getToken: () => Promise<string | null>;
 }
@@ -93,6 +98,63 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const signInWithGoogle = async () => {
+    try {
+      console.log('Starting Google Auth...');
+      // Use the 'app://' scheme from app.json
+      const redirectUrl = Linking.createURL('/', { scheme: 'app' });
+      console.log('Redirect URL:', redirectUrl);
+      
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectUrl,
+          skipBrowserRedirect: true,
+        },
+      });
+
+      if (error) {
+        console.error('Supabase OAuth Error:', error);
+        return { error };
+      }
+
+      if (data?.url) {
+        console.log('Opening browser for Google Login...');
+        const res = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
+        console.log('WebBrowser result:', res.type);
+        
+        if (res.type === 'success' && res.url) {
+          console.log('Login successful, parsing tokens...');
+          const paramsStr = res.url.split('#')[1] || res.url.split('?')[1];
+          if (paramsStr) {
+            const searchParams = new URLSearchParams(paramsStr.replace(/\?/g, '&'));
+            const access_token = searchParams.get('access_token');
+            const refresh_token = searchParams.get('refresh_token');
+            
+            if (access_token && refresh_token) {
+              const { error: sessionError } = await supabase.auth.setSession({
+                access_token,
+                refresh_token,
+              });
+              if (sessionError) {
+                console.error('Session setting error:', sessionError);
+                return { error: sessionError };
+              }
+              console.log('Session established successfully!');
+            }
+          }
+        } else if (res.type === 'cancel' || res.type === 'dismiss') {
+          console.log('User cancelled the sign-in flow.');
+          return { error: new Error('User cancelled sign-in') };
+        }
+      }
+      return { error: null };
+    } catch (error) {
+      console.error('Global Google sign in error:', error);
+      return { error: error instanceof Error ? error : new Error('Unknown error') };
+    }
+  };
+
   const getToken = async (): Promise<string | null> => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -110,6 +172,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     loading,
     signIn,
     signUp,
+    signInWithGoogle,
     signOut,
     getToken,
   };

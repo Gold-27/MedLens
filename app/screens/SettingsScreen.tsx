@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeProvider';
 import { useAuth } from '../context/AuthContext';
+import { useNavigation } from '@react-navigation/native';
 import { useNavigation, DrawerActions } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -17,6 +18,7 @@ type SettingsSection = {
 
 const SettingsScreen: React.FC = () => {
   const theme = useTheme();
+  const navigation = useNavigation<any>();
   const { user, signOut, isGuest } = useAuth();
 
   const handleSignOut = () => {
@@ -25,7 +27,10 @@ const SettingsScreen: React.FC = () => {
       { text: 'Sign Out', style: 'destructive', onPress: async () => {
         try {
           await signOut();
-          Alert.alert('Signed out', 'You have been signed out.');
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Login' }],
+          });
         } catch (error) {
           console.error('Sign out error:', error);
           Alert.alert('Error', 'Failed to sign out. Please try again.');

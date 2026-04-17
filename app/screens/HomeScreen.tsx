@@ -48,22 +48,23 @@ const HomeScreen: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    // Only fetch cabinet data for authenticated users — guests can't save, so skip the API call entirely
+    if (isGuest || !user) return;
+
     const initData = async () => {
       try {
-        if (user) {
-          const token = await getToken();
-          if (token) {
-            const response = await api.getCabinetItems(token);
-            const drugNames = response.items.map(item => item.drug_name.toLowerCase());
-            setSavedDrugs(new Set(drugNames));
-          }
+        const token = await getToken();
+        if (token) {
+          const response = await api.getCabinetItems(token);
+          const drugNames = response.items.map(item => item.drug_name.toLowerCase());
+          setSavedDrugs(new Set(drugNames));
         }
       } catch (error) {
         console.error('Initial data fetch failed:', error);
       }
     };
     initData();
-  }, [user, getToken]);
+  }, [user, isGuest, getToken]);
 
   const handleSearch = useCallback(async (searchQuery: string) => {
     if (!searchQuery.trim()) return;
