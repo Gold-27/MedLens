@@ -417,17 +417,20 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
 
 
 
-const RequirementRow = ({ met, label, theme }: { met: boolean; label: string; theme: ThemeContextType }) => (
-  <View style={styles.requirementRow}>
-    <MaterialIcons 
-      name={met ? "check-circle" : "radio-button-unchecked"} 
-      size={16} 
-      color={met ? theme.colors.success : theme.colors.outlineVariant} 
-    />
-    <Text style={[styles.requirementText, { color: met ? theme.colors.onSurface : theme.colors.onSurfaceVariant }]}>
-      {label}
-    </Text>
-  </View>
-);
+const RequirementRow = ({ met, label, theme }: { met: boolean; label: string; theme: ThemeContextType }) => {
+  const styles = makeStyles(theme);
+  return (
+    <View style={styles.requirementRow}>
+      <MaterialIcons 
+        name={met ? "check-circle" : "radio-button-unchecked"} 
+        size={16} 
+        color={met ? theme.colors.success : theme.colors.outlineVariant} 
+      />
+      <Text style={[styles.requirementText, { color: met ? theme.colors.onSurface : theme.colors.onSurfaceVariant }]}>
+        {label}
+      </Text>
+    </View>
+  );
+};
 
 export default SignUpScreen;

@@ -5,11 +5,13 @@ import { useTheme } from '../theme/ThemeProvider';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as NativeStack from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { useAuth } from '../context/AuthContext';
 
 type SplashScreenProps = NativeStack.NativeStackScreenProps<RootStackParamList, 'Splash'>;
 
 const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
   const theme = useTheme();
+  const { user, loading: authLoading } = useAuth();
   const pulseAnim = new Animated.Value(1);
 
   useEffect(() => {
@@ -38,27 +40,32 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
     ]).catch(() => {/* silent — local assets always available */});
 
     // Check onboarding status and navigate
-    const checkOnboardingStatus = async () => {
+    const checkStatus = async () => {
       try {
-        // Clear status so you can preview the new onboarding screen!
-        await AsyncStorage.removeItem('hasSeenOnboarding');
-        
+        // Wait for auth to initialize
+        if (authLoading) return;
+
         const hasSeenOnboarding = await AsyncStorage.getItem('hasSeenOnboarding');
-        await new Promise(resolve => setTimeout(resolve, 5000)); // Minimum splash time
+        await new Promise(resolve => setTimeout(resolve, 3000)); // Minimum splash time (reduced from 5s)
         
-        if (hasSeenOnboarding === 'true') {
+        if (user) {
+          // If logged in, always go home
           navigation.replace('Home');
+        } else if (hasSeenOnboarding === 'true') {
+          navigation.replace('Login'); // Changed to Login instead of Home for better UX
         } else {
           navigation.replace('Onboarding');
         }
       } catch (error) {
-        console.error('Error checking onboarding status:', error);
+        console.error('Error checking status:', error);
         navigation.replace('Onboarding');
       }
     };
 
-    checkOnboardingStatus();
-  }, []);
+    if (!authLoading) {
+      checkStatus();
+    }
+  }, [authLoading, user]);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.primary }]}>
