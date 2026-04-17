@@ -17,7 +17,8 @@ export class OpenFDAService {
 
   async searchDrug(query: string): Promise<NormalizedDrugData | null> {
     try {
-      const url = `${this.baseUrl}?search=openfda.brand_name:"${query}"+openfda.generic_name:"${query}"&limit=1${this.apiKey ? `&api_key=${this.apiKey}` : ''}`;
+      const encodedQuery = encodeURIComponent(`"${query}"`);
+      const url = `${this.baseUrl}?search=openfda.brand_name:${encodedQuery}+OR+openfda.generic_name:${encodedQuery}&limit=1${this.apiKey ? `&api_key=${this.apiKey}` : ''}`;
       
       const response = await axios.get(url);
       
