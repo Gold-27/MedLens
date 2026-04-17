@@ -4,11 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeProvider';
 import { useAuth } from '../context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
-<<<<<<< HEAD
-=======
-import { useNavigation, DrawerActions } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
->>>>>>> 1cda7a650c944044ec45a4103fa947468287e60a
+
 
 type SettingsItem = 
   | { label: string; value: string; type: 'info' }

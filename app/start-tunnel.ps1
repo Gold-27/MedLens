@@ -151,10 +151,10 @@ $env:NODE_OPTIONS = "--max-old-space-size=4096"
 $env:EXPO_NODE_OPTIONS = "--max-old-space-size=4096"
 
 Write-Host "==========================================================" -ForegroundColor Red
-Write-Host "POP-UP: Opening QR Code for Expo Go" -ForegroundColor Yellow
+Write-Host "SCAN THIS QR CODE TO OPEN IN EXPO GO:" -ForegroundColor Yellow
 Write-Host "==========================================================" -ForegroundColor Red
 
-node -e "const qrcode = require('qrcode'); const { exec } = require('child_process'); qrcode.toFile('qrcode.png', '$expUrl', { width: 600, margin: 4 }, (err) => { if (err) { console.error('QR Error:', err); } else { console.log('QR Code generated: qrcode.png'); exec('start qrcode.png', (e) => { if (e) exec('explorer qrcode.png'); }); } })"
+node -e "const qrcode = require('qrcode'); qrcode.toString('$expUrl', { type: 'terminal', small: true }, (err, str) => { if (err) { console.error('QR Error:', err); } else { console.log(str); } })"
 
 Write-Host "`nQR URL: $expUrl" -ForegroundColor Cyan
 Write-Host "==========================================================" -ForegroundColor Red
