@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, StyleSheet, Animated, Image } from 'react-native';
+import { Asset } from 'expo-asset';
 import { useTheme } from '../theme/ThemeProvider';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as NativeStack from '@react-navigation/native-stack';
@@ -28,6 +29,14 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
       ])
     ).start();
 
+    // Preload onboarding images in the background WHILE the splash timer runs.
+    // By the time we navigate to Onboarding, images are already in the Expo cache.
+    Asset.loadAsync([
+      require('../assets/img_onboard1.png'),
+      require('../assets/img_onboard2.png'),
+      require('../assets/img_onboard3.png'),
+    ]).catch(() => {/* silent — local assets always available */});
+
     // Check onboarding status and navigate
     const checkOnboardingStatus = async () => {
       try {
@@ -44,7 +53,6 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
         }
       } catch (error) {
         console.error('Error checking onboarding status:', error);
-        // Default to onboarding on error
         navigation.replace('Onboarding');
       }
     };
