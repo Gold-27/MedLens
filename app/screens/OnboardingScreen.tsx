@@ -97,10 +97,10 @@ const SlideView = ({ item, theme }: { item: Slide; theme: any }) => {
         fadeDuration={0}
       />
       <View style={styles.textContainer}>
-        <Text style={[styles.title, { color: theme.colors.onSurfaceVariant }]}>
+        <Text style={[styles.title, { color: theme.colors.inverseSurface }]}>
           {item.title}
         </Text>
-        <Text style={[styles.description, { color: theme.colors.outlineVariant }]}>
+        <Text style={[styles.description, { color: theme.colors.outline }]}>
           {item.description}
         </Text>
       </View>
@@ -226,7 +226,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
               style={styles.guestLinkButton}
               onPress={handleNext}
             >
-              <Text style={[styles.guestLinkText, { color: theme.colors.outlineVariant }]}>
+              <Text style={[styles.guestLinkText, { color: theme.colors.primary }]}>
                 Use as Guest
               </Text>
             </TouchableOpacity>
