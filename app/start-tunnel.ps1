@@ -154,7 +154,10 @@ Write-Host "==========================================================" -Foregro
 Write-Host "POP-UP: Opening QR Code for Expo Go" -ForegroundColor Yellow
 Write-Host "==========================================================" -ForegroundColor Red
 
-node -e "const qrcode = require('qrcode'); qrcode.toFile('qrcode.png', '$expUrl', { width: 600, margin: 4 }, (err) => { if(!err) { const { exec } = require('child_process'); exec('start qrcode.png'); } else { console.error(err); } })"
+node -e "const qrcode = require('qrcode'); const { exec } = require('child_process'); qrcode.toFile('qrcode.png', '$expUrl', { width: 600, margin: 4 }, (err) => { if (err) { console.error('QR Error:', err); } else { console.log('QR Code generated: qrcode.png'); exec('start qrcode.png', (e) => { if (e) exec('explorer qrcode.png'); }); } })"
+
+Write-Host "`nQR URL: $expUrl" -ForegroundColor Cyan
+Write-Host "==========================================================" -ForegroundColor Red
 
 Write-Host "A QR Code image window should pop up shortly." -ForegroundColor Cyan
 Write-Host "Scan the image to bypass terminal formatting issues." -ForegroundColor Cyan
