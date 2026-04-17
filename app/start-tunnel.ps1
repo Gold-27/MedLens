@@ -136,7 +136,11 @@ Write-Host "Frontend Tunnel: $frontendUrl" -ForegroundColor Green
 Write-Host "`n[4/4] Launching Expo..." -ForegroundColor Cyan
 $env:EXPO_PACKAGER_PROXY_URL = $frontendUrl
 $env:EXPO_SKIP_DEPENDENCY_VALIDATION = "1"
-$expUrl = $frontendUrl -replace "https://", "exps://"
+
+# Build the correct Expo Go URL
+# Expo Go scans: exp+app://expo-development-client/?url=<encoded tunnel URL>
+# But for Cloudflare tunnels, the simplest working format is just the HTTPS URL itself
+$qrUrl = $frontendUrl
 
 # Restart Packager
 $expoConn = Get-NetTCPConnection -LocalPort 8081 -State Listen -ErrorAction SilentlyContinue
@@ -150,18 +154,24 @@ if ($expoConn) {
 $env:NODE_OPTIONS = "--max-old-space-size=4096"
 $env:EXPO_NODE_OPTIONS = "--max-old-space-size=4096"
 
-Write-Host "==========================================================" -ForegroundColor Red
-Write-Host "SCAN THIS QR CODE TO OPEN IN EXPO GO:" -ForegroundColor Yellow
-Write-Host "==========================================================" -ForegroundColor Red
+Write-Host ""
+Write-Host "==========================================================" -ForegroundColor Magenta
+Write-Host " SCAN THIS QR CODE WITH YOUR PHONE CAMERA" -ForegroundColor Yellow
+Write-Host " It will open in Expo Go automatically" -ForegroundColor Yellow
+Write-Host "==========================================================" -ForegroundColor Magenta
+Write-Host ""
 
-node -e "const qrcode = require('qrcode'); qrcode.toString('$expUrl', { type: 'terminal', small: true }, (err, str) => { if (err) { console.error('QR Error:', err); } else { console.log(str); } })"
+# Generate QR code in terminal
+node -e "const qr = require('qrcode'); qr.toString('$qrUrl', { type: 'terminal', small: true }, (e, s) => { if (!e) console.log(s); else console.error(e); });"
 
-Write-Host "`nQR URL: $expUrl" -ForegroundColor Cyan
-Write-Host "==========================================================" -ForegroundColor Red
+# Also generate a PNG as fallback
+node -e "const qr = require('qrcode'); qr.toFile('qrcode.png', '$qrUrl', { width: 400, margin: 2 }, (e) => { if (!e) { require('child_process').exec('start qrcode.png'); } });"
 
-Write-Host "A QR Code image window should pop up shortly." -ForegroundColor Cyan
-Write-Host "Scan the image to bypass terminal formatting issues." -ForegroundColor Cyan
-Write-Host "Fallback link (type manually): $expUrl" -ForegroundColor Green
-Write-Host "==========================================================" -ForegroundColor Red
+Write-Host ""
+Write-Host "==========================================================" -ForegroundColor Magenta
+Write-Host " If QR doesn't work, open this URL on your phone:" -ForegroundColor Yellow
+Write-Host " $qrUrl" -ForegroundColor Green
+Write-Host "==========================================================" -ForegroundColor Magenta
+Write-Host ""
 
 npx.cmd expo start -c --offline
