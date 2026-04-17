@@ -47,14 +47,14 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
 
   const handleChangeText = (field: keyof typeof form, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
-    
+
     if (field === 'email') {
       if (value.trim() === '') {
         setErrors((prev) => ({ ...prev, email: '' }));
       } else {
-        const isValidDomain = value.toLowerCase().endsWith('@gmail.com') || 
-                              value.toLowerCase().endsWith('@yahoo.com') || 
-                              value.toLowerCase().endsWith('@icloud.com');
+        const isValidDomain = value.toLowerCase().endsWith('@gmail.com') ||
+          value.toLowerCase().endsWith('@yahoo.com') ||
+          value.toLowerCase().endsWith('@icloud.com');
         if (!isValidDomain) {
           setErrors((prev) => ({ ...prev, email: 'Enter a valid email address' }));
         } else {
@@ -64,7 +64,7 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
     } else if (field === 'name') {
       const nameParts = value.trim().split(/\s+/);
       const isValidName = nameParts.length >= 2 && nameParts.every(part => part.length >= 2);
-      
+
       if (value.trim() === '') {
         setErrors((prev) => ({ ...prev, name: '' }));
       } else if (!isValidName) {
@@ -95,28 +95,28 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
       const newErrors = { ...errors };
       if (!form.name) newErrors.name = 'Field must not be empty';
       if (!form.email) newErrors.email = 'Field must not be empty';
-      }
+    }
   };
 
   const handleGoogleAuth = async () => {
     setGoogleLoading(true);
     const { error } = await signInWithGoogle();
     setGoogleLoading(false);
-    
+
     if (error && error.message !== 'User cancelled sign-in') {
       Alert.alert('Authentication Failed', error.message);
     } else if (!error) {
-       navigation.replace('Home');
+      navigation.replace('Home');
     }
   };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top', 'left', 'right']}>
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           bounces={false}
@@ -133,8 +133,8 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
               <TextInput
                 style={[
                   styles.input,
-                  { 
-                    backgroundColor: focusedInput === 'name' ? 'transparent' : theme.colors.surfaceContainerLow, 
+                  {
+                    backgroundColor: focusedInput === 'name' ? 'transparent' : theme.colors.surfaceContainerLow,
                     color: focusedInput === 'name' ? theme.colors.onPrimaryContainer : theme.colors.onSurface,
                     borderColor: errors.name ? theme.colors.error : (focusedInput === 'name' ? theme.colors.primaryContainer : theme.colors.outlineVariant)
                   }
@@ -156,8 +156,8 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
               <TextInput
                 style={[
                   styles.input,
-                  { 
-                    backgroundColor: focusedInput === 'email' ? 'transparent' : theme.colors.surfaceContainerLow, 
+                  {
+                    backgroundColor: focusedInput === 'email' ? 'transparent' : theme.colors.surfaceContainerLow,
                     color: focusedInput === 'email' ? theme.colors.onPrimaryContainer : theme.colors.onSurface,
                     borderColor: errors.email ? theme.colors.error : (focusedInput === 'email' ? theme.colors.primaryContainer : theme.colors.outlineVariant)
                   }
@@ -183,8 +183,8 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
                   style={[
                     styles.input,
                     styles.passwordInput,
-                    { 
-                      backgroundColor: focusedInput === 'password' ? 'transparent' : theme.colors.surfaceContainerLow, 
+                    {
+                      backgroundColor: focusedInput === 'password' ? 'transparent' : theme.colors.surfaceContainerLow,
                       color: focusedInput === 'password' ? theme.colors.onPrimaryContainer : theme.colors.onSurface,
                       borderColor: errors.password ? theme.colors.error : (focusedInput === 'password' ? theme.colors.primaryContainer : theme.colors.outlineVariant)
                     }
@@ -197,14 +197,14 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
                   onFocus={() => setFocusedInput('password')}
                   onBlur={() => handleBlur('password')}
                 />
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.eyeButton}
                   onPress={() => setShowPassword(!showPassword)}
                 >
-                  <MaterialIcons 
-                    name={showPassword ? 'visibility' : 'visibility-off'} 
-                    size={20} 
-                    color={theme.colors.onSurfaceVariant} 
+                  <MaterialIcons
+                    name={showPassword ? 'visibility' : 'visibility-off'}
+                    size={20}
+                    color={theme.colors.onSurfaceVariant}
                   />
                 </TouchableOpacity>
               </View>
@@ -223,7 +223,7 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
               )}
             </View>
 
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.submitButton, { backgroundColor: theme.colors.primary }]}
               onPress={handleSignUp}
               disabled={loading}
@@ -243,12 +243,12 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
               <View style={[styles.divider, { backgroundColor: theme.colors.outlineVariant }]} />
             </View>
 
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[
-                styles.socialButton, 
-                { 
+                styles.socialButton,
+                {
                   backgroundColor: theme.colors.background,
-                  borderColor: theme.colors.onSurfaceVariant,
+                  borderColor: theme.colors.primary,
                 }
               ]}
               activeOpacity={0.7}
@@ -259,13 +259,13 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
                 <ActivityIndicator color={theme.colors.primary} />
               ) : (
                 <>
-                  <Image 
-                    source={require('../assets/google_g_logo.png')} 
-                    style={styles.googleIcon} 
+                  <Image
+                    source={require('../assets/google_g_logo.png')}
+                    style={styles.googleIcon}
                     fadeDuration={0}
                     resizeMode="contain"
                   />
-                  <Text style={[styles.socialButtonText, { color: theme.colors.onSurfaceVariant }]}>Continue with Google</Text>
+                  <Text style={[styles.socialButtonText, { color: theme.colors.primary }]}>Continue with Google</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -421,10 +421,10 @@ const RequirementRow = ({ met, label, theme }: { met: boolean; label: string; th
   const styles = makeStyles(theme);
   return (
     <View style={styles.requirementRow}>
-      <MaterialIcons 
-        name={met ? "check-circle" : "radio-button-unchecked"} 
-        size={16} 
-        color={met ? theme.colors.success : theme.colors.outlineVariant} 
+      <MaterialIcons
+        name={met ? "check-circle" : "radio-button-unchecked"}
+        size={16}
+        color={met ? theme.colors.success : theme.colors.outlineVariant}
       />
       <Text style={[styles.requirementText, { color: met ? theme.colors.onSurface : theme.colors.onSurfaceVariant }]}>
         {label}
