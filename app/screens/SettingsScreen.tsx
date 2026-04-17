@@ -4,11 +4,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeProvider';
 import { useAuth } from '../context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
-<<<<<<< HEAD
-=======
-import { useNavigation, DrawerActions } from '@react-navigation/native';
+import { DrawerNavigationProp } from '@react-navigation/drawer';
+import { DrawerParamList } from '../navigation/AppNavigator';
 import { Ionicons } from '@expo/vector-icons';
->>>>>>> 1cda7a650c944044ec45a4103fa947468287e60a
 
 type SettingsItem = 
   | { label: string; value: string; type: 'info' }
@@ -21,7 +19,7 @@ type SettingsSection = {
 
 const SettingsScreen: React.FC = () => {
   const theme = useTheme();
-  const navigation = useNavigation<any>();
+  const navigation = (useNavigation as any)();
   const { user, signOut, isGuest } = useAuth();
 
   const handleSignOut = () => {

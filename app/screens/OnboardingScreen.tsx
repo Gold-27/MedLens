@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { Asset } from 'expo-asset';
 import { useTheme } from '../theme/ThemeProvider';
-import * as NativeStack from '@react-navigation/native-stack';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -51,7 +51,7 @@ const slides: Slide[] = [
   },
 ];
 
-type OnboardingScreenProps = NativeStack.NativeStackScreenProps<RootStackParamList, 'Onboarding'>;
+type OnboardingScreenProps = any;
 
 const { width } = Dimensions.get('window');
 

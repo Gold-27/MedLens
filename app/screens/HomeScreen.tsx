@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Share, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import type { DrawerNavigationProp } from '@react-navigation/drawer';
+import { DrawerParamList, RootStackParamList } from '../navigation/AppNavigator';
 
 import { useTheme, ThemeContextType } from '../theme/ThemeProvider';
 import { useAuth } from '../context/AuthContext';
@@ -21,7 +23,7 @@ type AppState = 'empty' | 'loading' | 'success' | 'partial' | 'notFound' | 'erro
 const HomeScreen: React.FC = () => {
   const theme = useTheme();
   const { user, isGuest, getToken } = useAuth();
-  const navigation = useNavigation<any>();
+  const navigation = (useNavigation as any)();
   const insets = useSafeAreaInsets();
   const styles = makeStyles(theme);
 

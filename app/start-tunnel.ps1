@@ -1,6 +1,6 @@
 # start-tunnel.ps1
-# This script manages EVERYTHING: Backend Server, Dual Tunnels, and App Startup.
-# Refactored for Persistence & Reliability.
+# This script manages EVERYTHING: Backend Server, Fresh Tunnels, and App Startup.
+# Refactored for absolute reliability (Stateless Mode).
 
 # 0. Helper Functions
 function Get-SafeContent($path) {
@@ -18,160 +18,126 @@ function Get-SafeContent($path) {
 }
 
 function Get-UrlFromLog($logPath) {
+    if (-not (Test-Path $logPath)) { return $null }
     $content = Get-SafeContent $logPath
-    $lines = $content -split "`n"
-    # Search from bottom for most recent URL
-    for ($i = $lines.Count - 1; $i -ge 0; $i--) {
-        if ($lines[$i] -match "(https://[a-zA-Z0-9-]+\.trycloudflare\.com)") {
-            return $matches[1]
-        }
+    if ($content -match "(https://[a-zA-Z0-9-]+\.trycloudflare\.com)") {
+        return $matches[1]
     }
     return $null
 }
 
-function Get-TunnelProcess ($port) {
-    try {
-        $procs = Get-CimInstance Win32_Process -Filter "name='cloudflared.exe'" -ErrorAction SilentlyContinue
-        if ($null -eq $procs) { 
-            # Fallback to Get-WmiObject for older systems
-            $procs = Get-WmiObject Win32_Process -Filter "name='cloudflared.exe'" -ErrorAction SilentlyContinue 
-        }
-        foreach ($p in $procs) {
-            if ($p.CommandLine -match $port) { return $p }
-        }
-    } catch { }
-    return $null
-}
-
-function Is-PortActive($port) {
-    $conn = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue
+function Test-PortActive {
+    param([int]$Port)
+    $conn = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
     return ($null -ne $conn)
 }
 
-# 1. Initialize
-Write-Host "--- MedLens Tunnel System ---" -ForegroundColor Magenta
+function Kill-ProcessOnPort {
+    param([int]$Port)
+    $conn = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
+    if ($conn) {
+        Write-Host "Force killing stale process on port $Port (PID: $($conn.OwningProcess))..." -ForegroundColor Yellow
+        Stop-Process -Id $conn.OwningProcess -Force -ErrorAction SilentlyContinue
+        Start-Sleep -Seconds 1
+    }
+}
+
+# 1. HARD RESET
+Write-Host "--- MedLens Tunnel System (Stateless Reset) ---" -ForegroundColor Magenta
+Write-Host "Performing aggressive cleanup to ensure fresh connection..." -ForegroundColor Cyan
+
+# Kill all cloudflared and existing dev servers
+Get-Process "cloudflared" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+Kill-ProcessOnPort 3001
+Kill-ProcessOnPort 8081
+
+# Wipe stale logs
+@("backend.log", "frontend.log", "qrcode.png") | ForEach-Object {
+    if (Test-Path $_) { Remove-Item $_ -Force -ErrorAction SilentlyContinue }
+}
+
 $maxWait = 120
 
 # 2. Handle Backend API (Port 3001)
-Write-Host "`n[1/4] Checking Backend API..." -ForegroundColor Cyan
-if (Is-PortActive 3001) {
-    Write-Host "Backend API is already running on port 3001. Skipping startup." -ForegroundColor Yellow
-} else {
-    Write-Host "Starting Backend API Server..." -ForegroundColor Gray
-    Start-Process -FilePath "npm.cmd" -ArgumentList "run", "dev" -WorkingDirectory "../api" -NoNewWindow -PassThru -RedirectStandardOutput "../api/server_out.log" -RedirectStandardError "../api/server_err.log"
-    
-    $apiReady = $false
-    for ($i = 0; $i -lt 30; $i++) {
-        if (Is-PortActive 3001) { $apiReady = $true; break }
-        Start-Sleep -Seconds 1
-    }
-    if (-not $apiReady) { Write-Host "Error: Backend failed to start." -ForegroundColor Red; exit 1 }
-    Write-Host "Backend API is LIVE!" -ForegroundColor Green
+Write-Host "`n[1/4] Starting Backend API..." -ForegroundColor Cyan
+Start-Process -FilePath "npm.cmd" -ArgumentList "run", "dev" -WorkingDirectory "../api" -NoNewWindow -PassThru -RedirectStandardOutput "../api/server_out.log" -RedirectStandardError "../api/server_err.log"
+
+$apiReady = $false
+for ($i = 0; $i -lt 30; $i++) {
+    if (Test-PortActive -Port 3001) { $apiReady = $true; break }
+    Start-Sleep -Seconds 1
 }
+if (-not $apiReady) { Write-Host "Error: Backend failed to start." -ForegroundColor Red; exit 1 }
+Write-Host "Backend API is LIVE!" -ForegroundColor Green
 
 # 3. Handle Backend Tunnel (Port 3001)
-Write-Host "`n[2/4] Checking Backend Tunnel..." -ForegroundColor Cyan
-$backendUrl = Get-UrlFromLog "backend.log"
-$backendProc = Get-TunnelProcess "3001"
+Write-Host "`n[2/4] Starting Fresh Backend Tunnel..." -ForegroundColor Cyan
+Start-Process -FilePath "npx.cmd" -ArgumentList "cloudflared", "tunnel", "--url", "http://localhost:3001", "--no-autoupdate" -NoNewWindow -PassThru -RedirectStandardError "backend.log"
 
-if ($backendUrl -and $backendProc) {
-    Write-Host "Existing Backend Tunnel found: $backendUrl" -ForegroundColor Yellow
-} else {
-    Write-Host "Starting fresh Backend Tunnel..." -ForegroundColor Gray
-    if ($backendProc) { Stop-Process -Id $backendProc.ProcessId -Force -ErrorAction SilentlyContinue }
-    if (Test-Path "backend.log") { Remove-Item "backend.log" -Force -ErrorAction SilentlyContinue }
-    
-    Start-Process -FilePath "npx.cmd" -ArgumentList "cloudflared", "tunnel", "--url", "http://localhost:3001", "--no-autoupdate" -NoNewWindow -PassThru -RedirectStandardError "backend.log"
-    
-    $counter = 0
-    while ($null -eq $backendUrl -and $counter -lt $maxWait) {
-        Start-Sleep -Seconds 2
-        $backendUrl = Get-UrlFromLog "backend.log"
-        $counter += 2
-    }
+$backendUrl = $null
+$counter = 0
+while ($null -eq $backendUrl -and $counter -lt $maxWait) {
+    Start-Sleep -Seconds 2
+    $backendUrl = Get-UrlFromLog "backend.log"
+    $counter += 2
 }
 
 if ($null -eq $backendUrl) { Write-Host "Error: Could not retrieve Backend URL." -ForegroundColor Red; exit 1 }
 Write-Host "Backend Tunnel: $backendUrl" -ForegroundColor Green
 
 # 4. Sync .env
+Write-Host "`n[Syncing .env]..." -ForegroundColor Gray
 if (Test-Path ".env") {
     $envContent = Get-Content ".env"
-    if ($envContent -match "EXPO_PUBLIC_API_BASE_URL=$backendUrl") {
-        Write-Host ".env is already synced." -ForegroundColor Yellow
-    } else {
-        Write-Host "Updating app/.env with Backend URL..." -ForegroundColor Gray
-        $newEnvContent = $envContent -replace "EXPO_PUBLIC_API_BASE_URL=.*", "EXPO_PUBLIC_API_BASE_URL=$backendUrl"
-        $newEnvContent | Set-Content ".env" -Encoding Utf8
-        Write-Host "Successfully synced .env!" -ForegroundColor Green
-    }
+    $newEnvContent = $envContent -replace "EXPO_PUBLIC_API_BASE_URL=.*", "EXPO_PUBLIC_API_BASE_URL=$backendUrl"
+    $newEnvContent | Set-Content ".env" -Encoding Utf8
+    Write-Host "Successfully synced .env!" -ForegroundColor Green
 }
 
 # 5. Handle Frontend Tunnel (Port 8081)
-Write-Host "`n[3/4] Checking Frontend Tunnel..." -ForegroundColor Cyan
-$frontendUrl = Get-UrlFromLog "frontend.log"
-$frontendProc = Get-TunnelProcess "8081"
+Write-Host "`n[3/4] Starting Fresh Frontend Tunnel..." -ForegroundColor Cyan
+Start-Process -FilePath "npx.cmd" -ArgumentList "cloudflared", "tunnel", "--url", "http://localhost:8081", "--no-autoupdate" -NoNewWindow -PassThru -RedirectStandardError "frontend.log"
 
-if ($frontendUrl -and $frontendProc) {
-    Write-Host "Existing Frontend Tunnel found: $frontendUrl" -ForegroundColor Yellow
-} else {
-    Write-Host "Starting fresh Frontend Tunnel..." -ForegroundColor Gray
-    if ($frontendProc) { Stop-Process -Id $frontendProc.ProcessId -Force -ErrorAction SilentlyContinue }
-    if (Test-Path "frontend.log") { Remove-Item "frontend.log" -Force -ErrorAction SilentlyContinue }
-
-    Start-Process -FilePath "npx.cmd" -ArgumentList "cloudflared", "tunnel", "--url", "http://localhost:8081", "--no-autoupdate" -NoNewWindow -PassThru -RedirectStandardError "frontend.log"
-    
-    $counter = 0
-    while ($null -eq $frontendUrl -and $counter -lt $maxWait) {
-        Start-Sleep -Seconds 2
-        $frontendUrl = Get-UrlFromLog "frontend.log"
-        $counter += 2
-    }
+$frontendUrl = $null
+$counter = 0
+while ($null -eq $frontendUrl -and $counter -lt $maxWait) {
+    Start-Sleep -Seconds 2
+    $frontendUrl = Get-UrlFromLog "frontend.log"
+    $counter += 2
 }
 
 if ($null -eq $frontendUrl) { Write-Host "Error: Could not retrieve Frontend URL." -ForegroundColor Red; exit 1 }
 Write-Host "Frontend Tunnel: $frontendUrl" -ForegroundColor Green
 
 # 6. Launch Expo
-Write-Host "`n[4/4] Launching Expo..." -ForegroundColor Cyan
+Write-Host "`n[4/4] Launching Expo Bundler..." -ForegroundColor Cyan
 $env:EXPO_PACKAGER_PROXY_URL = $frontendUrl
 $env:EXPO_SKIP_DEPENDENCY_VALIDATION = "1"
+$env:NODE_OPTIONS = "--max-old-space-size=4096"
 
 # Build the correct Expo Go URL
-# Expo Go scans: exp+app://expo-development-client/?url=<encoded tunnel URL>
-# But for Cloudflare tunnels, the simplest working format is just the HTTPS URL itself
-$qrUrl = $frontendUrl
-
-# Restart Packager
-$expoConn = Get-NetTCPConnection -LocalPort 8081 -State Listen -ErrorAction SilentlyContinue
-if ($expoConn) { 
-    Write-Host "Cleaning up old Expo process..." -ForegroundColor Gray
-    Stop-Process -Id $expoConn.OwningProcess -Force -ErrorAction SilentlyContinue 
-    Start-Sleep -Seconds 2 
-}
-
-# Fix Heap Memory Error
-$env:NODE_OPTIONS = "--max-old-space-size=4096"
-$env:EXPO_NODE_OPTIONS = "--max-old-space-size=4096"
+$encodedUrl = [System.Uri]::EscapeDataString($frontendUrl)
+$qrUrl = "exp+app://expo-development-client/?url=$encodedUrl"
 
 Write-Host ""
 Write-Host "==========================================================" -ForegroundColor Magenta
 Write-Host " SCAN THIS QR CODE WITH YOUR PHONE CAMERA" -ForegroundColor Yellow
-Write-Host " It will open in Expo Go automatically" -ForegroundColor Yellow
+Write-Host " It will open in your development client" -ForegroundColor Yellow
 Write-Host "==========================================================" -ForegroundColor Magenta
 Write-Host ""
 
 # Generate QR code in terminal
 node -e "const qr = require('qrcode'); qr.toString('$qrUrl', { type: 'terminal', small: true }, (e, s) => { if (!e) console.log(s); else console.error(e); });"
 
-# Also generate a PNG as fallback
+# Generate File as backup
 node -e "const qr = require('qrcode'); qr.toFile('qrcode.png', '$qrUrl', { width: 400, margin: 2 }, (e) => { if (!e) { require('child_process').exec('start qrcode.png'); } });"
 
 Write-Host ""
 Write-Host "==========================================================" -ForegroundColor Magenta
 Write-Host " If QR doesn't work, open this URL on your phone:" -ForegroundColor Yellow
-Write-Host " $qrUrl" -ForegroundColor Green
+Write-Host " $frontendUrl" -ForegroundColor Green
 Write-Host "==========================================================" -ForegroundColor Magenta
 Write-Host ""
 
-npx.cmd expo start -c --offline
+# Start Metro Bundler in the current terminal
+npx.cmd expo start --offline --clear

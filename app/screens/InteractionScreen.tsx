@@ -2,8 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
 
 import { useAuth } from '../context/AuthContext';
-import * as ReactNavigation from '@react-navigation/native';
-import * as NativeStack from '@react-navigation/native-stack';
+import { useRoute, useNavigation } from '@react-navigation/native';
+import type { RouteProp } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import * as api from '../services/api';
 import { useTheme, ThemeContextType } from '../theme/ThemeProvider';
@@ -19,8 +20,8 @@ interface DrugItem {
 const InteractionScreen: React.FC = () => {
   const theme = useTheme();
   const { user, getToken } = useAuth();
-  const route = ReactNavigation.useRoute() as ReactNavigation.RouteProp<RootStackParamList, 'Interaction'>;
-  const navigation = ReactNavigation.useNavigation() as NativeStack.NativeStackNavigationProp<RootStackParamList>;
+  const route = (useRoute as any)();
+  const navigation = (useNavigation as any)();
   const [selectedDrugs, setSelectedDrugs] = useState<string[]>([]);
   const [availableDrugs, setAvailableDrugs] = useState<DrugItem[]>([]);
   const [loading, setLoading] = useState(true);
