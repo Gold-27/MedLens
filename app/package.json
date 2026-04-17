@@ -4,6 +4,7 @@
   "main": "index.ts",
   "scripts": {
     "start": "npx expo start",
+    "dev": "npx expo start",
     "android": "npx expo start --android",
     "ios": "npx expo start",
     "tunnel": "powershell -ExecutionPolicy Bypass -File ./start-tunnel.ps1",
