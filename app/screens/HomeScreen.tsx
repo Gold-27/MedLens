@@ -208,7 +208,7 @@ const HomeScreen: React.FC = () => {
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
         {/* Top Navigation */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => {/* Handle Menu */}}>
+          <TouchableOpacity onPress={() => navigation.openDrawer()}>
             <Ionicons name="menu-outline" size={28} color={theme.colors.onSurface} />
           </TouchableOpacity>
           <View style={styles.headerActions}>
