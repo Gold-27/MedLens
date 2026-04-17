@@ -100,7 +100,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signInWithGoogle = async () => {
     try {
-      const redirectUrl = Linking.createURL('');
+      console.log('Starting Google Auth...');
+      // Use the 'app://' scheme from app.json
+      const redirectUrl = Linking.createURL('/', { scheme: 'app' });
+      console.log('Redirect URL:', redirectUrl);
       
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -110,17 +113,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         },
       });
 
-      if (error) return { error };
+      if (error) {
+        console.error('Supabase OAuth Error:', error);
+        return { error };
+      }
 
       if (data?.url) {
+        console.log('Opening browser for Google Login...');
         const res = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
+        console.log('WebBrowser result:', res.type);
         
         if (res.type === 'success' && res.url) {
-          // Parse tokens returned by Supabase via deep link
-          // If implicit grant, they are in the hash.
+          console.log('Login successful, parsing tokens...');
           const paramsStr = res.url.split('#')[1] || res.url.split('?')[1];
           if (paramsStr) {
-            // Replace url params formatting
             const searchParams = new URLSearchParams(paramsStr.replace(/\?/g, '&'));
             const access_token = searchParams.get('access_token');
             const refresh_token = searchParams.get('refresh_token');
@@ -130,16 +136,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 access_token,
                 refresh_token,
               });
-              if (sessionError) return { error: sessionError };
+              if (sessionError) {
+                console.error('Session setting error:', sessionError);
+                return { error: sessionError };
+              }
+              console.log('Session established successfully!');
             }
           }
         } else if (res.type === 'cancel' || res.type === 'dismiss') {
+          console.log('User cancelled the sign-in flow.');
           return { error: new Error('User cancelled sign-in') };
         }
       }
       return { error: null };
     } catch (error) {
-      console.error('Google sign in error:', error);
+      console.error('Global Google sign in error:', error);
       return { error: error instanceof Error ? error : new Error('Unknown error') };
     }
   };
