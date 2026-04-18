@@ -173,10 +173,15 @@ const SettingsScreen: React.FC = () => {
       ))}
 
       <View style={[styles.disclaimerContainer, { backgroundColor: theme.colors.accentContainer }]}>
-        <Ionicons name="warning-outline" size={20} color={theme.colors.onAccentContainer} style={styles.disclaimerIcon} />
-        <Text style={[styles.disclaimerText, { color: theme.colors.onAccentContainer }]}>
-          MedLens simplifies medical information for understanding. It does not replace professional medical advice.
-        </Text>
+        <Ionicons name="information-circle-outline" size={24} color={theme.colors.onAccentContainer} style={styles.disclaimerIcon} />
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.disclaimerTitle, { color: theme.colors.onAccentContainer }]}>
+            Medical Disclaimer
+          </Text>
+          <Text style={[styles.disclaimerText, { color: theme.colors.onAccentContainer }]}>
+            MedLens simplifies medical information for understanding. It does not replace professional medical advice, diagnosis, or treatment.
+          </Text>
+        </View>
       </View>
       </View>
     </SafeAreaView>
@@ -262,32 +267,26 @@ const styles = StyleSheet.create({
   disclaimerContainer: {
     marginHorizontal: 24,
     marginTop: 8,
-    marginBottom: 40,
-    padding: 16,
-    borderRadius: 16,
+    marginBottom: 48,
+    padding: 20,
+    borderRadius: 20,
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
+    alignItems: 'flex-start',
+    gap: 16,
   },
   disclaimerIcon: {
-    opacity: 0.8,
+    marginTop: 2,
   },
-  syncCTA: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    gap: 8,
-  },
-  syncText: {
-    fontSize: 14,
-    fontWeight: '600',
+  disclaimerTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 4,
   },
   disclaimerText: {
-    fontSize: 13,
-    lineHeight: 18,
-    flex: 1,
+    fontSize: 14,
+    lineHeight: 20,
     fontWeight: '500',
+    opacity: 0.9,
   },
 });
 
