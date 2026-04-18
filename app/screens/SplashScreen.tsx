@@ -55,16 +55,14 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
         // Wait for auth to initialize — but don't wait if it's still loading
         if (authLoading) return;
 
+        // DEVELOPER RESET: Un-comment the line below to reset onboarding for testing
+        await AsyncStorage.removeItem('hasSeenOnboarding');
+
         const hasSeenOnboarding = await AsyncStorage.getItem('hasSeenOnboarding');
         await new Promise(resolve => setTimeout(resolve, 2000)); // Minimum splash time
         
-        if (user) {
-          navigate('Home');
-        } else if (hasSeenOnboarding === 'true') {
-          navigate('Login');
-        } else {
-          navigate('Onboarding');
-        }
+        // Force Onboarding navigation for review session
+        navigate('Onboarding');
       } catch (error) {
         console.error('Error checking status:', error);
         navigate('Onboarding');
