@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "app",
-    "slug": "app",
-    "scheme": "app",
+    "name": "MedLens",
+    "slug": "medlens",
+    "scheme": "medlens",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
