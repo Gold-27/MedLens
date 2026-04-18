@@ -76,6 +76,9 @@ const SettingsScreen: React.FC = () => {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
       <View style={styles.container}>
         <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Ionicons name="chevron-back" size={28} color={theme.colors.onSurface} />
+          </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: theme.colors.onSurface }]}>Settings</Text>
         </View>
 
@@ -129,9 +132,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 16,
     paddingTop: 24,
     paddingBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  backButton: {
+    padding: 4,
   },
   headerTitle: {
     fontSize: 32,
