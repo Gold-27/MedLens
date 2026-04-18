@@ -11,6 +11,7 @@ export interface SearchResponse {
     warnings: string | null;
     side_effects: string | null;
   };
+  ai_provider?: string;
   eli12: {
     enabled: boolean;
     content: string | null;
@@ -58,7 +59,7 @@ export interface DrugData {
   [key: string]: unknown;
 }
 
-const DEFAULT_TIMEOUT = 8000; // 8 seconds
+const DEFAULT_TIMEOUT = 20000; // 20 seconds
 const MAX_RETRIES = 2;
 
 async function fetchWithRetry(url: string, options: RequestInit, retries = MAX_RETRIES): Promise<Response> {
