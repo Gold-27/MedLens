@@ -105,7 +105,7 @@ const SettingsScreen: React.FC = () => {
               <View key={itemIndex}>
                 {item.type === 'info' ? (
                   <View style={styles.infoRow}>
-                    <Text style={[styles.infoLabel, { color: theme.colors.onSurface }]}>{item.label}</Text>
+                    <Text style={[styles.infoLabel, { color: theme.colors.onSurfaceVariant }]}>{item.label}</Text>
                     <Text style={[
                       styles.infoValue, 
                       { 
@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 24,
     paddingTop: 24,
-    paddingBottom: 16,
+    paddingBottom: 32,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
