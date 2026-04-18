@@ -66,19 +66,32 @@ const HomeScreen: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // Only fetch cabinet data for authenticated users — guests can't save, so skip the API call entirely
-    if (isGuest || !user) return;
+    // Only fetch cabinet data for authenticated users
+    if (isGuest || !user) {
+      setSavedDrugs(new Set());
+      return;
+    }
 
     const initData = async () => {
       try {
+        // 1. Initial Load from Cache (Local-First)
+        const cached = await LocalStorageService.getCachedCabinet();
+        if (cached.length > 0) {
+          setSavedDrugs(new Set(cached.map(item => item.drug_name.toLowerCase())));
+        }
+
+        // 2. Background Revalidation (SWR)
         const token = await getToken();
         if (token) {
           const response = await api.getCabinetItems(token);
           const drugNames = response.items.map(item => item.drug_name.toLowerCase());
+          
+          // Update both state and local storage
           setSavedDrugs(new Set(drugNames));
+          await LocalStorageService.setCachedCabinet(response.items);
         }
       } catch (error) {
-        console.error('Initial data fetch failed:', error);
+        console.error('Cabinet revalidation failed:', error);
       }
     };
     initData();
@@ -149,10 +162,23 @@ const HomeScreen: React.FC = () => {
       if (!token) return;
       const drugKey = result.drug_name.toLowerCase().replace(/\s+/g, '-');
       await api.saveCabinetItem(result.drug_name, drugKey, token);
+      
+      // Update state and refresh cache immediately (Optimistic UI style)
+      setSavedDrugs(prev => {
+        const next = new Set(prev);
+        next.add(result.drug_name.toLowerCase());
+        return next;
+      });
+
+      // Silently refresh the full cabinet cache in background
+      api.getCabinetItems(token).then(resp => {
+        LocalStorageService.setCachedCabinet(resp.items);
+      }).catch(() => {});
+
       Alert.alert('Saved', `${result.drug_name} has been saved to your cabinet.`);
-      setSavedDrugs(prev => new Set([...prev, result.drug_name.toLowerCase()]));
     } catch (error) {
       console.error('Save failed:', error);
+      Alert.alert('Error', 'Failed to save medication. Please check your connection.');
     }
   }, [result, isGuest, getToken]);
 

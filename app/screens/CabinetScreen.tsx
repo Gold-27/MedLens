@@ -6,6 +6,7 @@ import { useNavigation, DrawerActions } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { Ionicons } from '@expo/vector-icons';
 import * as api from '../services/api';
+import { LocalStorageService } from '../services/storage';
 import EmptyState from '../components/EmptyState';
 
 interface CabinetItem {
@@ -43,6 +44,8 @@ const CabinetScreen: React.FC = () => {
       
       const response = await api.getCabinetItems(token);
       setItems(response.items);
+      // Persist to local cache
+      await LocalStorageService.setCachedCabinet(response.items);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       console.error('Failed to fetch cabinet items:', message);
@@ -51,12 +54,26 @@ const CabinetScreen: React.FC = () => {
   }, [user, getToken]);
 
   useEffect(() => {
-    if (user) {
-      fetchCabinetItems().finally(() => setLoading(false));
-    } else {
+    const initCabinet = async () => {
+      if (!user) {
+        setLoading(false);
+        setItems([]);
+        return;
+      }
+
+      // 1. Initial Load from Local Cache (Zero-latency)
+      const cached = await LocalStorageService.getCachedCabinet();
+      if (cached.length > 0) {
+        setItems(cached);
+        setLoading(false); // Show cached data immediately
+      }
+
+      // 2. Background Revalidation
+      await fetchCabinetItems();
       setLoading(false);
-      setItems([]);
-    }
+    };
+
+    initCabinet();
   }, [user, fetchCabinetItems]);
 
   const handleRefresh = useCallback(async () => {
@@ -93,7 +110,14 @@ const CabinetScreen: React.FC = () => {
               }
               
               await api.deleteCabinetItem(item.drug_key, token);
-              setItems(prev => prev.filter(i => i.id !== item.id));
+              
+              // Update state and cache immediately
+              setItems(prev => {
+                const updated = prev.filter(i => i.id !== item.id);
+                LocalStorageService.setCachedCabinet(updated);
+                return updated;
+              });
+              
               setSelectedItems(prev => {
                 const newSet = new Set(prev);
                 newSet.delete(item.id);
