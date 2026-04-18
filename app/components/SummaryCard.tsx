@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch, LayoutAnimation, Platform, UIManager } from 'react-native';
 import { useTheme, ThemeContextType } from '../theme/ThemeProvider';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 export interface SummaryCardProps {
   drugName: string;
@@ -21,7 +26,7 @@ export interface SummaryCardProps {
 
 const SummaryCard: React.FC<SummaryCardProps> = ({
   drugName,
-  source = 'OpenFDA',
+  source = 'FDA (OpenFDA)',
   sections,
   onSave,
   onExport,
@@ -33,105 +38,201 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
   const theme = useTheme();
   const styles = makeStyles(theme);
   const [eli12Enabled, setEli12Enabled] = useState(isEli12);
+  const [activeSection, setActiveSection] = useState<string | null>('whatItDoes');
 
   useEffect(() => {
     setEli12Enabled(isEli12);
   }, [isEli12]);
 
-  const handleToggleEli12 = () => {
-    const newValue = !eli12Enabled;
-    setEli12Enabled(newValue);
-    onToggleEli12?.(newValue);
+  const toggleEli12 = (value: boolean) => {
+    setEli12Enabled(value);
+    onToggleEli12?.(value);
   };
 
-  const handleSave = () => {
-    if (requiresAuth) {
-      // TODO: Trigger auth modal
-    } else {
-      onSave?.();
-    }
+  const toggleSection = (id: string) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setActiveSection(prev => prev === id ? null : id);
   };
 
-  const handleExport = () => {
-    if (requiresAuth) {
-      // TODO: Trigger auth modal
-    } else {
-      onExport?.();
-    }
-  };
+  const formatContent = (content: string | null | undefined) => {
+    if (!content) return null;
 
-  const renderSection = (title: string, content: string | null | undefined) => {
-    if (!content) {
-      return (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{title}</Text>
-          <Text style={styles.missingDataText}>
-            We do not have enough reliable information for this section.
-          </Text>
-        </View>
-      );
+    // Remove any existing bullet point characters to standardize
+    const cleanContent = content.replace(/^[•\-\*]\s*/gm, '').trim();
+    
+    // Split into sentences (simple heuristic)
+    const sentences = cleanContent.split(/(?<=[.!?])\s+(?=[A-Z])/);
+    
+    // If it's short (1-2 sentences) and not too long, return as plain text
+    if (sentences.length <= 2 && cleanContent.length < 150) {
+      return <Text style={styles.sectionContent}>{cleanContent}</Text>;
     }
 
+    // Otherwise, format as bullet points
     return (
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{title}</Text>
-        <Text style={styles.sectionContent}>{content}</Text>
+      <View style={styles.bulletContainer}>
+        {sentences.map((sentence, index) => (
+          <View key={index} style={styles.bulletRow}>
+            <Text style={[styles.bulletPoint, { color: theme.colors.primary }]}>•</Text>
+            <Text style={styles.bulletText}>{sentence.trim()}</Text>
+          </View>
+        ))}
       </View>
     );
   };
+
+  const sectionConfig = [
+    { 
+      id: 'whatItDoes', 
+      title: 'What it does', 
+      content: sections.whatItDoes, 
+      icon: 'medical-outline' as const,
+      color: theme.colors.successContainer,
+      iconColor: theme.colors.onSuccessContainer
+    },
+    { 
+      id: 'howToTake', 
+      title: 'How to take it', 
+      content: sections.howToTake, 
+      icon: 'beaker-outline' as const,
+      color: theme.colors.primaryContainer,
+      iconColor: theme.colors.onPrimaryContainer
+    },
+    { 
+      id: 'warnings', 
+      title: 'Warnings', 
+      content: sections.warnings, 
+      icon: 'warning-outline' as const,
+      color: theme.colors.accentContainer,
+      iconColor: theme.colors.onAccentContainer
+    },
+    { 
+      id: 'sideEffects', 
+      title: 'Possible side effects', 
+      content: sections.sideEffects, 
+      icon: 'list-outline' as const,
+      color: theme.colors.tertiaryContainer,
+      iconColor: theme.colors.onTertiaryContainer
+    },
+  ];
 
   return (
     <View style={styles.card}>
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.drugNameRow}>
-          <Text style={styles.drugName}>{drugName}</Text>
-          <View style={styles.sourceBadge}>
-            <Text style={styles.sourceBadgeText}>Source: {source}</Text>
+        <View style={styles.headerMain}>
+          <View style={styles.titleContainer}>
+            <MaterialCommunityIcons name="pill" size={28} color={theme.colors.primary} style={styles.drugIcon} />
+            <View>
+              <Text style={styles.drugName}>{drugName}</Text>
+              <View style={styles.sourceRow}>
+                <Ionicons name="shield-checkmark" size={14} color={theme.colors.success} />
+                <Text style={styles.sourceText}>Trusted source: {source}</Text>
+              </View>
+            </View>
+          </View>
+          
+          <View style={styles.toggleWrapper}>
+            <Text style={[styles.toggleLabel, { color: eli12Enabled ? theme.colors.primary : theme.colors.outline }]}>
+              ELI12
+            </Text>
+            <Switch
+              value={eli12Enabled}
+              onValueChange={toggleEli12}
+              trackColor={{ false: theme.colors.surfaceVariant, true: theme.colors.primaryContainer }}
+              thumbColor={eli12Enabled ? theme.colors.primary : theme.colors.outline}
+              ios_backgroundColor={theme.colors.surfaceVariant}
+            />
           </View>
         </View>
-        
-        {/* ELI12 Toggle */}
-        <TouchableOpacity
-          style={[styles.eli12Toggle, eli12Enabled && styles.eli12ToggleActive]}
-          onPress={handleToggleEli12}
-        >
-          <Text style={styles.eli12ToggleText}>
-            {eli12Enabled ? 'ELI12 ON' : 'ELI12 OFF'}
-          </Text>
-        </TouchableOpacity>
+
+        {eli12Enabled && (
+          <View style={[styles.eliInfoCard, { backgroundColor: theme.colors.primaryContainer + '40' }]}>
+            <Ionicons name="information-circle" size={20} color={theme.colors.primary} />
+            <View style={styles.eliInfoTextContainer}>
+              <Text style={[styles.eliInfoText, { color: theme.colors.onPrimaryContainer }]}>
+                Simplified mode is ON. We've translated complex terms into easy-to-understand language.
+                <Text style={styles.learnMore}> Learn more</Text>
+              </Text>
+            </View>
+          </View>
+        )}
       </View>
 
-      {/* Sections */}
-      <ScrollView style={styles.sectionsContainer} showsVerticalScrollIndicator={false}>
-        {renderSection('What it does', sections.whatItDoes)}
-        {renderSection('How to take it', sections.howToTake)}
-        {renderSection('Warnings', sections.warnings)}
-        {renderSection('Side effects', sections.sideEffects)}
-      </ScrollView>
+      {/* Accordion Sections */}
+      <View style={styles.accordionContainer}>
+        {sectionConfig.map((section) => {
+          const isOpen = activeSection === section.id;
+          return (
+            <View key={section.id} style={styles.sectionWrapper}>
+              <TouchableOpacity 
+                style={[
+                  styles.sectionHeader, 
+                  { backgroundColor: section.color }
+                ]}
+                onPress={() => toggleSection(section.id)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.sectionHeaderLeft}>
+                  <View style={[styles.sectionIconBg, { backgroundColor: theme.colors.surface + '60' }]}>
+                    <Ionicons name={section.icon} size={20} color={section.iconColor} />
+                  </View>
+                  <Text style={[styles.sectionTitle, { color: section.iconColor }]}>{section.title}</Text>
+                </View>
+                <Ionicons 
+                  name={isOpen ? "chevron-up" : "chevron-down"} 
+                  size={20} 
+                  color={section.iconColor} 
+                />
+              </TouchableOpacity>
+
+              {isOpen ? (
+                <View style={styles.expandedContent}>
+                  {section.content ? formatContent(section.content) : (
+                    <Text style={styles.missingDataText}>
+                      We do not have enough reliable information for this section.
+                    </Text>
+                  )}
+                </View>
+              ) : (
+                <View style={styles.collapsedContent}>
+                   <Text 
+                    style={[styles.previewText, { color: theme.colors.onSurfaceVariant }]} 
+                    numberOfLines={2}
+                  >
+                    {section.content || 'Information not available.'}
+                  </Text>
+                </View>
+              )}
+            </View>
+          );
+        })}
+      </View>
 
       {/* Action Buttons */}
       <View style={styles.actionsRow}>
         <TouchableOpacity
-          style={[styles.actionButton, styles.saveButton]}
-          onPress={handleSave}
+          style={[styles.actionButton, styles.saveButton, { backgroundColor: theme.colors.primary }]}
+          onPress={onSave}
         >
+          <Ionicons name={isSaved ? "archive" : "archive-outline"} size={18} color={theme.colors.onPrimary} />
           <Text style={styles.actionButtonText}>
-            {isSaved ? 'Saved' : 'Save'}
+            {isSaved ? 'In cabinet' : 'Save to cabinet'}
           </Text>
         </TouchableOpacity>
         
         <TouchableOpacity
-          style={[styles.actionButton, styles.exportButton]}
-          onPress={handleExport}
+          style={[styles.actionButton, styles.exportButton, { borderColor: theme.colors.outlineVariant, borderWidth: 1 }]}
+          onPress={onExport}
         >
-          <Text style={styles.actionButtonText}>Export</Text>
+          <Ionicons name="share-outline" size={18} color={theme.colors.onSurface} />
+          <Text style={[styles.actionButtonText, { color: theme.colors.onSurface }]}>Export summary</Text>
         </TouchableOpacity>
       </View>
 
       {/* Disclaimer */}
-      <View style={styles.disclaimer}>
-        <Text style={styles.disclaimerText}>
+      <View style={[styles.footerDisclaimer, { borderTopColor: theme.colors.outlineVariant }]}>
+        <Text style={styles.footerDisclaimerText}>
           MedLens simplifies medical information. It does not replace professional medical advice.
         </Text>
       </View>
@@ -142,105 +243,187 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
 const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
   card: {
     backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.lg,
-    padding: theme.spacing.lg,
+    borderRadius: 24,
+    padding: 20,
     ...theme.elevation.medium,
+    marginBottom: 20,
   },
   header: {
-    marginBottom: theme.spacing.lg,
+    marginBottom: 20,
   },
-  drugNameRow: {
+  headerMain: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: theme.spacing.sm,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  titleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  drugIcon: {
+    marginRight: 12,
   },
   drugName: {
-    ...theme.typography.headlineSmall,
+    fontSize: 22,
+    fontWeight: '700',
     color: theme.colors.onSurface,
+    letterSpacing: -0.5,
+  },
+  sourceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 2,
+  },
+  sourceText: {
+    fontSize: 12,
+    color: theme.colors.outline,
+    fontWeight: '500',
+  },
+  toggleWrapper: {
+    alignItems: 'center',
+    marginLeft: 12,
+  },
+  toggleLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    marginBottom: 2,
+  },
+  eliInfoCard: {
+    flexDirection: 'row',
+    padding: 12,
+    borderRadius: 12,
+    alignItems: 'flex-start',
+    gap: 10,
+    marginTop: 8,
+  },
+  eliInfoTextContainer: {
     flex: 1,
-    marginRight: theme.spacing.sm,
   },
-  sourceBadge: {
-    backgroundColor: theme.colors.surfaceContainer,
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: theme.spacing.xs,
-    borderRadius: theme.borderRadius.sm,
+  eliInfoText: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '500',
   },
-  sourceBadgeText: {
-    ...theme.typography.labelSmall,
-    color: theme.colors.onSurfaceVariant,
+  learnMore: {
+    fontWeight: '700',
+    textDecorationLine: 'underline',
   },
-  eli12Toggle: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.xs,
-    backgroundColor: theme.colors.surfaceContainer,
-    borderRadius: theme.borderRadius.sm,
+  accordionContainer: {
+    gap: 12,
+    marginBottom: 24,
   },
-  eli12ToggleActive: {
-    backgroundColor: theme.colors.primaryContainer,
+  sectionWrapper: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: theme.colors.surfaceContainerLow,
   },
-  eli12ToggleText: {
-    ...theme.typography.labelMedium,
-    color: theme.colors.onSurface,
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 12,
   },
-  sectionsContainer: {
-    maxHeight: 400,
-    marginBottom: theme.spacing.lg,
+  sectionHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
-  section: {
-    marginBottom: theme.spacing.lg,
+  sectionIconBg: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   sectionTitle: {
-    ...theme.typography.titleMedium,
-    color: theme.colors.onSurface,
-    marginBottom: theme.spacing.xs,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  expandedContent: {
+    padding: 16,
+    paddingTop: 8,
+  },
+  collapsedContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    marginTop: -4,
+  },
+  previewText: {
+    fontSize: 13,
+    lineHeight: 18,
+    opacity: 0.8,
   },
   sectionContent: {
-    ...theme.typography.bodyMedium,
+    fontSize: 15,
+    lineHeight: 22,
     color: theme.colors.onSurface,
-    lineHeight: theme.typography.bodyMedium.lineHeight * 1.3,
+  },
+  bulletContainer: {
+    gap: 10,
+  },
+  bulletRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  bulletPoint: {
+    fontSize: 20,
+    lineHeight: 22,
+    marginTop: -2,
+  },
+  bulletText: {
+    flex: 1,
+    fontSize: 15,
+    lineHeight: 22,
+    color: theme.colors.onSurface,
   },
   missingDataText: {
-    ...theme.typography.bodyMedium,
+    fontSize: 14,
     color: theme.colors.onSurfaceVariant,
     fontStyle: 'italic',
   },
   actionsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: theme.spacing.lg,
+    gap: 12,
+    marginBottom: 20,
   },
   actionButton: {
     flex: 1,
-    paddingVertical: theme.spacing.sm,
-    borderRadius: theme.borderRadius.md,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: 16,
+    gap: 8,
   },
   saveButton: {
-    backgroundColor: theme.colors.primary,
-    marginRight: theme.spacing.sm,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
   exportButton: {
-    backgroundColor: theme.colors.secondary,
-    marginLeft: theme.spacing.sm,
+    backgroundColor: theme.colors.surface,
   },
   actionButtonText: {
-    ...theme.typography.labelLarge,
+    fontSize: 14,
+    fontWeight: '700',
     color: theme.colors.onPrimary,
   },
-  disclaimer: {
-    padding: theme.spacing.md,
-    backgroundColor: theme.colors.surfaceContainerLow,
-    borderRadius: theme.borderRadius.md,
+  footerDisclaimer: {
+    paddingTop: 16,
+    borderTopWidth: 1,
+    alignItems: 'center',
   },
-  disclaimerText: {
-    ...theme.typography.bodySmall,
-    color: theme.colors.onSurfaceVariant,
+  footerDisclaimerText: {
+    fontSize: 11,
+    color: theme.colors.outline,
     textAlign: 'center',
+    lineHeight: 16,
   },
 });
 
-export default SummaryCard;
+export default SummaryCard;
