@@ -17,13 +17,15 @@ function Get-SafeContent($path) {
     }
 }
 
-function Get-UrlFromLog($logPath) {
-    if (-not (Test-Path $logPath)) { return $null }
-    $content = Get-SafeContent $logPath
-    # Support Cloudflare, ngrok, and localtunnel
-    if ($content -match "(https://[a-zA-Z0-9-]+\.trycloudflare\.com)") { return $matches[1] }
-    if ($content -match "(https://[a-zA-Z0-9-]+\.ngrok-free\.app)") { return $matches[1] }
-    if ($content -match "(https://[a-zA-Z0-9-]+\.loca\.lt)") { return $matches[1] }
+function Get-UrlFromLog($filter) {
+    # Check log files matching the filter
+    $logs = Get-ChildItem -Path "." -Filter $filter | Sort-Object LastWriteTime -Descending
+    foreach ($log in $logs) {
+        $content = Get-SafeContent $log.FullName
+        if ($content -match "(https://[a-zA-Z0-9-]+\.trycloudflare\.com)") { return $matches[1] }
+        if ($content -match "(https://[a-zA-Z0-9-]+\.ngrok-free\.app)") { return $matches[1] }
+        if ($content -match "(https://[a-zA-Z0-9-]+\.loca\.lt)") { return $matches[1] }
+    }
     return $null
 }
 
@@ -53,16 +55,19 @@ $env:EXPO_SKIP_DEPENDENCY_VALIDATION = "1"
 $env:EXPO_NO_TELEMETRY = "1"
 
 # Kill all tunnel processes and existing dev servers
-Get-Process "cloudflared" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+Get-Process "cloudflared*" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 Get-Process "ngrok" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+Get-Process "node" -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -like "*localtunnel*" } | Stop-Process -Force -ErrorAction SilentlyContinue
 Stop-ProcessOnPort 3001
 Stop-ProcessOnPort 8081
-Stop-ProcessOnPort 8082 # Clear fallback port too
+Stop-ProcessOnPort 8082
 
 # Wipe stale logs
-@("backend.log", "frontend.log", "qrcode.png") | ForEach-Object {
+@("backend.log", "frontend.log", "qrcode.png", "backend*.log", "frontend*.log") | ForEach-Object {
     if (Test-Path $_) { Remove-Item $_ -Force -ErrorAction SilentlyContinue }
 }
+Write-Host "Waiting for handles to release..." -ForegroundColor Gray
+Start-Sleep -Seconds 3
 
 $maxWait = 120
 
@@ -79,15 +84,25 @@ if (-not $apiReady) { Write-Host "Error: Backend failed to start." -ForegroundCo
 Write-Host "Backend API is LIVE!" -ForegroundColor Green
 
 # 3. Handle Backend Tunnel (Port 3001)
-Write-Host "`n[2/4] Starting Fresh Backend Tunnel (localtunnel)..." -ForegroundColor Cyan
-Start-Process -FilePath "cmd.exe" -ArgumentList "/c npx localtunnel --port 3001 > backend.log 2>&1" -NoNewWindow -PassThru
+Write-Host "`n[2/4] Starting Fresh Backend Tunnel (Cloudflare)..." -ForegroundColor Cyan
+$backendLog = "backend_$(Get-Date -Format 'HHmmss').log"
+Start-Process -FilePath "cmd.exe" -ArgumentList "/c npx cloudflared tunnel --url http://127.0.0.1:3001 --no-autoupdate --metrics 127.0.0.1:0 > $backendLog 2>&1" -NoNewWindow -PassThru
 
 $backendUrl = $null
 $counter = 0
 while ($null -eq $backendUrl -and $counter -lt $maxWait) {
-    Start-Sleep -Seconds 2
-    $backendUrl = Get-UrlFromLog "backend.log"
-    $counter += 2
+    # Check if process died
+    $proc = Get-Process "cloudflared*" -ErrorAction SilentlyContinue 
+    if ($null -eq $proc -and $counter -gt 15 -and $counter -lt ($maxWait - 10)) {
+        Write-Host "Backend tunnel process died, retrying..." -ForegroundColor Yellow
+        $backendLog = "backend_retry_$(Get-Date -Format 'HHmmss').log"
+        Start-Process -FilePath "cmd.exe" -ArgumentList "/c .\node_modules\.bin\cloudflared.cmd tunnel --url http://127.0.0.1:3001 --no-autoupdate --protocol http2 --metrics 127.0.0.1:0 > $backendLog 2>&1" -NoNewWindow -PassThru
+        Start-Sleep -Seconds 5
+    }
+
+    Start-Sleep -Seconds 4
+    $backendUrl = Get-UrlFromLog "backend*.log"
+    $counter += 4
 }
 
 if ($null -eq $backendUrl) { Write-Host "Error: Could not retrieve Backend URL." -ForegroundColor Red; exit 1 }
@@ -103,15 +118,24 @@ if (Test-Path ".env") {
 }
 
 # 5. Handle Frontend Tunnel (Port 8081)
-Write-Host "`n[3/4] Starting Fresh Frontend Tunnel (localtunnel)..." -ForegroundColor Cyan
-Start-Process -FilePath "cmd.exe" -ArgumentList "/c npx localtunnel --port 8081 > frontend.log 2>&1" -NoNewWindow -PassThru
+Write-Host "`n[3/4] Starting Fresh Frontend Tunnel (Cloudflare)..." -ForegroundColor Cyan
+$frontendLog = "frontend_$(Get-Date -Format 'HHmmss').log"
+Start-Process -FilePath "cmd.exe" -ArgumentList "/c npx cloudflared tunnel --url http://127.0.0.1:8081 --no-autoupdate --metrics 127.0.0.1:0 > $frontendLog 2>&1" -NoNewWindow -PassThru
 
 $frontendUrl = $null
 $counter = 0
 while ($null -eq $frontendUrl -and $counter -lt $maxWait) {
-    Start-Sleep -Seconds 2
-    $frontendUrl = Get-UrlFromLog "frontend.log"
-    $counter += 2
+    # Simple wait for propagation
+    Start-Sleep -Seconds 5
+    $frontendUrl = Get-UrlFromLog "frontend*.log"
+    
+    # If it died, retry once
+    if ($null -eq $frontendUrl -and $counter -gt 15 -and $null -eq (Get-Process "cloudflared*" -ErrorAction SilentlyContinue)) {
+         $frontendLog = "frontend_retry_$(Get-Date -Format 'HHmmss').log"
+         Start-Process -FilePath "cmd.exe" -ArgumentList "/c .\node_modules\.bin\cloudflared.cmd tunnel --url http://127.0.0.1:8081 --no-autoupdate --protocol http2 --metrics 127.0.0.1:0 > $frontendLog 2>&1" -NoNewWindow -PassThru
+    }
+    
+    $counter += 5
 }
 
 if ($null -eq $frontendUrl) { Write-Host "Error: Could not retrieve Frontend URL." -ForegroundColor Red; exit 1 }
@@ -119,7 +143,7 @@ Write-Host "Frontend Tunnel: $frontendUrl" -ForegroundColor Green
 
 # Wait for tunnel propagation (Fixes the 'QR works but app doesn't open' issue)
 Write-Host "Waiting for tunnel propagation..." -ForegroundColor Gray
-Start-Sleep -Seconds 6
+Start-Sleep -Seconds 5
 
 # 6. Launch Expo
 Write-Host "`n[4/4] Launching Expo Bundler..." -ForegroundColor Cyan
