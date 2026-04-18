@@ -53,6 +53,18 @@ const HomeScreen: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    // Check for navigation params if we came from drawer search
+    const route = (navigation as any).getState()?.routes.find((r: any) => r.name === 'HomeDrawer');
+    const searchQuery = route?.params?.searchQuery;
+    
+    if (searchQuery) {
+      handleSearch(searchQuery);
+      // Clear navigation params to prevent re-triggering on every mount/update
+      navigation.setParams({ searchQuery: undefined });
+    }
+  }, [navigation, handleSearch]);
+
+  useEffect(() => {
     // Load local data on mount
     const loadLocalData = async () => {
       const [recent, settings] = await Promise.all([
@@ -207,19 +219,9 @@ const HomeScreen: React.FC = () => {
     if (state === 'empty') {
       return (
         <View style={styles.emptyContent}>
-          <Text style={[styles.headlineText, { color: theme.colors.onSurfaceVariant, marginBottom: 40 }]}>
+          <Text style={[styles.headlineText, { color: theme.colors.onSurfaceVariant }]}>
             How can I help you with your medication today?
           </Text>
-          
-          {recentSearches.length > 0 && (
-            <RecentSearches 
-              searches={recentSearches} 
-              onSearchPress={handleSearch}
-              onViewAll={() => {/* Optional: Navigate to full history */}}
-            />
-          )}
-
-          <TrustBadges />
         </View>
       );
     }
@@ -316,7 +318,7 @@ const HomeScreen: React.FC = () => {
         </ScrollView>
 
         {/* Floating Bottom Bar */}
-        <View style={[styles.floatingFooter, { paddingBottom: isKeyboardVisible ? 12 : Math.max(insets.bottom, 12) }]}>
+        <View style={[styles.floatingFooter, { paddingBottom: isKeyboardVisible ? 20 : Math.max(insets.bottom + 20, 32) }]}>
           <InputBar
             onSubmit={handleSearch}
             loading={state === 'loading'}
@@ -397,8 +399,8 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
   },
   emptyContent: {
     flex: 1,
-    justifyContent: 'flex-start',
-    paddingTop: 32,
+    justifyContent: 'center',
+    paddingBottom: 60, // Balance for floating footer
   },
   resultContainer: {
     paddingHorizontal: 20,
