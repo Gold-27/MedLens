@@ -20,9 +20,10 @@ function Get-SafeContent($path) {
 function Get-UrlFromLog($logPath) {
     if (-not (Test-Path $logPath)) { return $null }
     $content = Get-SafeContent $logPath
-    if ($content -match "(https://[a-zA-Z0-9-]+\.trycloudflare\.com)") {
-        return $matches[1]
-    }
+    # Support Cloudflare, ngrok, and localtunnel
+    if ($content -match "(https://[a-zA-Z0-9-]+\.trycloudflare\.com)") { return $matches[1] }
+    if ($content -match "(https://[a-zA-Z0-9-]+\.ngrok-free\.app)") { return $matches[1] }
+    if ($content -match "(https://[a-zA-Z0-9-]+\.loca\.lt)") { return $matches[1] }
     return $null
 }
 
@@ -51,8 +52,9 @@ $env:NODE_OPTIONS = "--dns-result-order=ipv4first --max-old-space-size=4096"
 $env:EXPO_SKIP_DEPENDENCY_VALIDATION = "1"
 $env:EXPO_NO_TELEMETRY = "1"
 
-# Kill all cloudflared and existing dev servers
+# Kill all tunnel processes and existing dev servers
 Get-Process "cloudflared" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+Get-Process "ngrok" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 Stop-ProcessOnPort 3001
 Stop-ProcessOnPort 8081
 Stop-ProcessOnPort 8082 # Clear fallback port too
@@ -77,8 +79,8 @@ if (-not $apiReady) { Write-Host "Error: Backend failed to start." -ForegroundCo
 Write-Host "Backend API is LIVE!" -ForegroundColor Green
 
 # 3. Handle Backend Tunnel (Port 3001)
-Write-Host "`n[2/4] Starting Fresh Backend Tunnel..." -ForegroundColor Cyan
-Start-Process -FilePath "npx.cmd" -ArgumentList "cloudflared", "tunnel", "--url", "http://127.0.0.1:3001", "--no-autoupdate" -NoNewWindow -PassThru -RedirectStandardError "backend.log"
+Write-Host "`n[2/4] Starting Fresh Backend Tunnel (localtunnel)..." -ForegroundColor Cyan
+Start-Process -FilePath "cmd.exe" -ArgumentList "/c npx localtunnel --port 3001 > backend.log 2>&1" -NoNewWindow -PassThru
 
 $backendUrl = $null
 $counter = 0
@@ -101,8 +103,8 @@ if (Test-Path ".env") {
 }
 
 # 5. Handle Frontend Tunnel (Port 8081)
-Write-Host "`n[3/4] Starting Fresh Frontend Tunnel..." -ForegroundColor Cyan
-Start-Process -FilePath "npx.cmd" -ArgumentList "cloudflared", "tunnel", "--url", "http://127.0.0.1:8081", "--no-autoupdate" -NoNewWindow -PassThru -RedirectStandardError "frontend.log"
+Write-Host "`n[3/4] Starting Fresh Frontend Tunnel (localtunnel)..." -ForegroundColor Cyan
+Start-Process -FilePath "cmd.exe" -ArgumentList "/c npx localtunnel --port 8081 > frontend.log 2>&1" -NoNewWindow -PassThru
 
 $frontendUrl = $null
 $counter = 0
@@ -116,8 +118,8 @@ if ($null -eq $frontendUrl) { Write-Host "Error: Could not retrieve Frontend URL
 Write-Host "Frontend Tunnel: $frontendUrl" -ForegroundColor Green
 
 # Wait for tunnel propagation (Fixes the 'QR works but app doesn't open' issue)
-Write-Host "Waiting for Cloudflare edge propagation..." -ForegroundColor Gray
-Start-Sleep -Seconds 4
+Write-Host "Waiting for tunnel propagation..." -ForegroundColor Gray
+Start-Sleep -Seconds 6
 
 # 6. Launch Expo
 Write-Host "`n[4/4] Launching Expo Bundler..." -ForegroundColor Cyan
