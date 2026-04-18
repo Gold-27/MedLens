@@ -53,6 +53,18 @@ const HomeScreen: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    // Check for navigation params if we came from drawer search
+    const route = (navigation as any).getState()?.routes.find((r: any) => r.name === 'HomeDrawer');
+    const searchQuery = route?.params?.searchQuery;
+    
+    if (searchQuery) {
+      handleSearch(searchQuery);
+      // Clear navigation params to prevent re-triggering on every mount/update
+      navigation.setParams({ searchQuery: undefined });
+    }
+  }, [navigation, handleSearch]);
+
+  useEffect(() => {
     // Load local data on mount
     const loadLocalData = async () => {
       const [recent, settings] = await Promise.all([
@@ -66,19 +78,32 @@ const HomeScreen: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // Only fetch cabinet data for authenticated users — guests can't save, so skip the API call entirely
-    if (isGuest || !user) return;
+    // Only fetch cabinet data for authenticated users
+    if (isGuest || !user) {
+      setSavedDrugs(new Set());
+      return;
+    }
 
     const initData = async () => {
       try {
+        // 1. Initial Load from Cache (Local-First)
+        const cached = await LocalStorageService.getCachedCabinet();
+        if (cached.length > 0) {
+          setSavedDrugs(new Set(cached.map(item => item.drug_name.toLowerCase())));
+        }
+
+        // 2. Background Revalidation (SWR)
         const token = await getToken();
         if (token) {
           const response = await api.getCabinetItems(token);
           const drugNames = response.items.map(item => item.drug_name.toLowerCase());
+          
+          // Update both state and local storage
           setSavedDrugs(new Set(drugNames));
+          await LocalStorageService.setCachedCabinet(response.items);
         }
       } catch (error) {
-        console.error('Initial data fetch failed:', error);
+        console.error('Cabinet revalidation failed:', error);
       }
     };
     initData();
@@ -149,10 +174,23 @@ const HomeScreen: React.FC = () => {
       if (!token) return;
       const drugKey = result.drug_name.toLowerCase().replace(/\s+/g, '-');
       await api.saveCabinetItem(result.drug_name, drugKey, token);
+      
+      // Update state and refresh cache immediately (Optimistic UI style)
+      setSavedDrugs(prev => {
+        const next = new Set(prev);
+        next.add(result.drug_name.toLowerCase());
+        return next;
+      });
+
+      // Silently refresh the full cabinet cache in background
+      api.getCabinetItems(token).then(resp => {
+        LocalStorageService.setCachedCabinet(resp.items);
+      }).catch(() => {});
+
       Alert.alert('Saved', `${result.drug_name} has been saved to your cabinet.`);
-      setSavedDrugs(prev => new Set([...prev, result.drug_name.toLowerCase()]));
     } catch (error) {
       console.error('Save failed:', error);
+      Alert.alert('Error', 'Failed to save medication. Please check your connection.');
     }
   }, [result, isGuest, getToken]);
 
@@ -181,19 +219,9 @@ const HomeScreen: React.FC = () => {
     if (state === 'empty') {
       return (
         <View style={styles.emptyContent}>
-          <Text style={[styles.headlineText, { color: theme.colors.onSurfaceVariant, marginBottom: 40 }]}>
+          <Text style={[styles.headlineText, { color: theme.colors.onSurfaceVariant }]}>
             How can I help you with your medication today?
           </Text>
-          
-          {recentSearches.length > 0 && (
-            <RecentSearches 
-              searches={recentSearches} 
-              onSearchPress={handleSearch}
-              onViewAll={() => {/* Optional: Navigate to full history */}}
-            />
-          )}
-
-          <TrustBadges />
         </View>
       );
     }
@@ -266,7 +294,7 @@ const HomeScreen: React.FC = () => {
           <View style={styles.headerActions}>
             <TouchableOpacity
               style={[styles.cabinetPill, { backgroundColor: theme.colors.primaryContainer, borderWidth: 0 }]}
-              onPress={() => navigation.navigate('Cabinet')}
+              onPress={() => isGuest ? navigation.navigate('SignUp') : navigation.navigate('Cabinet')}
             >
               <Ionicons name="briefcase" size={18} color={theme.colors.onPrimaryContainer} />
               <Text style={[styles.cabinetText, { color: theme.colors.onPrimaryContainer }]}>Cabinet</Text>
@@ -290,7 +318,7 @@ const HomeScreen: React.FC = () => {
         </ScrollView>
 
         {/* Floating Bottom Bar */}
-        <View style={[styles.floatingFooter, { paddingBottom: isKeyboardVisible ? 12 : Math.max(insets.bottom, 12) }]}>
+        <View style={[styles.floatingFooter, { paddingBottom: isKeyboardVisible ? 20 : Math.max(insets.bottom + 20, 32) }]}>
           <InputBar
             onSubmit={handleSearch}
             loading={state === 'loading'}
@@ -371,8 +399,8 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
   },
   emptyContent: {
     flex: 1,
-    justifyContent: 'flex-start',
-    paddingTop: 32,
+    justifyContent: 'center',
+    paddingBottom: 60, // Balance for floating footer
   },
   resultContainer: {
     paddingHorizontal: 20,

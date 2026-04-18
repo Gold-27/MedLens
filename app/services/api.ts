@@ -1,4 +1,5 @@
 import { Config } from '../config';
+import COMMON_DRUGS from '../assets/data/common_drugs.json';
 
 export interface SearchResponse {
   drug_name: string;
@@ -122,9 +123,48 @@ export async function searchMedication(query: string, eli12Enabled = false): Pro
 
 // Autocomplete suggestions
 export async function getAutocomplete(query: string): Promise<AutocompleteResponse> {
-  return apiRequest<AutocompleteResponse>(`${Config.ENDPOINTS.AUTOCCOMPLETE}?q=${encodeURIComponent(query)}`, {
-    method: 'GET',
-  });
+  const normalizedQuery = query.toLowerCase().trim();
+  if (!normalizedQuery) return { query, suggestions: [] };
+
+  // 1. Local Search First (Instant, Zero API Cost)
+  const localSuggestions = (COMMON_DRUGS as any[])
+    .filter(d => 
+      d.name.toLowerCase().includes(normalizedQuery) || 
+      d.drug_name.toLowerCase().includes(normalizedQuery)
+    )
+    .slice(0, 5)
+    .map(d => ({
+      name: d.name,
+      drug_name: d.drug_name,
+      type: d.type as 'brand' | 'generic'
+    }));
+
+  try {
+    // 2. Attempt API Search for more comprehensive results
+    const apiResponse = await apiRequest<AutocompleteResponse>(`${Config.ENDPOINTS.AUTOCCOMPLETE}?q=${encodeURIComponent(query)}`, {
+      method: 'GET',
+    });
+    
+    // Merge results, prioritizing local hits but removing duplicates
+    const combined = [...localSuggestions];
+    apiResponse.suggestions.forEach(apiSug => {
+      if (!combined.some(c => c.name.toLowerCase() === apiSug.name.toLowerCase())) {
+        combined.push(apiSug);
+      }
+    });
+
+    return {
+      query,
+      suggestions: combined.slice(0, 10),
+    };
+  } catch (error) {
+    // 3. Fallback: If offline or API fails, return current local matches
+    console.warn('Autocomplete API failed, using local fallback:', error);
+    return {
+      query,
+      suggestions: localSuggestions,
+    };
+  }
 }
 
 // ELI12 toggle

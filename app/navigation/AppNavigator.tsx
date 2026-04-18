@@ -1,10 +1,12 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItemList, DrawerContentComponentProps } from '@react-navigation/drawer';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme, ThemeContextType } from '../theme/ThemeProvider';
+import { LocalStorageService } from '../services/storage';
+import { useNavigation } from '@react-navigation/native';
 import SplashScreen from '../screens/SplashScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
 import HomeScreen from '../screens/HomeScreen';
@@ -13,6 +15,7 @@ import InteractionScreen from '../screens/InteractionScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import SignUpScreen from '../screens/SignUpScreen';
 import LoginScreen from '../screens/LoginScreen';
+import { useAuth } from '../context/AuthContext';
 
 export type RootStackParamList = {
   Splash: undefined;
@@ -36,19 +39,104 @@ const Drawer = (createDrawerNavigator as any)();
 
 const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
   const theme = useTheme();
+  const navigation = useNavigation();
+  const { signOut, isGuest, user } = useAuth();
+  const [history, setHistory] = React.useState<string[]>([]);
+
+  React.useEffect(() => {
+    const loadHistory = async () => {
+      const searches = await LocalStorageService.getRecentSearches();
+      setHistory(searches);
+    };
+    
+    // Refresh history when drawer opens
+    const unsubscribe = props.navigation.addListener('drawerOpen', loadHistory);
+    loadHistory();
+    return unsubscribe;
+  }, [props.navigation]);
+
+  const handleHistoryPress = (query: string) => {
+    (navigation as any).navigate('HomeDrawer', { searchQuery: query });
+    props.navigation.closeDrawer();
+  };
+
+  const clearHistory = async () => {
+    await LocalStorageService.clearRecentSearches();
+    setHistory([]);
+  };
+
+  const handleLogout = () => {
+    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+      { text: 'Cancel', style: 'cancel' },
+      { 
+        text: 'Sign Out', 
+        style: 'destructive', 
+        onPress: async () => {
+          try {
+            await signOut();
+            props.navigation.closeDrawer();
+            (navigation as any).reset({
+              index: 0,
+              routes: [{ name: 'Login' }],
+            });
+          } catch (error) {
+            console.error('Logout error:', error);
+          }
+        } 
+      },
+    ]);
+  };
+
   return (
-    <DrawerContentScrollView {...props} style={{ backgroundColor: theme.colors.background }}>
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <View style={styles.drawerHeader}>
         <View style={[styles.logoContainer, { backgroundColor: theme.colors.primary }]}>
           <Ionicons name="medical" size={32} color={theme.colors.onPrimary} />
         </View>
         <Text style={[styles.appName, { color: theme.colors.onSurface }]}>MedLens</Text>
-        <Text style={[styles.tagline, { color: theme.colors.onSurfaceVariant }]}>
-          Medication made clear
-        </Text>
+        {!isGuest && (
+          <Text style={[styles.userEmail, { color: theme.colors.onSurfaceVariant }]} numberOfLines={1}>
+            {user?.email}
+          </Text>
+        )}
       </View>
-      <DrawerItemList {...props} />
-    </DrawerContentScrollView>
+
+      <View style={styles.historySection}>
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.onSurfaceVariant }]}>SEARCH HISTORY</Text>
+          {history.length > 0 && (
+            <TouchableOpacity onPress={clearHistory}>
+              <Text style={[styles.clearText, { color: theme.colors.primary }]}>Clear</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {history.length === 0 ? (
+          <View style={styles.emptyHistory}>
+            <Ionicons name="time-outline" size={48} color={theme.colors.outlineVariant} />
+            <Text style={[styles.emptyText, { color: theme.colors.onSurfaceVariant }]}>
+              You do not have any search history yet
+            </Text>
+          </View>
+        ) : (
+          <ScrollView style={styles.historyList} showsVerticalScrollIndicator={false}>
+            {history.map((item, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[styles.historyItem, { borderBottomColor: theme.colors.outlineVariant }]}
+                onPress={() => handleHistoryPress(item)}
+              >
+                <Ionicons name="search-outline" size={20} color={theme.colors.onSurfaceVariant} style={styles.historyIcon} />
+                <Text style={[styles.historyText, { color: theme.colors.onSurface }]} numberOfLines={1}>
+                  {item}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        )}
+      </View>
+
+    </View>
   );
 };
 
@@ -56,14 +144,11 @@ const DrawerNavigator: React.FC = () => {
   const theme = useTheme();
   return (
     <Drawer.Navigator
+      useLegacyImplementation={false}
       drawerContent={(props: DrawerContentComponentProps) => <CustomDrawerContent {...props} />}
       screenOptions={{
         headerShown: false,
-        drawerActiveBackgroundColor: theme.colors.primaryContainer,
-        drawerActiveTintColor: theme.colors.onPrimaryContainer,
-        drawerInactiveTintColor: theme.colors.onSurface,
-        drawerLabelStyle: { marginLeft: -20, fontSize: 16, fontWeight: '500' },
-        drawerStyle: { backgroundColor: theme.colors.background, width: 280 },
+        drawerStyle: { backgroundColor: theme.colors.background, width: 300 },
       }}
     >
       <Drawer.Screen
@@ -71,23 +156,6 @@ const DrawerNavigator: React.FC = () => {
         component={HomeScreen}
         options={{
           drawerLabel: 'Home',
-          drawerIcon: ({ color, size }: { color: string; size: number }) => <Ionicons name="home-outline" size={size} color={color} />,
-        }}
-      />
-      <Drawer.Screen
-        name="CabinetDrawer"
-        component={CabinetScreen}
-        options={{
-          drawerLabel: 'My Cabinet',
-          drawerIcon: ({ color, size }: { color: string; size: number }) => <Ionicons name="briefcase-outline" size={size} color={color} />,
-        }}
-      />
-      <Drawer.Screen
-        name="SettingsDrawer"
-        component={SettingsScreen}
-        options={{
-          drawerLabel: 'Settings',
-          drawerIcon: ({ color, size }: { color: string; size: number }) => <Ionicons name="settings-outline" size={size} color={color} />,
         }}
       />
     </Drawer.Navigator>
@@ -107,6 +175,12 @@ const AppNavigator = () => {
           options={{ gestureEnabled: false, headerBackVisible: false }} 
         />
         <Stack.Screen name="Home" component={DrawerNavigator} />
+        <Stack.Screen name="Cabinet" component={CabinetScreen} />
+        <Stack.Screen 
+          name="Settings" 
+          component={SettingsScreen} 
+          options={{ gestureEnabled: false }}
+        />
         <Stack.Screen
           name="Interaction"
           component={InteractionScreen}
@@ -119,26 +193,80 @@ const AppNavigator = () => {
 
 const styles = StyleSheet.create({
   drawerHeader: {
-    padding: 20,
+    padding: 24,
+    paddingTop: 60,
     alignItems: 'center',
-    marginBottom: 10,
   },
   logoContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
   },
-  appName: {
-    fontSize: 22,
-    fontWeight: '700',
-    marginBottom: 4,
+  headerText: {
+    marginTop: 8,
   },
-  tagline: {
+  appName: {
+    fontSize: 24,
+    fontWeight: '800',
+    letterSpacing: -0.5,
+  },
+  userEmail: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  historySection: {
+    flex: 1,
+    paddingTop: 24,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 1,
+  },
+  clearText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  historyList: {
+    flex: 1,
+  },
+  historyItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+  },
+  historyIcon: {
+    marginRight: 16,
+  },
+  historyText: {
+    fontSize: 16,
+    fontWeight: '500',
+    flex: 1,
+  },
+  emptyHistory: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 40,
+    paddingBottom: 100,
+  },
+  emptyText: {
+    marginTop: 16,
     fontSize: 14,
-    fontWeight: '400',
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });
 

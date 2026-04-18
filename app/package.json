@@ -53,6 +53,7 @@
     "@types/yargs-parser": "^21.0.3",
     "babel-preset-expo": "~54.0.0",
     "cloudflared": "^0.7.1",
+    "localtunnel": "^2.0.2",
     "qrcode": "^1.5.3",
     "typescript": "~5.9.2"
   },
