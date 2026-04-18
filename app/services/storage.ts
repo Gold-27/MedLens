@@ -1,10 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { SearchResponse } from './api';
+import { SearchResponse, CabinetItem } from './api';
 
 const KEYS = {
   RECENT_SEARCHES: 'ml_recent_searches',
   SEARCH_CACHE: 'ml_search_cache_',
   INTERACTION_CACHE: 'ml_interaction_cache_',
+  CABINET: 'ml_cabinet',
   SETTINGS: 'ml_settings',
 };
 
@@ -121,5 +122,21 @@ export const LocalStorageService = {
     const updated = { ...current, ...settings };
     await AsyncStorage.setItem(KEYS.SETTINGS, JSON.stringify(updated));
     return updated;
+  },
+  
+  // Cabinet Data
+  async getCachedCabinet(): Promise<CabinetItem[]> {
+    try {
+      const data = await AsyncStorage.getItem(KEYS.CABINET);
+      return data ? JSON.parse(data) : [];
+    } catch (e) {
+      return [];
+    }
+  },
+
+  async setCachedCabinet(items: CabinetItem[]): Promise<void> {
+    try {
+      await AsyncStorage.setItem(KEYS.CABINET, JSON.stringify(items));
+    } catch (e) {}
   },
 };
