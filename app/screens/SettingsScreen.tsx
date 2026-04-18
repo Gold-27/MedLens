@@ -76,7 +76,7 @@ const SettingsScreen: React.FC = () => {
       ],
     },
     {
-      title: 'Actions',
+      title: '',
       items: [
         { label: 'Sign Out', type: 'button', action: handleSignOut, destructive: true },
       ],
@@ -95,9 +95,11 @@ const SettingsScreen: React.FC = () => {
 
       {sections.map((section, sectionIndex) => (
         <View key={sectionIndex} style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.onSurfaceVariant }]}>
-            {section.title}
-          </Text>
+          {section.title ? (
+            <Text style={[styles.sectionTitle, { color: theme.colors.onSurfaceVariant }]}>
+              {section.title}
+            </Text>
+          ) : null}
           <View style={[styles.sectionContent, { backgroundColor: theme.colors.surfaceContainer }]}>
             {section.items.map((item, itemIndex) => (
               <View key={itemIndex}>
@@ -121,7 +123,7 @@ const SettingsScreen: React.FC = () => {
                       style={styles.buttonRow}
                       onPress={() => item.content ? toggleAccordion(item.label) : item.action?.()}
                     >
-                      <View style={styles.buttonRowContent}>
+                      <View style={[styles.buttonRowContent, item.destructive && { justifyContent: 'center' }]}>
                         <Text style={[
                           styles.buttonLabel,
                           { color: item.destructive ? theme.colors.error : theme.colors.primary }
@@ -152,6 +154,20 @@ const SettingsScreen: React.FC = () => {
                 )}
               </View>
             ))}
+            {section.title === 'Account' && isGuest && (
+              <>
+                <View style={[styles.separator, { backgroundColor: theme.colors.outlineVariant }]} />
+                <TouchableOpacity 
+                  style={styles.syncCTA} 
+                  onPress={() => navigation.navigate('SignUp')}
+                >
+                  <Ionicons name="sync-outline" size={16} color={theme.colors.primary} />
+                  <Text style={[styles.syncText, { color: theme.colors.primary }]}>
+                    Sign in to sync your data
+                  </Text>
+                </TouchableOpacity>
+              </>
+            )}
           </View>
         </View>
       ))}
@@ -255,6 +271,17 @@ const styles = StyleSheet.create({
   },
   disclaimerIcon: {
     opacity: 0.8,
+  },
+  syncCTA: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    gap: 8,
+  },
+  syncText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
   disclaimerText: {
     fontSize: 13,
