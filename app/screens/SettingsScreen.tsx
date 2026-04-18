@@ -193,11 +193,11 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 6,
   },
   backButton: {
     paddingVertical: 4,
-    marginRight: 4,
+    marginLeft: -8,
   },
   headerTitle: {
     fontSize: 32,
