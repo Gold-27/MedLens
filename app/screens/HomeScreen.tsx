@@ -17,6 +17,8 @@ import AuthModal from '../components/AuthModal';
 import Disclaimer from '../components/Disclaimer';
 import TrustBadges from '../components/TrustBadges';
 import * as api from '../services/api';
+import { LocalStorageService } from '../services/storage';
+import RecentSearches from '../components/RecentSearches';
 
 type AppState = 'empty' | 'loading' | 'success' | 'partial' | 'notFound' | 'error';
 
@@ -34,6 +36,7 @@ const HomeScreen: React.FC = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [pendingAction, setPendingAction] = useState<string>('');
   const [savedDrugs, setSavedDrugs] = useState<Set<string>>(new Set());
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
 
   useEffect(() => {
@@ -47,6 +50,19 @@ const HomeScreen: React.FC = () => {
       showSub.remove();
       hideSub.remove();
     };
+  }, []);
+
+  useEffect(() => {
+    // Load local data on mount
+    const loadLocalData = async () => {
+      const [recent, settings] = await Promise.all([
+        LocalStorageService.getRecentSearches(),
+        LocalStorageService.getSettings()
+      ]);
+      setRecentSearches(recent);
+      setEli12Enabled(settings.eli12Enabled);
+    };
+    loadLocalData();
   }, []);
 
   useEffect(() => {
@@ -72,10 +88,30 @@ const HomeScreen: React.FC = () => {
     if (!searchQuery.trim()) return;
     setQuery(searchQuery);
     setState('loading');
+    
     try {
+      // 1. Check Local Cache First (Optimization)
+      const cached = await LocalStorageService.getCachedResult(searchQuery.trim());
+      if (cached) {
+        setResult(cached);
+        setState('success');
+        // Update recent searches in background
+        const updated = await LocalStorageService.addRecentSearch(searchQuery.trim());
+        setRecentSearches(updated);
+        return;
+      }
+
+      // 2. Fallback to API/DB
       const response = await api.searchMedication(searchQuery.trim(), eli12Enabled);
       setResult(response);
       setEli12Enabled(response.eli12.enabled);
+      
+      // 3. Save to local storage for future use
+      await Promise.all([
+        LocalStorageService.setCachedResult(searchQuery.trim(), response),
+        LocalStorageService.addRecentSearch(searchQuery.trim()).then(updated => setRecentSearches(updated))
+      ]);
+      
       setState('success');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
@@ -89,6 +125,9 @@ const HomeScreen: React.FC = () => {
 
   const handleToggleELI12 = useCallback(async (enabled: boolean) => {
     setEli12Enabled(enabled);
+    // Persist preference locally
+    LocalStorageService.updateSettings({ eli12Enabled: enabled });
+    
     if (!result) return;
     if (!enabled) { setState('success'); return; }
     setState('loading');
@@ -141,10 +180,20 @@ const HomeScreen: React.FC = () => {
   const renderContent = () => {
     if (state === 'empty') {
       return (
-        <View style={[styles.emptyContent, { justifyContent: 'center', alignItems: 'center' }]}>
-          <Text style={[styles.headlineText, { color: theme.colors.onSurfaceVariant }]}>
+        <View style={styles.emptyContent}>
+          <Text style={[styles.headlineText, { color: theme.colors.onSurfaceVariant, marginBottom: 40 }]}>
             How can I help you with your medication today?
           </Text>
+          
+          {recentSearches.length > 0 && (
+            <RecentSearches 
+              searches={recentSearches} 
+              onSearchPress={handleSearch}
+              onViewAll={() => {/* Optional: Navigate to full history */}}
+            />
+          )}
+
+          <TrustBadges />
         </View>
       );
     }
