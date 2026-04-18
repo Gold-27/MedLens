@@ -138,8 +138,8 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
 
       <View style={styles.drawerFooter}>
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Ionicons name="log-out-outline" size={20} color={theme.colors.error} />
-          <Text style={[styles.logoutText, { color: theme.colors.error }]}>Log Out</Text>
+          <Ionicons name="log-out-outline" size={20} color={theme.colors.onSurfaceVariant} />
+          <Text style={[styles.logoutText, { color: theme.colors.onSurfaceVariant }]}>Log Out</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
   drawerHeader: {
     padding: 24,
     paddingTop: 60,
-    alignItems: 'flex-start',
+    alignItems: 'center',
   },
   logoContainer: {
     width: 60,
@@ -272,6 +272,7 @@ const styles = StyleSheet.create({
   },
   drawerFooter: {
     padding: 24,
+    paddingBottom: 48,
     alignItems: 'flex-start',
   },
   logoutButton: {
