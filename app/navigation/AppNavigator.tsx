@@ -56,6 +56,7 @@ const DrawerNavigator: React.FC = () => {
   const theme = useTheme();
   return (
     <Drawer.Navigator
+      useLegacyImplementation={false}
       drawerContent={(props: DrawerContentComponentProps) => <CustomDrawerContent {...props} />}
       screenOptions={{
         headerShown: false,
