@@ -172,15 +172,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 24,
     paddingTop: 24,
     paddingBottom: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 12,
   },
   backButton: {
-    padding: 4,
+    paddingVertical: 4,
+    marginRight: 4,
   },
   headerTitle: {
     fontSize: 32,
