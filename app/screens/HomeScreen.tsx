@@ -294,7 +294,7 @@ const HomeScreen: React.FC = () => {
           <View style={styles.headerActions}>
             <TouchableOpacity
               style={[styles.cabinetPill, { backgroundColor: theme.colors.primaryContainer, borderWidth: 0 }]}
-              onPress={() => navigation.navigate('Cabinet')}
+              onPress={() => isGuest ? navigation.navigate('SignUp') : navigation.navigate('Cabinet')}
             >
               <Ionicons name="briefcase" size={18} color={theme.colors.onPrimaryContainer} />
               <Text style={[styles.cabinetText, { color: theme.colors.onPrimaryContainer }]}>Cabinet</Text>
