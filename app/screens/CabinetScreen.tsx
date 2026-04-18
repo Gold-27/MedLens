@@ -259,8 +259,8 @@ return (
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <View style={[styles.header, { borderBottomColor: theme.colors.outlineVariant }]}>
           <View style={styles.headerRow}>
-            <TouchableOpacity onPress={() => navigation.dispatch(DrawerActions.openDrawer())} style={styles.menuButton}>
-              <Ionicons name="menu" size={24} color={theme.colors.onSurface} />
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+              <Ionicons name="chevron-back" size={28} color={theme.colors.onSurface} />
             </TouchableOpacity>
             <Text style={[styles.headerTitle, { color: theme.colors.onSurface }]}>My Cabinet</Text>
           </View>
@@ -315,9 +315,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
-  menuButton: {
-    marginRight: 16,
+  backButton: {
+    marginRight: 12,
     padding: 4,
+    marginLeft: -8,
   },
   headerTitle: {
     fontSize: 32,

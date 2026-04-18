@@ -15,6 +15,7 @@ import InteractionScreen from '../screens/InteractionScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import SignUpScreen from '../screens/SignUpScreen';
 import LoginScreen from '../screens/LoginScreen';
+import { useAuth } from '../context/AuthContext';
 
 export type RootStackParamList = {
   Splash: undefined;
@@ -39,6 +40,7 @@ const Drawer = (createDrawerNavigator as any)();
 const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
   const theme = useTheme();
   const navigation = useNavigation();
+  const { signOut, isGuest, user } = useAuth();
   const [history, setHistory] = React.useState<string[]>([]);
 
   React.useEffect(() => {
@@ -63,13 +65,42 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
     setHistory([]);
   };
 
+  const handleLogout = () => {
+    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+      { text: 'Cancel', style: 'cancel' },
+      { 
+        text: 'Sign Out', 
+        style: 'destructive', 
+        onPress: async () => {
+          try {
+            await signOut();
+            props.navigation.closeDrawer();
+            (navigation as any).reset({
+              index: 0,
+              routes: [{ name: 'Login' }],
+            });
+          } catch (error) {
+            console.error('Logout error:', error);
+          }
+        } 
+      },
+    ]);
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <View style={styles.drawerHeader}>
         <View style={[styles.logoContainer, { backgroundColor: theme.colors.primary }]}>
           <Ionicons name="medical" size={32} color={theme.colors.onPrimary} />
         </View>
-        <Text style={[styles.appName, { color: theme.colors.onSurface }]}>MedLens</Text>
+        <View style={styles.headerText}>
+          <Text style={[styles.appName, { color: theme.colors.onSurface }]}>MedLens</Text>
+          {!isGuest && (
+            <Text style={[styles.userEmail, { color: theme.colors.onSurfaceVariant }]} numberOfLines={1}>
+              {user?.email}
+            </Text>
+          )}
+        </View>
       </View>
 
       <View style={styles.historySection}>
@@ -105,6 +136,13 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
             ))}
           </ScrollView>
         )}
+      </View>
+
+      <View style={[styles.drawerFooter, { borderTopColor: theme.colors.outlineVariant }]}>
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Ionicons name="log-out-outline" size={20} color={theme.colors.error} />
+          <Text style={[styles.logoutText, { color: theme.colors.error }]}>Log Out</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -145,6 +183,8 @@ const AppNavigator = () => {
           options={{ gestureEnabled: false, headerBackVisible: false }} 
         />
         <Stack.Screen name="Home" component={DrawerNavigator} />
+        <Stack.Screen name="Cabinet" component={CabinetScreen} />
+        <Stack.Screen name="Settings" component={SettingsScreen} />
         <Stack.Screen
           name="Interaction"
           component={InteractionScreen}
@@ -171,10 +211,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 12,
   },
+  headerText: {
+    marginLeft: 16,
+    flex: 1,
+  },
   appName: {
     fontSize: 24,
     fontWeight: '800',
     letterSpacing: -0.5,
+  },
+  userEmail: {
+    fontSize: 12,
+    marginTop: 2,
   },
   historySection: {
     flex: 1,
@@ -226,6 +274,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 20,
+  },
+  drawerFooter: {
+    padding: 24,
+    borderTopWidth: 1,
+    alignItems: 'flex-end',
+  },
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 4,
+  },
+  logoutText: {
+    fontSize: 14,
+    fontWeight: '700',
   },
 });
 
