@@ -1,6 +1,6 @@
 # start-tunnel.ps1
 # This script manages EVERYTHING: Backend Server, Fresh Tunnels, and App Startup.
-# Refactored for absolute reliability (Stateless Mode + Network Hardening).
+# Refactored for absolute reliability (Stateless Mode + Network Hardening + Expo Go Fix).
 
 # 0. Helper Functions
 function Get-SafeContent($path) {
@@ -32,7 +32,7 @@ function Test-PortActive {
     return ($null -ne $conn)
 }
 
-function Kill-ProcessOnPort {
+function Stop-ProcessOnPort {
     param([int]$Port)
     $conn = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
     if ($conn) {
@@ -43,7 +43,7 @@ function Kill-ProcessOnPort {
 }
 
 # 1. HARD RESET & NETWORK HARDENING
-Write-Host "--- MedLens Tunnel System (Stabilized Reset) ---" -ForegroundColor Magenta
+Write-Host "--- MedLens Tunnel System (Expo Go Optimized) ---" -ForegroundColor Magenta
 Write-Host "Hardening network settings and cleaning ports..." -ForegroundColor Cyan
 
 # Fix for Node 18+ / Node 24 experimental network issues
@@ -53,9 +53,9 @@ $env:EXPO_NO_TELEMETRY = "1"
 
 # Kill all cloudflared and existing dev servers
 Get-Process "cloudflared" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
-Kill-ProcessOnPort 3001
-Kill-ProcessOnPort 8081
-Kill-ProcessOnPort 8082 # Clear fallback port too
+Stop-ProcessOnPort 3001
+Stop-ProcessOnPort 8081
+Stop-ProcessOnPort 8082 # Clear fallback port too
 
 # Wipe stale logs
 @("backend.log", "frontend.log", "qrcode.png") | ForEach-Object {
@@ -115,18 +115,22 @@ while ($null -eq $frontendUrl -and $counter -lt $maxWait) {
 if ($null -eq $frontendUrl) { Write-Host "Error: Could not retrieve Frontend URL." -ForegroundColor Red; exit 1 }
 Write-Host "Frontend Tunnel: $frontendUrl" -ForegroundColor Green
 
+# Wait for tunnel propagation (Fixes the 'QR works but app doesn't open' issue)
+Write-Host "Waiting for Cloudflare edge propagation..." -ForegroundColor Gray
+Start-Sleep -Seconds 3
+
 # 6. Launch Expo
 Write-Host "`n[4/4] Launching Expo Bundler..." -ForegroundColor Cyan
 $env:EXPO_PACKAGER_PROXY_URL = $frontendUrl
 
-# Build the correct Expo Go URL
-$encodedUrl = [System.Uri]::EscapeDataString($frontendUrl)
-$qrUrl = "exp+app://expo-development-client/?url=$encodedUrl"
+# Build the correct Expo Go URL (Standard exp:// for Expo Go)
+$cleanUrl = $frontendUrl -replace "^https?://", ""
+$qrUrl = "exp://$cleanUrl"
 
 Write-Host ""
 Write-Host "==========================================================" -ForegroundColor Magenta
 Write-Host " SCAN THIS QR CODE WITH YOUR PHONE CAMERA" -ForegroundColor Yellow
-Write-Host " It will open in your development client" -ForegroundColor Yellow
+Write-Host " It will open in EXPO GO automatically" -ForegroundColor Yellow
 Write-Host "==========================================================" -ForegroundColor Magenta
 Write-Host ""
 
