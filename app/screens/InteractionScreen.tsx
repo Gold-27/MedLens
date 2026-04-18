@@ -8,6 +8,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import * as api from '../services/api';
 import { useTheme, ThemeContextType } from '../theme/ThemeProvider';
+import { LocalStorageService } from '../services/storage';
 
 
 
@@ -107,8 +108,19 @@ const InteractionScreen: React.FC = () => {
     setResult(null);
     
     try {
+      // 1. Check Local Cache
+      const cached = await LocalStorageService.getCachedInteraction(selectedDrugs);
+      if (cached) {
+        setResult(cached);
+        return;
+      }
+
+      // 2. Fetch from API
       const response = await api.checkInteractions(selectedDrugs);
       setResult(response);
+
+      // 3. Save to Cache
+      await LocalStorageService.setCachedInteraction(selectedDrugs, response);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       console.error('Interaction check failed:', message);
