@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, LayoutAnimation, Platform, UIManager } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeProvider';
 import { useAuth } from '../context/AuthContext';
@@ -10,17 +10,27 @@ import { Ionicons } from '@expo/vector-icons';
 
 type SettingsItem = 
   | { label: string; value: string; type: 'info' }
-  | { label: string; type: 'button'; action: () => void; destructive?: boolean };
+  | { label: string; type: 'button'; action?: () => void; content?: string; destructive?: boolean };
 
 type SettingsSection = {
   title: string;
   items: SettingsItem[];
 };
 
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
 const SettingsScreen: React.FC = () => {
   const theme = useTheme();
   const navigation = (useNavigation as any)();
   const { user, signOut, isGuest } = useAuth();
+  const [activeAccordion, setActiveAccordion] = React.useState<string | null>(null);
+
+  const toggleAccordion = (label: string) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setActiveAccordion(prev => prev === label ? null : label);
+  };
 
   const handleSignOut = () => {
     Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
@@ -40,13 +50,6 @@ const SettingsScreen: React.FC = () => {
     ]);
   };
 
-  const handlePrivacy = () => {
-    Alert.alert('Privacy Policy', 'We do not store sensitive health data. All drug information is fetched from OpenFDA.');
-  };
-
-  const handleDisclaimer = () => {
-    Alert.alert('Disclaimer', 'MedLens simplifies medical information for understanding. It does not replace professional medical advice.');
-  };
 
   const sections: SettingsSection[] = [
     {
@@ -60,8 +63,16 @@ const SettingsScreen: React.FC = () => {
       title: 'App',
       items: [
         { label: 'Version', value: '1.0.0', type: 'info' },
-        { label: 'Privacy Policy', type: 'button', action: handlePrivacy },
-        { label: 'Disclaimer', type: 'button', action: handleDisclaimer },
+        { 
+          label: 'Privacy Policy', 
+          type: 'button', 
+          content: 'We do not store sensitive health data. All medication information is fetched from OpenFDA in real-time. Your search history is stored locally on your device.' 
+        },
+        { 
+          label: 'Disclaimer', 
+          type: 'button', 
+          content: 'MedLens simplifies complex medical data for educational purposes. It is not a clinical tool and does not replace professional medical advice, diagnosis, or treatment. Always consult with a licensed healthcare provider.' 
+        },
       ],
     },
     {
@@ -105,17 +116,36 @@ const SettingsScreen: React.FC = () => {
                     </Text>
                   </View>
                 ) : (
-                  <TouchableOpacity
-                    style={styles.buttonRow}
-                    onPress={item.action}
-                  >
-                    <Text style={[
-                      styles.buttonLabel,
-                      { color: item.destructive ? theme.colors.error : theme.colors.primary }
-                    ]}>
-                      {item.label}
-                    </Text>
-                  </TouchableOpacity>
+                  <View>
+                    <TouchableOpacity
+                      style={styles.buttonRow}
+                      onPress={() => item.content ? toggleAccordion(item.label) : item.action?.()}
+                    >
+                      <View style={styles.buttonRowContent}>
+                        <Text style={[
+                          styles.buttonLabel,
+                          { color: item.destructive ? theme.colors.error : theme.colors.primary }
+                        ]}>
+                          {item.label}
+                        </Text>
+                        {item.content && (
+                          <Ionicons 
+                            name={activeAccordion === item.label ? "chevron-up" : "chevron-down"} 
+                            size={18} 
+                            color={theme.colors.outline} 
+                          />
+                        )}
+                      </View>
+                    </TouchableOpacity>
+                    
+                    {activeAccordion === item.label && item.content && (
+                      <View style={[styles.accordionContent, { backgroundColor: theme.colors.surfaceContainerLow }]}>
+                        <Text style={[styles.accordionText, { color: theme.colors.onSurfaceVariant }]}>
+                          {item.content}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
                 )}
                 {itemIndex < section.items.length - 1 && (
                   <View style={[styles.separator, { backgroundColor: theme.colors.outlineVariant }]} />
@@ -189,9 +219,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
   },
+  buttonRowContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   buttonLabel: {
     fontSize: 16,
     fontWeight: '500',
+  },
+  accordionContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    marginTop: -8,
+  },
+  accordionText: {
+    fontSize: 14,
+    lineHeight: 20,
   },
   separator: {
     height: 1,
