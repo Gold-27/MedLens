@@ -225,7 +225,7 @@ const CabinetScreen: React.FC = () => {
   if (loading) {
     return (
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <View style={[styles.header, { borderBottomColor: theme.colors.outlineVariant }]}>
+        <View style={styles.header}>
           <Text style={[styles.headerTitle, { color: theme.colors.onSurface }]}>My Cabinet</Text>
         </View>
         <View style={styles.loadingContainer}>
@@ -241,7 +241,7 @@ const CabinetScreen: React.FC = () => {
   if (!user) {
     return (
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <View style={[styles.header, { borderBottomColor: theme.colors.outlineVariant }]}>
+        <View style={styles.header}>
           <Text style={[styles.headerTitle, { color: theme.colors.onSurface }]}>My Cabinet</Text>
         </View>
         <EmptyState
@@ -305,20 +305,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 16,
     paddingTop: 24,
     paddingBottom: 16,
-    borderBottomWidth: 1,
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 4,
+    gap: 8,
   },
   backButton: {
-    marginRight: 12,
     padding: 4,
-    marginLeft: -8,
   },
   headerTitle: {
     fontSize: 32,

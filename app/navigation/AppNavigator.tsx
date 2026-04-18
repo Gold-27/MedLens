@@ -93,14 +93,12 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
         <View style={[styles.logoContainer, { backgroundColor: theme.colors.primary }]}>
           <Ionicons name="medical" size={32} color={theme.colors.onPrimary} />
         </View>
-        <View style={styles.headerText}>
-          <Text style={[styles.appName, { color: theme.colors.onSurface }]}>MedLens</Text>
-          {!isGuest && (
-            <Text style={[styles.userEmail, { color: theme.colors.onSurfaceVariant }]} numberOfLines={1}>
-              {user?.email}
-            </Text>
-          )}
-        </View>
+        <Text style={[styles.appName, { color: theme.colors.onSurface }]}>MedLens</Text>
+        {!isGuest && (
+          <Text style={[styles.userEmail, { color: theme.colors.onSurfaceVariant }]} numberOfLines={1}>
+            {user?.email}
+          </Text>
+        )}
       </View>
 
       <View style={styles.historySection}>
@@ -138,7 +136,7 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
         )}
       </View>
 
-      <View style={[styles.drawerFooter, { borderTopColor: theme.colors.outlineVariant }]}>
+      <View style={styles.drawerFooter}>
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Ionicons name="log-out-outline" size={20} color={theme.colors.error} />
           <Text style={[styles.logoutText, { color: theme.colors.error }]}>Log Out</Text>
@@ -199,9 +197,7 @@ const styles = StyleSheet.create({
   drawerHeader: {
     padding: 24,
     paddingTop: 60,
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    alignItems: 'flex-start',
   },
   logoContainer: {
     width: 60,
@@ -212,8 +208,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   headerText: {
-    marginLeft: 16,
-    flex: 1,
+    marginTop: 8,
   },
   appName: {
     fontSize: 24,
@@ -277,8 +272,7 @@ const styles = StyleSheet.create({
   },
   drawerFooter: {
     padding: 24,
-    borderTopWidth: 1,
-    alignItems: 'flex-end',
+    alignItems: 'flex-start',
   },
   logoutButton: {
     flexDirection: 'row',
