@@ -78,7 +78,7 @@ Write-Host "Backend API is LIVE!" -ForegroundColor Green
 
 # 3. Handle Backend Tunnel (Port 3001)
 Write-Host "`n[2/4] Starting Fresh Backend Tunnel..." -ForegroundColor Cyan
-Start-Process -FilePath "npx.cmd" -ArgumentList "cloudflared", "tunnel", "--url", "http://localhost:3001", "--no-autoupdate" -NoNewWindow -PassThru -RedirectStandardError "backend.log"
+Start-Process -FilePath "npx.cmd" -ArgumentList "cloudflared", "tunnel", "--url", "http://127.0.0.1:3001", "--no-autoupdate" -NoNewWindow -PassThru -RedirectStandardError "backend.log"
 
 $backendUrl = $null
 $counter = 0
@@ -102,7 +102,7 @@ if (Test-Path ".env") {
 
 # 5. Handle Frontend Tunnel (Port 8081)
 Write-Host "`n[3/4] Starting Fresh Frontend Tunnel..." -ForegroundColor Cyan
-Start-Process -FilePath "npx.cmd" -ArgumentList "cloudflared", "tunnel", "--url", "http://localhost:8081", "--no-autoupdate" -NoNewWindow -PassThru -RedirectStandardError "frontend.log"
+Start-Process -FilePath "npx.cmd" -ArgumentList "cloudflared", "tunnel", "--url", "http://127.0.0.1:8081", "--no-autoupdate" -NoNewWindow -PassThru -RedirectStandardError "frontend.log"
 
 $frontendUrl = $null
 $counter = 0
@@ -117,7 +117,7 @@ Write-Host "Frontend Tunnel: $frontendUrl" -ForegroundColor Green
 
 # Wait for tunnel propagation (Fixes the 'QR works but app doesn't open' issue)
 Write-Host "Waiting for Cloudflare edge propagation..." -ForegroundColor Gray
-Start-Sleep -Seconds 3
+Start-Sleep -Seconds 4
 
 # 6. Launch Expo
 Write-Host "`n[4/4] Launching Expo Bundler..." -ForegroundColor Cyan
