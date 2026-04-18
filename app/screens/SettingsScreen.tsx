@@ -93,7 +93,16 @@ const SettingsScreen: React.FC = () => {
                 {item.type === 'info' ? (
                   <View style={styles.infoRow}>
                     <Text style={[styles.infoLabel, { color: theme.colors.onSurface }]}>{item.label}</Text>
-                    <Text style={[styles.infoValue, { color: theme.colors.onSurfaceVariant }]}>{item.value}</Text>
+                    <Text style={[
+                      styles.infoValue, 
+                      { 
+                        color: (item.value === 'Not signed in' || item.value === 'Guest' || item.value === '1.0.0') 
+                          ? theme.colors.outline 
+                          : theme.colors.onSurfaceVariant 
+                      }
+                    ]}>
+                      {item.value}
+                    </Text>
                   </View>
                 ) : (
                   <TouchableOpacity
