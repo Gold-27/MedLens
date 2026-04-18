@@ -176,7 +176,11 @@ const AppNavigator = () => {
         />
         <Stack.Screen name="Home" component={DrawerNavigator} />
         <Stack.Screen name="Cabinet" component={CabinetScreen} />
-        <Stack.Screen name="Settings" component={SettingsScreen} />
+        <Stack.Screen 
+          name="Settings" 
+          component={SettingsScreen} 
+          options={{ gestureEnabled: false }}
+        />
         <Stack.Screen
           name="Interaction"
           component={InteractionScreen}
