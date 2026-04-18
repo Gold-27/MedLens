@@ -155,8 +155,7 @@ $qrUrl = "exp://$cleanUrl"
 
 Write-Host ""
 Write-Host "==========================================================" -ForegroundColor Magenta
-Write-Host " 🔥 PUBLIC QR CODE - ACCESSIBLE ANYWHERE 🔥" -ForegroundColor Yellow
-Write-Host " SCAN THIS WITH YOUR PHONE CAMERA (Works on LTE/4G)" -ForegroundColor Yellow
+Write-Host " SCAN THIS QR CODE WITH YOUR PHONE CAMERA" -ForegroundColor Yellow
 Write-Host " It will open in EXPO GO automatically" -ForegroundColor Yellow
 Write-Host "==========================================================" -ForegroundColor Magenta
 Write-Host ""
