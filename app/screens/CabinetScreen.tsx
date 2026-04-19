@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, SafeAreaView } from 'react-native';
 import { useTheme, ThemeContextType } from '../theme/ThemeProvider';
 import { useAuth } from '../context/AuthContext';
-import { useNavigation, DrawerActions } from '@react-navigation/native';
-import { RootStackParamList } from '../navigation/AppNavigator';
+import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as api from '../services/api';
 import { LocalStorageService } from '../services/storage';
@@ -16,307 +15,184 @@ interface CabinetItem {
   drug_key: string;
   source: string;
   created_at: string;
-  updated_at: string;
-  last_accessed_at?: string;
-  deleted_at?: string;
 }
 
+const DRUG_DESCRIPTIONS: Record<string, string> = {
+  'advil': 'For pain and fever',
+  'tylenol': 'Pain reliever and fever reducer',
+  'motrin': 'Pain reliever and fever reducer',
+  'aspirin': 'Pain reliever and heart health',
+  'metformin': 'Blood sugar management',
+  'lisinopril': 'Blood pressure management',
+  'levothyroxine': 'Thyroid hormone replacement',
+  'atorvastatin': 'Cholesterol management',
+  'amlodipine': 'Blood pressure management',
+  'metoprolol': 'Heart rate and blood pressure',
+  'albuterol': 'Rescue inhaler for asthma',
+  'omeprazole': 'Acid reflux and heartburn',
+  'losartan': 'Blood pressure management',
+  'gabapentin': 'Nerve pain and seizures',
+  'simvastatin': 'Cholesterol management',
+  'zyrtec': 'Allergy relief',
+  'benadryl': 'Allergy and sleep aid',
+  'lipitor': 'Cholesterol management',
+  'amoxicillin': 'Antibiotic for infections',
+  'xanax': 'Anxiety and panic disorders',
+};
 
+const getDrugDescription = (name: string): string => {
+  const lowerName = name.toLowerCase();
+  for (const [key, desc] of Object.entries(DRUG_DESCRIPTIONS)) {
+    if (lowerName.includes(key)) return desc;
+  }
+  return 'Commonly used medication';
+};
 
 const CabinetScreen: React.FC = () => {
   const theme = useTheme();
   const { user, getToken } = useAuth();
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const [items, setItems] = useState<CabinetItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const [interactionCount, setInteractionCount] = useState(0);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
-  const [fetchError, setFetchError] = useState<string | null>(null);
 
-  const fetchCabinetItems = useCallback(async () => {
+  const fetchCabinetData = useCallback(async () => {
     if (!user) return;
-    
     try {
-      setFetchError(null);
       const token = await getToken();
-      if (!token) {
-        setFetchError('Authentication required');
-        return;
-      }
+      if (!token) return;
       
-      const response = await api.getCabinetItems(token);
-      setItems(response.items);
-      // Persist to local cache
-      await LocalStorageService.setCachedCabinet(response.items);
-    } catch (error: any) {
-      const message = error.message || 'Unknown error';
-      console.error('Failed to fetch cabinet items:', message);
+      const [cabinetResponse, statsCount] = await Promise.all([
+        api.getCabinetItems(token),
+        LocalStorageService.getInteractionCount()
+      ]);
       
-      // Check for specific retryable errors
-      if (message.includes('503') || message.includes('initializing')) {
-        setFetchError('Database is initializing. This usually takes 30-60 seconds after a new setup.');
-      } else {
-        setFetchError('Failed to load your cabinet. Please check your connection.');
-      }
+      setItems(cabinetResponse.items);
+      setInteractionCount(statsCount);
+      await LocalStorageService.setCachedCabinet(cabinetResponse.items);
+    } catch (error) {
+      console.error('Failed to fetch cabinet data:', error);
+    } finally {
+      setLoading(false);
     }
   }, [user, getToken]);
 
   useEffect(() => {
-    const initCabinet = async () => {
-      if (!user) {
-        setLoading(false);
-        setItems([]);
-        return;
-      }
+    fetchCabinetData();
+  }, [fetchCabinetData]);
 
-      // 1. Initial Load from Local Cache (Zero-latency)
-      const cached = await LocalStorageService.getCachedCabinet();
-      if (cached.length > 0) {
-        setItems(cached);
-        setLoading(false); // Show cached data immediately
-      }
-
-      // 2. Background Revalidation
-      await fetchCabinetItems();
-      setLoading(false);
-    };
-
-    initCabinet();
-  }, [user, fetchCabinetItems]);
-
-  const handleRefresh = useCallback(async () => {
-    if (!user) return;
-    
-    setRefreshing(true);
-    await fetchCabinetItems();
-    setRefreshing(false);
-  }, [user, fetchCabinetItems]);
-
-  const handleItemPress = (item: CabinetItem) => {
-    // Navigate to Home with this drug pre-selected
-    navigation.navigate('Home', { 
-      drugKey: item.drug_key,
-      drugName: item.drug_name
-    });
-  };
-
-  const handleDeleteItem = async (item: CabinetItem) => {
-    Alert.alert(
-      'Remove Medication',
-      `Remove ${item.drug_name} from your cabinet?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Remove',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const token = await getToken();
-              if (!token) {
-                Alert.alert('Error', 'Authentication required.');
-                return;
-              }
-              
-              await api.deleteCabinetItem(item.drug_key, token);
-              
-              // Update state and cache immediately
-              setItems(prev => {
-                const updated = prev.filter(i => i.id !== item.id);
-                LocalStorageService.setCachedCabinet(updated);
-                return updated;
-              });
-              
-              setSelectedItems(prev => {
-                const newSet = new Set(prev);
-                newSet.delete(item.id);
-                return newSet;
-              });
-            } catch (error) {
-              const message = error instanceof Error ? error.message : 'Unknown error';
-              console.error('Failed to delete item:', message);
-              Alert.alert('Error', 'Failed to remove medication. Please try again.');
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const toggleItemSelection = (itemId: string) => {
+  const toggleSelection = (drugKey: string) => {
     setSelectedItems(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(itemId)) {
-        newSet.delete(itemId);
-      } else {
-        newSet.add(itemId);
-      }
+      if (newSet.has(drugKey)) newSet.delete(drugKey);
+      else newSet.add(drugKey);
       return newSet;
     });
   };
 
-  const handleCheckInteractions = () => {
-    const selectedDrugs = items
-      .filter(item => selectedItems.has(item.id))
-      .map(item => item.drug_key);
-    
-    if (selectedDrugs.length < 2) {
-      Alert.alert('Select Medications', 'Please select at least two medications to check interactions.');
-      return;
-    }
-    
-    // Navigate to Interaction screen with selected drugs
-    navigation.navigate('Interaction', { drugKeys: selectedDrugs });
+  const handleCheckNow = () => {
+    const selectedKeys = Array.from(selectedItems);
+    navigation.navigate('Interaction', { drugKeys: selectedKeys });
   };
 
-  const renderEmptyState = () => (
-    <EmptyState
-      type="empty_cabinet"
-      title="Your cabinet is empty"
-      subtitle="Save medications from search results to see them here"
-    />
+  const renderHeader = () => (
+    <View style={styles.headerContainer}>
+      <View style={styles.topRow}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color={theme.colors.onSurface} />
+        </TouchableOpacity>
+        <Text style={[styles.title, { color: theme.colors.onSurface }]}>My Cabinet</Text>
+      </View>
+      <Text style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>
+        Your saved medications, always at your fingertips.
+      </Text>
+
+      <View style={styles.statsRow}>
+        <View style={[styles.statsCard, { backgroundColor: theme.colors.surfaceContainerHigh }]}>
+          <Text style={[styles.statsValue, { color: theme.colors.primary }]}>{items.length}</Text>
+          <Text style={[styles.statsLabel, { color: theme.colors.onSurfaceVariant }]}>Medications saved</Text>
+        </View>
+        <View style={[styles.statsCard, { backgroundColor: theme.colors.surfaceContainerHigh }]}>
+          <Text style={[styles.statsValue, { color: theme.colors.secondary }]}>{interactionCount}</Text>
+          <Text style={[styles.statsLabel, { color: theme.colors.onSurfaceVariant }]}>Interactions checked</Text>
+        </View>
+      </View>
+    </View>
+  );
+
+  const renderFooter = () => (
+    <View style={[styles.interactionCard, { backgroundColor: theme.colors.primaryContainer }]}>
+      <Text style={[styles.interactionTitle, { color: theme.colors.onPrimaryContainer }]}>Check for interactions</Text>
+      <Text style={[styles.interactionText, { color: theme.colors.onPrimaryContainer }]}>
+        Select two or more medications to see if there are known interactions.
+      </Text>
+      <TouchableOpacity
+        style={[
+          styles.checkButton,
+          { 
+            backgroundColor: selectedItems.size >= 2 ? theme.colors.primary : theme.colors.outlineVariant,
+            opacity: selectedItems.size >= 2 ? 1 : 0.6 
+          }
+        ]}
+        disabled={selectedItems.size < 2}
+        onPress={handleCheckNow}
+      >
+        <Text style={[styles.checkButtonText, { color: theme.colors.onPrimary }]}>Check now</Text>
+      </TouchableOpacity>
+    </View>
   );
 
   const renderItem = ({ item }: { item: CabinetItem }) => {
-    const isSelected = selectedItems.has(item.id);
-    
+    const isSelected = selectedItems.has(item.drug_key);
     return (
-      <TouchableOpacity
-        style={[
-          styles.itemContainer, 
-          { 
-            backgroundColor: isSelected ? theme.colors.primaryContainer : theme.colors.surfaceContainer,
-            borderColor: isSelected ? theme.colors.primary : theme.colors.outlineVariant,
-          }
-        ]}
-        onPress={() => toggleItemSelection(item.id)}
-        onLongPress={() => handleDeleteItem(item)}
-        delayLongPress={500}
-      >
-        <View style={styles.itemContent}>
-          <Text style={[
-            styles.itemName, 
-            { color: isSelected ? theme.colors.onPrimaryContainer : theme.colors.onSurface }
-          ]}>
-            {item.drug_name}
-          </Text>
-          <Text style={[
-            styles.itemDate, 
-            { color: isSelected ? theme.colors.onPrimaryContainer : theme.colors.onSurfaceVariant }
-          ]}>
-            Added {new Date(item.created_at).toLocaleDateString()}
-          </Text>
+      <View style={[styles.itemCard, { backgroundColor: theme.colors.surface }]}>
+        <TouchableOpacity 
+          style={styles.checkboxArea} 
+          onPress={() => toggleSelection(item.drug_key)}
+        >
+          <Ionicons 
+            name={isSelected ? "checkbox" : "square-outline"} 
+            size={24} 
+            color={isSelected ? theme.colors.primary : theme.colors.outline} 
+          />
+        </TouchableOpacity>
+        
+        <View style={styles.itemInfo}>
+          <Text style={[styles.itemName, { color: theme.colors.onSurface }]}>{item.drug_name}</Text>
+          <Text style={[styles.itemDesc, { color: theme.colors.onSurfaceVariant }]}>{getDrugDescription(item.drug_name)}</Text>
         </View>
-        <View style={styles.itemActions}>
-          <TouchableOpacity 
-            style={styles.openButton}
-            onPress={(e) => {
-              e.stopPropagation();
-              handleItemPress(item);
-            }}
-          >
-            <Text style={[styles.openButtonText, { color: theme.colors.primary }]}>Open</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.deleteButton}
-            onPress={(e) => {
-              e.stopPropagation();
-              handleDeleteItem(item);
-            }}
-          >
-            <Text style={[styles.deleteButtonText, { color: theme.colors.error }]}>Remove</Text>
-          </TouchableOpacity>
-        </View>
-      </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={[styles.viewButton, { backgroundColor: theme.colors.secondaryContainer }]}
+          onPress={() => navigation.navigate('Home', { searchQuery: item.drug_name })}
+        >
+          <Text style={[styles.viewButtonText, { color: theme.colors.onSecondaryContainer }]}>View</Text>
+        </TouchableOpacity>
+      </View>
     );
   };
 
   if (loading) {
     return (
-      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <View style={styles.header}>
-          <Text style={[styles.headerTitle, { color: theme.colors.onSurface }]}>My Cabinet</Text>
-        </View>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-          <Text style={[styles.loadingText, { color: theme.colors.onSurfaceVariant }]}>
-            Loading your cabinet...
-          </Text>
-        </View>
+      <View style={[styles.container, { backgroundColor: theme.colors.background, justifyContent: 'center' }]}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
       </View>
     );
   }
 
-  if (!user) {
-    return (
-      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <View style={styles.header}>
-          <Text style={[styles.headerTitle, { color: theme.colors.onSurface }]}>My Cabinet</Text>
-        </View>
-        <EmptyState
-          type="empty_cabinet"
-          title="Sign in to access your cabinet"
-          subtitle="Save medications from search results to see them here"
-          onAction={() => navigation.navigate('Settings')}
-          actionLabel="Go to Settings"
-        />
-      </View>
-    );
-  }
-
-return (
-      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <View style={[styles.header, { borderBottomColor: theme.colors.outlineVariant }]}>
-          <View style={styles.headerRow}>
-            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-              <Ionicons name="chevron-back" size={28} color={theme.colors.onSurface} />
-            </TouchableOpacity>
-            <Text style={[styles.headerTitle, { color: theme.colors.onSurface }]}>My Cabinet</Text>
-          </View>
-          <Text style={[styles.headerSubtitle, { color: theme.colors.onSurfaceVariant }]}>
-            {items.length} medication{items.length !== 1 ? 's' : ''}
-            {selectedItems.size > 0 && ` • ${selectedItems.size} selected`}
-          </Text>
-        </View>
-
-      {fetchError && items.length === 0 ? (
-        <View style={styles.errorContainer}>
-          <Ionicons name="cloud-offline-outline" size={48} color={theme.colors.outline} />
-          <Text style={[styles.errorTitle, { color: theme.colors.onSurface }]}>Unable to load cabinet</Text>
-          <Text style={[styles.errorSubtitle, { color: theme.colors.onSurfaceVariant }]}>{fetchError}</Text>
-          <TouchableOpacity 
-            style={[styles.retryButton, { backgroundColor: theme.colors.primary }]}
-            onPress={() => fetchCabinetItems()}
-          >
-            <Text style={[styles.retryButtonText, { color: theme.colors.onPrimary }]}>Retry Connection</Text>
-          </TouchableOpacity>
-        </View>
-      ) : items.length > 0 ? (
-        <>
-          <FlatList
-            data={items}
-            renderItem={renderItem}
-            keyExtractor={item => item.id}
-            contentContainerStyle={styles.listContent}
-            showsVerticalScrollIndicator={false}
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-          />
-          
-          {selectedItems.size >= 2 && (
-            <TouchableOpacity
-              style={[styles.interactionButton, { backgroundColor: theme.colors.primary }]}
-              onPress={handleCheckInteractions}
-            >
-              <Text style={[styles.interactionButtonText, { color: theme.colors.onPrimary }]}>
-                Check Interactions ({selectedItems.size} medications)
-              </Text>
-            </TouchableOpacity>
-          )}
-        </>
-      ) : (
-        renderEmptyState()
-      )}
-    </View>
+  return (
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <FlatList
+        data={items}
+        renderItem={renderItem}
+        keyExtractor={item => item.id}
+        ListHeaderComponent={renderHeader}
+        ListFooterComponent={items.length > 0 ? renderFooter : null}
+        contentContainerStyle={styles.scrollContent}
+        ListEmptyComponent={<EmptyState type="empty_cabinet" title="No medications saved" subtitle="Search and save drugs to populate your cabinet." />}
+      />
+    </SafeAreaView>
   );
 };
 
@@ -324,125 +200,112 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    paddingHorizontal: 16,
-    paddingTop: 24,
-    paddingBottom: 16,
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 40,
   },
-  headerRow: {
+  headerContainer: {
+    marginBottom: 24,
+  },
+  topRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
-    gap: 8,
+    marginBottom: 8,
   },
   backButton: {
-    padding: 4,
+    marginRight: 12,
   },
-  headerTitle: {
-    fontSize: 32,
-    fontWeight: '600',
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+  },
+  subtitle: {
+    fontSize: 16,
+    marginBottom: 24,
+    lineHeight: 22,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  statsCard: {
+    flex: 1,
+    padding: 16,
+    borderRadius: 16,
+    alignItems: 'flex-start',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  statsValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
     marginBottom: 4,
   },
-  headerSubtitle: {
-    fontSize: 16,
+  statsLabel: {
+    fontSize: 12,
+    fontWeight: '500',
   },
-  listContent: {
-    padding: 16,
-  },
-  itemContainer: {
+  itemCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderRadius: 12,
+    padding: 16,
+    borderRadius: 16,
     marginBottom: 12,
-    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  itemContent: {
+  checkboxArea: {
+    paddingRight: 16,
+  },
+  itemInfo: {
     flex: 1,
-    marginRight: 12,
   },
   itemName: {
     fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 4,
+    fontWeight: 'bold',
+    marginBottom: 2,
   },
-  itemDate: {
+  itemDesc: {
     fontSize: 14,
   },
-  itemActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
+  viewButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
   },
-  openButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  openButtonText: {
+  viewButtonText: {
     fontSize: 14,
-    fontWeight: '500',
-  },
-  deleteButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  deleteButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 16,
-  },
-  loadingText: {
-    fontSize: 16,
-  },
-  interactionButton: {
-    marginHorizontal: 24,
-    marginBottom: 24,
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  interactionButtonText: {
-    fontSize: 18,
     fontWeight: '600',
   },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
+  interactionCard: {
+    marginTop: 24,
+    padding: 24,
+    borderRadius: 24,
     gap: 12,
   },
-  errorTitle: {
+  interactionTitle: {
     fontSize: 20,
-    fontWeight: '700',
-    marginTop: 8,
+    fontWeight: 'bold',
   },
-  errorSubtitle: {
-    fontSize: 14,
-    textAlign: 'center',
-    marginBottom: 8,
-    lineHeight: 20,
+  interactionText: {
+    fontSize: 15,
+    lineHeight: 22,
+    marginBottom: 12,
   },
-  retryButton: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 12,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+  checkButton: {
+    paddingVertical: 14,
+    borderRadius: 16,
+    alignItems: 'center',
   },
-  retryButtonText: {
+  checkButtonText: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: 'bold',
   },
 });
 

@@ -7,6 +7,7 @@ const KEYS = {
   INTERACTION_CACHE: 'ml_interaction_cache_',
   CABINET: 'ml_cabinet',
   SETTINGS: 'ml_settings',
+  INTERACTION_COUNT: 'ml_interaction_count',
 };
 
 const CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
@@ -138,5 +139,26 @@ export const LocalStorageService = {
     try {
       await AsyncStorage.setItem(KEYS.CABINET, JSON.stringify(items));
     } catch (e) {}
+  },
+
+  // Stats
+  async getInteractionCount(): Promise<number> {
+    try {
+      const data = await AsyncStorage.getItem(KEYS.INTERACTION_COUNT);
+      return data ? parseInt(data, 10) : 0;
+    } catch (e) {
+      return 0;
+    }
+  },
+
+  async incrementInteractionCount(): Promise<number> {
+    try {
+      const current = await this.getInteractionCount();
+      const updated = current + 1;
+      await AsyncStorage.setItem(KEYS.INTERACTION_COUNT, updated.toString());
+      return updated;
+    } catch (e) {
+      return 0;
+    }
   },
 };

@@ -112,12 +112,14 @@ const InteractionScreen: React.FC = () => {
       const cached = await LocalStorageService.getCachedInteraction(selectedDrugs);
       if (cached) {
         setResult(cached);
+        LocalStorageService.incrementInteractionCount();
         return;
       }
 
       // 2. Fetch from API
       const response = await api.checkInteractions(selectedDrugs);
       setResult(response);
+      LocalStorageService.incrementInteractionCount();
 
       // 3. Save to Cache
       await LocalStorageService.setCachedInteraction(selectedDrugs, response);
