@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Share, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { DrawerNavigationProp } from '@react-navigation/drawer';
 import { DrawerParamList, RootStackParamList } from '../navigation/AppNavigator';
 
@@ -26,6 +26,7 @@ const HomeScreen: React.FC = () => {
   const theme = useTheme();
   const { user, isGuest, getToken } = useAuth();
   const navigation = (useNavigation as any)();
+  const route = useRoute<RouteProp<DrawerParamList, 'HomeDrawer'>>();
   const insets = useSafeAreaInsets();
   const styles = makeStyles(theme);
 
@@ -140,15 +141,15 @@ const HomeScreen: React.FC = () => {
 
   useEffect(() => {
     // Check for navigation params if we came from drawer search
-    const route = (navigation as any).getState()?.routes.find((r: any) => r.name === 'HomeDrawer');
-    const searchQuery = route?.params?.searchQuery;
+    const searchQuery = route.params?.searchQuery;
     
     if (searchQuery) {
+      console.log(`[Home] Navigation query detected: ${searchQuery}`);
       handleSearch(searchQuery);
       // Clear navigation params to prevent re-triggering on every mount/update
       navigation.setParams({ searchQuery: undefined });
     }
-  }, [navigation, handleSearch]);
+  }, [route.params?.searchQuery, handleSearch, navigation]);
 
   useEffect(() => {
     // Load local data on mount

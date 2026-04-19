@@ -123,10 +123,9 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
             {history.map((item, index) => (
               <TouchableOpacity
                 key={index}
-                style={[styles.historyItem, { borderBottomColor: theme.colors.outlineVariant }]}
+                style={styles.historyItem}
                 onPress={() => handleHistoryPress(item)}
               >
-                <Ionicons name="search-outline" size={20} color={theme.colors.onSurfaceVariant} style={styles.historyIcon} />
                 <Text style={[styles.historyText, { color: theme.colors.onSurface }]} numberOfLines={1}>
                   {item}
                 </Text>
@@ -244,8 +243,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 24,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
+    paddingVertical: 14,
   },
   historyIcon: {
     marginRight: 16,
