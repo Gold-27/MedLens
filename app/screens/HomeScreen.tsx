@@ -274,7 +274,6 @@ const HomeScreen: React.FC = () => {
               isSaved={savedDrugs.has(result.drug_name.toLowerCase())}
               requiresAuth={isGuest}
             />
-            <Disclaimer />
           </View>
         );
 

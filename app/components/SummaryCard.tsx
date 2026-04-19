@@ -228,8 +228,9 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
       </View>
 
       {/* Disclaimer */}
-      <View style={[styles.footerDisclaimer, { borderTopColor: theme.colors.outlineVariant }]}>
-        <Text style={styles.footerDisclaimerText}>
+      <View style={[styles.footerDisclaimer, { backgroundColor: theme.colors.accentContainer }]}>
+        <Ionicons name="information-circle-outline" size={20} color={theme.colors.onAccentContainer} />
+        <Text style={[styles.footerDisclaimerText, { color: theme.colors.onAccentContainer }]}>
           MedLens simplifies medical information. It does not replace professional medical advice.
         </Text>
       </View>
@@ -410,15 +411,17 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
     color: theme.colors.onPrimary,
   },
   footerDisclaimer: {
-    paddingTop: 16,
-    borderTopWidth: 1,
+    padding: 16,
+    borderRadius: 16,
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 12,
   },
   footerDisclaimerText: {
-    fontSize: 11,
-    color: theme.colors.outline,
-    textAlign: 'center',
-    lineHeight: 16,
+    fontSize: 12,
+    lineHeight: 18,
+    fontWeight: '600',
+    flex: 1,
   },
 });
 
