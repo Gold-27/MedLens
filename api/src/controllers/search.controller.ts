@@ -28,19 +28,20 @@ export const searchMedication = async (req: Request, res: Response) => {
 
     // Stage 2: Transform with AI (with Multi-Engine Failover)
     console.log('[Search] Starting AI transformation pipeline...');
-    let summary: AISummary | null = null;
+    let layer1: AISummary | null = null;
+    let layer2: AISummary | null = null;
     let aiProvider = 'None';
 
     // Attempt 1: DeepSeek
     try {
       console.log('[Search] Attempting DeepSeek Layer 1...');
-      summary = await deepseekService.generateSummary(fdaData);
+      layer1 = await deepseekService.generateSummary(fdaData);
       aiProvider = 'DeepSeek';
       
       // If ELI12 requested, chain to Layer 2
       if (eli12) {
         console.log('[Search] DeepSeek Layer 1 success. Chaining to Layer 2 (ELI12)...');
-        summary = await deepseekService.generateELI12(summary);
+        layer2 = await deepseekService.generateELI12(layer1);
         console.log('[Search] DeepSeek Layer 2 success.');
       }
     } catch (dsError: any) {
@@ -49,19 +50,19 @@ export const searchMedication = async (req: Request, res: Response) => {
       // Attempt 2: Gemini Failover
       try {
         console.log('[Search] Attempting Gemini failover Layer 1...');
-        summary = await geminiService.generateSummary(fdaData);
+        layer1 = await geminiService.generateSummary(fdaData);
         aiProvider = 'Gemini';
 
         if (eli12) {
           console.log('[Search] Gemini Layer 1 success. Chaining to Layer 2 (ELI12)...');
-          summary = await geminiService.generateELI12(summary);
+          layer2 = await geminiService.generateELI12(layer1);
           console.log('[Search] Gemini Layer 2 success.');
         }
       } catch (gemError: any) {
         console.error(`[Search] Gemini also failed: ${gemError.message}`);
         
         // Final Fallback: Safe Mode
-        summary = {
+        layer1 = {
           what_it_does: fdaData.indications || 'We do not have enough reliable information for this section.',
           how_to_take: fdaData.dosage || 'We do not have enough reliable information for this section.',
           warnings: fdaData.warnings || 'We do not have enough reliable information for this section.',
@@ -71,16 +72,16 @@ export const searchMedication = async (req: Request, res: Response) => {
       }
     }
 
-    if (!summary) {
+    if (!layer1) {
       throw new Error('Summary generation failed in all stages');
     }
 
     // Stage 3: Validate AI output — ensure all required keys are present
     const validatedSummary: AISummary = {
-      what_it_does: summary.what_it_does || 'We do not have enough reliable information for this section.',
-      how_to_take: summary.how_to_take || 'We do not have enough reliable information for this section.',
-      warnings: summary.warnings || 'We do not have enough reliable information for this section.',
-      side_effects: summary.side_effects || 'We do not have enough reliable information for this section.',
+      what_it_does: layer1.what_it_does || 'We do not have enough reliable information for this section.',
+      how_to_take: layer1.how_to_take || 'We do not have enough reliable information for this section.',
+      warnings: layer1.warnings || 'We do not have enough reliable information for this section.',
+      side_effects: layer1.side_effects || 'We do not have enough reliable information for this section.',
     };
 
     // Stage 4: Return structured response (including normalized data for ELI12 re-use)
@@ -92,8 +93,8 @@ export const searchMedication = async (req: Request, res: Response) => {
       data: fdaData,
       summary: validatedSummary,
       eli12: {
-        enabled: !!eli12,
-        content: null,
+        enabled: !!layer2,
+        content: layer2 ? JSON.stringify(layer2) : null,
       },
       disclaimer: 'MedLens simplifies medical information for understanding. It does not replace professional medical advice.',
     });

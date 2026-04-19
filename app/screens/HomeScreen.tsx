@@ -87,7 +87,15 @@ const HomeScreen: React.FC = () => {
     LocalStorageService.updateSettings({ eli12Enabled: enabled });
     
     if (!result) return;
-    if (!enabled) { setState('success'); return; }
+    
+    // Cache logic: If we already have the ELI12 content, just toggle and return
+    if (enabled && result.eli12.content) {
+      return;
+    }
+
+    if (!enabled) return;
+
+    // Only fetch Layer 2 if enabled and we don't have it yet
     setState('loading');
     try {
       if (!result.data) throw new Error('No drug data available');
