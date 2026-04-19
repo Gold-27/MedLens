@@ -60,7 +60,6 @@ const CabinetScreen: React.FC = () => {
       }
     }
   }, [user, getToken]);
-  }, [user, getToken]);
 
   useEffect(() => {
     const initCabinet = async () => {
