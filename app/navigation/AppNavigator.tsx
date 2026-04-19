@@ -94,11 +94,6 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
           <Ionicons name="medical" size={32} color={theme.colors.onPrimary} />
         </View>
         <Text style={[styles.appName, { color: theme.colors.onSurface }]}>MedLens</Text>
-        {!isGuest && (
-          <Text style={[styles.userEmail, { color: theme.colors.onSurfaceVariant }]} numberOfLines={1}>
-            {user?.email}
-          </Text>
-        )}
       </View>
 
       <View style={styles.historySection}>
