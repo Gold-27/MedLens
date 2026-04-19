@@ -138,14 +138,14 @@ const DrawerNavigator: React.FC = () => {
   const theme = useTheme();
   return (
     <Drawer.Navigator
-      useLegacyImplementation={false}
+      useLegacyImplementation={true}
       drawerContent={(props: DrawerContentComponentProps) => <CustomDrawerContent {...props} />}
       screenOptions={{
         headerShown: false,
         drawerStyle: { backgroundColor: theme.colors.background, width: 300 },
-        drawerType: 'front', // Overlay drawer to prevent main screen resizing
-        unmountOnBlur: false, // Keep screens mounted in background
-        swipeEdgeWidth: 100, // Better swipe detection
+        drawerType: 'slide', // Use slide for better gesture/state synchronization
+        unmountOnBlur: false, // Keep screens mounted
+        swipeEdgeWidth: 100, // Large swipe edge for accessibility
         overlayColor: 'rgba(0,0,0,0.5)',
       }}
     >
