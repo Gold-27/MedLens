@@ -279,13 +279,7 @@ const HomeScreen: React.FC = () => {
 
   const renderContent = () => {
     if (state === 'empty') {
-      return (
-        <View style={styles.emptyContent}>
-          <Text style={[styles.headlineText, { color: theme.colors.onSurfaceVariant }]}>
-            How can I help you with your medication today?
-          </Text>
-        </View>
-      );
+      return null; // Headline is now static in the background
     }
 
     switch (state) {
@@ -346,6 +340,15 @@ const HomeScreen: React.FC = () => {
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
     >
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+        {/* Static Background Headline */}
+        {state === 'empty' && (
+          <View style={styles.staticHeadlineWrapper} pointerEvents="none">
+            <Text style={[styles.headlineText, { color: theme.colors.onSurfaceVariant }]}>
+              How can I help you with your medication today?
+            </Text>
+          </View>
+        )}
+
         {/* Top Navigation */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.openDrawer()}>
@@ -503,6 +506,13 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
     textAlign: 'center',
     paddingHorizontal: 32,
     lineHeight: 38,
+  },
+  staticHeadlineWrapper: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 0,
+    paddingBottom: 100, // Visual balance for the input bar area
   },
 });
 

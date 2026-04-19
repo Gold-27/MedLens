@@ -51,7 +51,7 @@ const SettingsScreen: React.FC = () => {
   };
 
 
-  const sections: SettingsSection[] = [
+  const allSections: SettingsSection[] = [
     {
       title: 'Account',
       items: [
@@ -81,7 +81,9 @@ const SettingsScreen: React.FC = () => {
         { label: 'Sign Out', type: 'button', action: handleSignOut, destructive: true },
       ],
     },
-  ].filter(section => {
+  ];
+
+  const sections = allSections.filter(section => {
     if (isGuest && section.items.some(item => item.label === 'Sign Out')) {
       return false;
     }
