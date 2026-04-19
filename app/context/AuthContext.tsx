@@ -29,10 +29,12 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const isGuest = !session?.user;
+  
+  // Derived state to ensure consistency
+  const user = session?.user ?? null;
+  const isGuest = !user;
 
   useEffect(() => {
     // Check active sessions and subscribe to auth changes
@@ -51,13 +53,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (error) {
           console.error('Session check error:', error);
         }
-
-        setUser(session?.user ?? null);
-        setSession(session);
+        
+        setSession(session ?? null);
       } catch (error) {
         console.error('Auth initialization error:', error);
         // On timeout/error, set as guest and continue
-        setUser(null);
         setSession(null);
       } finally {
         setLoading(false);
@@ -69,8 +69,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
       console.log(`[Auth] Event: ${event}`);
-      
-      setUser(currentSession?.user ?? null);
       setSession(currentSession);
       setLoading(false);
     });
@@ -85,7 +83,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const { data: { session: newSession }, error } = await supabase.auth.signInWithPassword({ email, password });
       if (newSession) {
         setSession(newSession);
-        setUser(newSession.user);
       }
       return { error };
     } catch (error) {
@@ -111,10 +108,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const { data: { session: refreshedSession } } = await supabase.auth.getSession();
         if (refreshedSession) {
           setSession(refreshedSession);
-          setUser(refreshedSession.user);
         } else if (newSession) {
           setSession(newSession);
-          setUser(newSession.user);
         }
       }
 
@@ -128,7 +123,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
-      setUser(null);
       setSession(null);
     } catch (error) {
       console.error('Sign out error:', error);
