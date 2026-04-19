@@ -161,7 +161,7 @@ const SettingsScreen: React.FC = () => {
                   style={styles.syncCTA} 
                   onPress={() => navigation.navigate('SignUp')}
                 >
-                  <Ionicons name="sync-outline" size={16} color={theme.colors.primary} />
+                  <Ionicons name="sync-outline" size={18} color={theme.colors.primary} />
                   <Text style={[styles.syncText, { color: theme.colors.primary }]}>
                     Sign in to sync your data
                   </Text>
@@ -174,14 +174,9 @@ const SettingsScreen: React.FC = () => {
 
       <View style={[styles.disclaimerContainer, { backgroundColor: theme.colors.accentContainer }]}>
         <Ionicons name="information-circle-outline" size={24} color={theme.colors.onAccentContainer} style={styles.disclaimerIcon} />
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.disclaimerTitle, { color: theme.colors.onAccentContainer }]}>
-            Medical Disclaimer
-          </Text>
-          <Text style={[styles.disclaimerText, { color: theme.colors.onAccentContainer }]}>
-            MedLens simplifies medical information for understanding. It does not replace professional medical advice, diagnosis, or treatment.
-          </Text>
-        </View>
+        <Text style={[styles.disclaimerText, { color: theme.colors.onAccentContainer, flex: 1 }]}>
+          MedLens simplifies medical information for understanding. It does not replace professional medical advice, diagnosis, or treatment.
+        </Text>
       </View>
       </View>
     </SafeAreaView>
@@ -271,22 +266,28 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 20,
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: 16,
   },
   disclaimerIcon: {
-    marginTop: 2,
-  },
-  disclaimerTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 4,
+    // Vertically centered via parent
   },
   disclaimerText: {
     fontSize: 14,
     lineHeight: 20,
     fontWeight: '500',
     opacity: 0.9,
+  },
+  syncCTA: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    gap: 10,
+  },
+  syncText: {
+    fontSize: 15,
+    fontWeight: '600',
   },
 });
 
