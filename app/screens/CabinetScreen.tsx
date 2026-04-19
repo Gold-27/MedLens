@@ -31,14 +31,16 @@ const CabinetScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   const fetchCabinetItems = useCallback(async () => {
     if (!user) return;
     
     try {
+      setFetchError(null);
       const token = await getToken();
       if (!token) {
-        Alert.alert('Error', 'Authentication required. Please sign in again.');
+        setFetchError('Authentication required');
         return;
       }
       
@@ -46,11 +48,18 @@ const CabinetScreen: React.FC = () => {
       setItems(response.items);
       // Persist to local cache
       await LocalStorageService.setCachedCabinet(response.items);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
+    } catch (error: any) {
+      const message = error.message || 'Unknown error';
       console.error('Failed to fetch cabinet items:', message);
-      Alert.alert('Error', 'Failed to load your cabinet. Please try again.');
+      
+      // Check for specific retryable errors
+      if (message.includes('503') || message.includes('initializing')) {
+        setFetchError('Database is initializing. This usually takes 30-60 seconds after a new setup.');
+      } else {
+        setFetchError('Failed to load your cabinet. Please check your connection.');
+      }
     }
+  }, [user, getToken]);
   }, [user, getToken]);
 
   useEffect(() => {
@@ -270,7 +279,19 @@ return (
           </Text>
         </View>
 
-      {items.length > 0 ? (
+      {fetchError && items.length === 0 ? (
+        <View style={styles.errorContainer}>
+          <Ionicons name="cloud-offline-outline" size={48} color={theme.colors.outline} />
+          <Text style={[styles.errorTitle, { color: theme.colors.onSurface }]}>Unable to load cabinet</Text>
+          <Text style={[styles.errorSubtitle, { color: theme.colors.onSurfaceVariant }]}>{fetchError}</Text>
+          <TouchableOpacity 
+            style={[styles.retryButton, { backgroundColor: theme.colors.primary }]}
+            onPress={() => fetchCabinetItems()}
+          >
+            <Text style={[styles.retryButtonText, { color: theme.colors.onPrimary }]}>Retry Connection</Text>
+          </TouchableOpacity>
+        </View>
+      ) : items.length > 0 ? (
         <>
           <FlatList
             data={items}
@@ -391,6 +412,38 @@ const styles = StyleSheet.create({
   interactionButtonText: {
     fontSize: 18,
     fontWeight: '600',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+    gap: 12,
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginTop: 8,
+  },
+  errorSubtitle: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 8,
+    lineHeight: 20,
+  },
+  retryButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  retryButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
   },
 });
 

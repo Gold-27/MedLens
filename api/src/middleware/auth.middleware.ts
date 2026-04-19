@@ -36,10 +36,11 @@ export const requireAuth = async (
     const { data: { user }, error } = await supabase.auth.getUser(token);
 
     if (error || !user) {
-      console.error('[Auth] Invalid token:', error?.message);
+      console.error('[Auth] Invalid token or session error:', error?.message);
       return res.status(401).json({ error: 'Invalid or expired session. Please sign in again.' });
     }
 
+    console.log(`[Auth] User validated: ${user.id} (${user.email || 'no email'})`);
     req.userId = user.id;
     req.userToken = token;
     next();

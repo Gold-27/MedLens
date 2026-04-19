@@ -7,26 +7,44 @@ import { AuthenticatedRequest } from '../middleware/auth.middleware';
 const getUserScopedClient = (userToken: string) => {
   const url = process.env.SUPABASE_URL!;
   const key = process.env.SUPABASE_ANON_KEY!;
+  
+  if (!url || !key) {
+    throw new Error('Supabase configuration missing (URL or Key)');
+  }
+
   return createClient(url, key, {
+    db: { schema: 'public' },
     global: { headers: { Authorization: `Bearer ${userToken}` } },
   });
 };
 
 export const getCabinetItems = async (req: AuthenticatedRequest, res: Response) => {
+  console.log(`[Cabinet] Fetching items for user: ${req.userId}`);
+  
   try {
     const supabase = getUserScopedClient(req.userToken!);
 
-    const { data, error } = await supabase
+    const { data, error, status } = await supabase
       .from('cabinet_items')
       .select('*')
       .is('deleted_at', null)
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('[Cabinet] Fetch error:', error.message);
+      console.error(`[Cabinet] Fetch error (Status ${status}):`, error.message);
+      
+      // Handle the specific "schema cache" error with a more helpful response
+      if (error.message.includes('schema cache')) {
+        return res.status(503).json({ 
+          error: 'Cabinet service is initializing', 
+          message: 'The database schema is being refreshed. Please try again in a few moments.' 
+        });
+      }
+
       return res.status(500).json({ error: 'Failed to fetch cabinet items', message: error.message });
     }
 
+    console.log(`[Cabinet] Successfully fetched ${data?.length || 0} items for ${req.userId}`);
     return res.json({ items: data || [], count: (data || []).length });
   } catch (error: any) {
     console.error('[Cabinet] getCabinetItems error:', error.message);
