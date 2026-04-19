@@ -81,7 +81,12 @@ const SettingsScreen: React.FC = () => {
         { label: 'Sign Out', type: 'button', action: handleSignOut, destructive: true },
       ],
     },
-  ];
+  ].filter(section => {
+    if (isGuest && section.items.some(item => item.label === 'Sign Out')) {
+      return false;
+    }
+    return true;
+  });
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
@@ -92,6 +97,38 @@ const SettingsScreen: React.FC = () => {
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: theme.colors.onSurface }]}>Settings</Text>
         </View>
+        
+        {!isGuest && user && (
+          <View style={styles.profileHeader}>
+            <View style={[styles.avatarCircle, { backgroundColor: theme.colors.primary }]}>
+              <Text style={styles.avatarText}>
+                {(() => {
+                  const name = user.user_metadata?.full_name;
+                  if (name) {
+                    const parts = name.trim().split(/\s+/);
+                    if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+                    return parts[0][0].toUpperCase();
+                  }
+                  return user.email?.[0].toUpperCase() || '?';
+                })()}
+              </Text>
+            </View>
+            <View style={styles.profileInfo}>
+              <Text style={[styles.profileName, { color: theme.colors.onSurface }]}>
+                {user.user_metadata?.full_name || 'User'}
+              </Text>
+              <Text style={[styles.profileEmail, { color: theme.colors.onSurfaceVariant }]}>
+                {user.email}
+              </Text>
+              <TouchableOpacity 
+                style={[styles.editButton, { backgroundColor: theme.colors.surfaceVariant }]}
+                onPress={() => Alert.alert('Edit Profile', 'Profile editing will be available in a future update.')}
+              >
+                <Text style={[styles.editButtonText, { color: theme.colors.onSurfaceVariant }]}>Edit Profile</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
 
       {sections.map((section, sectionIndex) => (
         <View key={sectionIndex} style={styles.section}>
@@ -287,6 +324,47 @@ const styles = StyleSheet.create({
   },
   syncText: {
     fontSize: 15,
+    fontWeight: '600',
+  },
+  profileHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingBottom: 32,
+    gap: 20,
+  },
+  avatarCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    color: '#FFFFFF',
+    fontSize: 28,
+    fontWeight: '700',
+  },
+  profileInfo: {
+    flex: 1,
+    gap: 4,
+  },
+  profileName: {
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  profileEmail: {
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  editButton: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  editButtonText: {
+    fontSize: 12,
     fontWeight: '600',
   },
 });

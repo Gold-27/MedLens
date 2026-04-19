@@ -360,10 +360,24 @@ const HomeScreen: React.FC = () => {
               <Text style={[styles.cabinetText, { color: theme.colors.onPrimaryContainer }]}>Cabinet</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.profileCircle, { backgroundColor: 'transparent', borderWidth: 0 }]}
+              style={[styles.profileCircle, { backgroundColor: user ? theme.colors.primary : 'transparent', borderWidth: 0 }]}
               onPress={() => navigation.navigate('Settings')}
             >
-              <Ionicons name="person-circle" size={32} color={theme.colors.onSurface} />
+              {user ? (
+                <Text style={[styles.initialsText, { color: theme.colors.onPrimary }]}>
+                  {(() => {
+                    const name = user.user_metadata?.full_name;
+                    if (name) {
+                      const parts = name.trim().split(/\s+/);
+                      if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+                      return parts[0][0].toUpperCase();
+                    }
+                    return user.email?.[0].toUpperCase() || '?';
+                  })()}
+                </Text>
+              ) : (
+                <Ionicons name="person-circle" size={32} color={theme.colors.onSurface} />
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -440,16 +454,20 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
     fontWeight: '700',
   },
   profileCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    elevation: 2,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  initialsText: {
+    fontSize: 16,
+    fontWeight: '700',
   },
   scrollView: {
     flex: 1,
