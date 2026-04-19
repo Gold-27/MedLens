@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, TextInput, TouchableOpacity, StyleSheet, FlatList, Platform, Animated } from 'react-native';
+import { View, TextInput, TouchableOpacity, StyleSheet, FlatList, Platform, Animated, Keyboard } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -7,6 +7,10 @@ interface Suggestion {
   name: string;
   type: 'brand' | 'generic';
   drug_name: string;
+}
+
+export interface InputBarHandle {
+  clear: () => void;
 }
 
 interface InputBarProps {
@@ -19,7 +23,7 @@ interface InputBarProps {
   onToggleEli12?: (enabled: boolean) => void;
 }
 
-const InputBar: React.FC<InputBarProps> = ({
+const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
   onSubmit,
   loading = false,
   onSuggestionSelect,
@@ -27,13 +31,24 @@ const InputBar: React.FC<InputBarProps> = ({
   autoFocus = false,
   eli12Enabled = false,
   onToggleEli12,
-}) => {
+}, ref) => {
   const theme = useTheme();
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const debounceTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputShadow = useRef(new Animated.Value(0)).current;
+  const inputRef = useRef<TextInput>(null);
+
+  React.useImperativeHandle(ref, () => ({
+    clear: () => {
+      setQuery('');
+      setSuggestions([]);
+      setShowSuggestions(false);
+      inputRef.current?.blur();
+      Keyboard.dismiss();
+    }
+  }));
 
   useEffect(() => {
     if (debounceTimeout.current) {
@@ -133,6 +148,7 @@ const InputBar: React.FC<InputBarProps> = ({
           ]}
         >
           <TextInput
+            ref={inputRef}
             style={[styles.input, { color: theme.colors.onSurface, textAlign: 'left' }]}
             placeholder="Search medication..."
             placeholderTextColor={theme.colors.outlineVariant}

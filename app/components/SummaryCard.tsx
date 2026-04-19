@@ -166,15 +166,12 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
           return (
             <View key={section.id} style={styles.sectionWrapper}>
               <TouchableOpacity 
-                style={[
-                  styles.sectionHeader, 
-                  { backgroundColor: section.color }
-                ]}
+                style={styles.sectionHeader}
                 onPress={() => toggleSection(section.id)}
                 activeOpacity={0.7}
               >
                 <View style={styles.sectionHeaderLeft}>
-                  <View style={[styles.sectionIconBg, { backgroundColor: theme.colors.surface + '60' }]}>
+                  <View style={[styles.sectionIconBg, { backgroundColor: section.color }]}>
                     <Ionicons name={section.icon} size={20} color={section.iconColor} />
                   </View>
                   <Text style={[styles.sectionTitle, { color: section.iconColor }]}>{section.title}</Text>
@@ -197,7 +194,7 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
               ) : (
                 <View style={styles.collapsedContent}>
                    <Text 
-                    style={[styles.previewText, { color: theme.colors.onSurfaceVariant }]} 
+                    style={styles.previewText} 
                     numberOfLines={2}
                   >
                     {section.content || 'Information not available.'}
@@ -275,7 +272,7 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    marginTop: 2,
+    marginTop: 8,
   },
   sourceText: {
     fontSize: 12,
@@ -318,7 +315,6 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
   sectionWrapper: {
     borderRadius: 16,
     overflow: 'hidden',
-    backgroundColor: theme.colors.surfaceContainerLow,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -352,9 +348,9 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
     marginTop: -4,
   },
   previewText: {
-    fontSize: 13,
-    lineHeight: 18,
-    opacity: 0.8,
+    fontSize: 15,
+    lineHeight: 22,
+    color: theme.colors.onSurface,
   },
   sectionContent: {
     fontSize: 15,

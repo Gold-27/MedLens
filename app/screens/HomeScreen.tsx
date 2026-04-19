@@ -11,7 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import SummaryCard from '../components/SummaryCard';
 import Skeleton from '../components/Skeleton';
-import InputBar from '../components/InputBar';
+import InputBar, { InputBarHandle } from '../components/InputBar';
 import EmptyState from '../components/EmptyState';
 import AuthModal from '../components/AuthModal';
 import Disclaimer from '../components/Disclaimer';
@@ -30,6 +30,7 @@ const HomeScreen: React.FC = () => {
   const styles = makeStyles(theme);
 
   const [query, setQuery] = useState('');
+  const inputBarRef = useRef<InputBarHandle>(null);
   const [state, setState] = useState<AppState>('empty');
   const [result, setResult] = useState<api.SearchResponse | null>(null);
   const [eli12Enabled, setEli12Enabled] = useState(false);
@@ -145,6 +146,8 @@ const HomeScreen: React.FC = () => {
       } else {
         setState('error');
       }
+    } finally {
+      inputBarRef.current?.clear();
     }
   }, [eli12Enabled]);
 
@@ -168,7 +171,10 @@ const HomeScreen: React.FC = () => {
 
   const handleSave = useCallback(async () => {
     if (!result) return;
-    if (isGuest) { setPendingAction('save this medication to your cabinet'); setShowAuthModal(true); return; }
+    if (isGuest) { 
+      navigation.navigate('SignUp');
+      return; 
+    }
     try {
       const token = await getToken();
       if (!token) return;
@@ -188,6 +194,10 @@ const HomeScreen: React.FC = () => {
       }).catch(() => {});
 
       Alert.alert('Saved', `${result.drug_name} has been saved to your cabinet.`);
+      
+      // Reset Home screen to empty state after saving
+      setState('empty');
+      setResult(null);
     } catch (error) {
       console.error('Save failed:', error);
       Alert.alert('Error', 'Failed to save medication. Please check your connection.');
@@ -196,7 +206,10 @@ const HomeScreen: React.FC = () => {
 
   const handleExport = useCallback(async () => {
     if (!result) return;
-    if (isGuest) { setPendingAction('export this summary'); setShowAuthModal(true); return; }
+    if (isGuest) { 
+      navigation.navigate('SignUp');
+      return; 
+    }
     const shareContent = `MedLens Summary: ${result.drug_name}\n\nWhat it does: ${result.summary.what_it_does}\n\nDisclaimer: Not medical advice.`;
     try { await Share.share({ title: result.drug_name, message: shareContent }); }
     catch (error) { console.error('Share failed:', error); }
@@ -320,6 +333,7 @@ const HomeScreen: React.FC = () => {
         {/* Floating Bottom Bar */}
         <View style={[styles.floatingFooter, { paddingBottom: isKeyboardVisible ? 20 : Math.max(insets.bottom + 20, 32) }]}>
           <InputBar
+            ref={inputBarRef}
             onSubmit={handleSearch}
             loading={state === 'loading'}
             fetchSuggestions={fetchSuggestions}
