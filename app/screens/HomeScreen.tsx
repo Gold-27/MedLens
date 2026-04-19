@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Share, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -39,6 +39,65 @@ const HomeScreen: React.FC = () => {
   const [savedDrugs, setSavedDrugs] = useState<Set<string>>(new Set());
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+
+  const handleSearch = useCallback(async (searchQuery: string) => {
+    if (!searchQuery.trim()) return;
+    setQuery(searchQuery);
+    setState('loading');
+    
+    try {
+      // 1. Check Local Cache First (Optimization)
+      const cached = await LocalStorageService.getCachedResult(searchQuery.trim());
+      if (cached) {
+        setResult(cached);
+        setState('success');
+        // Update recent searches in background
+        const updated = await LocalStorageService.addRecentSearch(searchQuery.trim());
+        setRecentSearches(updated);
+        return;
+      }
+
+      // 2. Fallback to API/DB
+      const response = await api.searchMedication(searchQuery.trim(), eli12Enabled);
+      setResult(response);
+      setEli12Enabled(response.eli12.enabled);
+      
+      // 3. Save to local storage for future use
+      await Promise.all([
+        LocalStorageService.setCachedResult(searchQuery.trim(), response),
+        LocalStorageService.addRecentSearch(searchQuery.trim()).then(updated => setRecentSearches(updated))
+      ]);
+      
+      setState('success');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      if (message.includes('not found') || message.includes('404')) {
+        setState('notFound');
+      } else {
+        setState('error');
+      }
+    } finally {
+      inputBarRef.current?.clear();
+    }
+  }, [eli12Enabled]);
+
+  const handleToggleELI12 = useCallback(async (enabled: boolean) => {
+    setEli12Enabled(enabled);
+    // Persist preference locally
+    LocalStorageService.updateSettings({ eli12Enabled: enabled });
+    
+    if (!result) return;
+    if (!enabled) { setState('success'); return; }
+    setState('loading');
+    try {
+      if (!result.data) throw new Error('No drug data available');
+      const response = await api.getELI12(result.data);
+      setResult({ ...result, eli12: response.eli12 });
+      setState('success');
+    } catch (error) {
+      setState('error');
+    }
+  }, [result]);
 
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
@@ -109,65 +168,6 @@ const HomeScreen: React.FC = () => {
     };
     initData();
   }, [user, isGuest, getToken]);
-
-  const handleSearch = useCallback(async (searchQuery: string) => {
-    if (!searchQuery.trim()) return;
-    setQuery(searchQuery);
-    setState('loading');
-    
-    try {
-      // 1. Check Local Cache First (Optimization)
-      const cached = await LocalStorageService.getCachedResult(searchQuery.trim());
-      if (cached) {
-        setResult(cached);
-        setState('success');
-        // Update recent searches in background
-        const updated = await LocalStorageService.addRecentSearch(searchQuery.trim());
-        setRecentSearches(updated);
-        return;
-      }
-
-      // 2. Fallback to API/DB
-      const response = await api.searchMedication(searchQuery.trim(), eli12Enabled);
-      setResult(response);
-      setEli12Enabled(response.eli12.enabled);
-      
-      // 3. Save to local storage for future use
-      await Promise.all([
-        LocalStorageService.setCachedResult(searchQuery.trim(), response),
-        LocalStorageService.addRecentSearch(searchQuery.trim()).then(updated => setRecentSearches(updated))
-      ]);
-      
-      setState('success');
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
-      if (message.includes('not found') || message.includes('404')) {
-        setState('notFound');
-      } else {
-        setState('error');
-      }
-    } finally {
-      inputBarRef.current?.clear();
-    }
-  }, [eli12Enabled]);
-
-  const handleToggleELI12 = useCallback(async (enabled: boolean) => {
-    setEli12Enabled(enabled);
-    // Persist preference locally
-    LocalStorageService.updateSettings({ eli12Enabled: enabled });
-    
-    if (!result) return;
-    if (!enabled) { setState('success'); return; }
-    setState('loading');
-    try {
-      if (!result.data) throw new Error('No drug data available');
-      const response = await api.getELI12(result.data);
-      setResult({ ...result, eli12: response.eli12 });
-      setState('success');
-    } catch (error) {
-      setState('error');
-    }
-  }, [result]);
 
   const handleSave = useCallback(async () => {
     if (!result) return;

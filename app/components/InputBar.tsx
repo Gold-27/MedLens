@@ -201,7 +201,7 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
       )}
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
