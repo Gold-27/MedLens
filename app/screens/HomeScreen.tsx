@@ -334,11 +334,12 @@ const HomeScreen: React.FC = () => {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.keyboardView}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
-    >
+    <View style={styles.root}>
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
+      >
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
         {/* Static Background Headline */}
         {state === 'empty' && (
@@ -414,10 +415,15 @@ const HomeScreen: React.FC = () => {
         pendingAction={pendingAction}
       />
     </KeyboardAvoidingView>
+    </View>
   );
 };
 
 const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
   keyboardView: {
     flex: 1,
     backgroundColor: theme.colors.background,

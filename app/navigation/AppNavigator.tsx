@@ -148,6 +148,10 @@ const DrawerNavigator: React.FC = () => {
       screenOptions={{
         headerShown: false,
         drawerStyle: { backgroundColor: theme.colors.background, width: 300 },
+        drawerType: 'front', // Overlay drawer to prevent main screen resizing
+        unmountOnBlur: false, // Keep screens mounted in background
+        swipeEdgeWidth: 100, // Better swipe detection
+        overlayColor: 'rgba(0,0,0,0.5)',
       }}
     >
       <Drawer.Screen
