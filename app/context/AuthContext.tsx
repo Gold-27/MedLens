@@ -104,12 +104,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
 
       if (!error) {
+        console.log('[Auth] SignUp successful, refreshing session...');
         // Force session update immediately
         const { data: { session: refreshedSession } } = await supabase.auth.getSession();
         if (refreshedSession) {
+          console.log('[Auth] Session refreshed successfully');
           setSession(refreshedSession);
         } else if (newSession) {
+          console.log('[Auth] Using newSession from signUp');
           setSession(newSession);
+        } else {
+          console.warn('[Auth] No session found after signUp - email confirmation might be required');
         }
       }
 
@@ -132,7 +137,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signInWithGoogle = async () => {
     try {
       console.log('Starting Google Auth...');
-      const redirectUrl = AuthSession.makeRedirectUri({});
+      const redirectUrl = AuthSession.makeRedirectUri({
+        scheme: 'medlens',
+        preferImplicitFlow: true,
+      });
       console.log('AuthSession Redirect URL:', redirectUrl);
 
       const { data, error } = await supabase.auth.signInWithOAuth({

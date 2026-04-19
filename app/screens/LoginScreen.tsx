@@ -39,7 +39,18 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
   });
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const { signIn, signInWithGoogle } = useAuth();
+  const { signIn, signInWithGoogle, isGuest } = useAuth();
+  const [loginSuccess, setLoginSuccess] = useState(false);
+
+  // Safe navigation: Wait for global auth state to catch up before navigating
+  React.useEffect(() => {
+    if (loginSuccess && !isGuest) {
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Home' }],
+      });
+    }
+  }, [loginSuccess, isGuest, navigation]);
 
   const handleBlur = (field: keyof typeof form) => {
     setFocusedInput(null);
@@ -85,11 +96,8 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
       if (error) {
         setErrors((prev) => ({ ...prev, general: error.message }));
       } else {
-        // Success! Navigation reset to Home
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'Home' }],
-        });
+        // Success! Mark as success and wait for useEffect to navigate
+        setLoginSuccess(true);
       }
     } catch (err) {
       setErrors((prev) => ({ ...prev, general: 'An unexpected error occurred. Please try again.' }));

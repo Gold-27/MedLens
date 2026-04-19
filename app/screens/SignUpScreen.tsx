@@ -26,7 +26,18 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
   });
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const { signUp, signInWithGoogle } = useAuth();
+  const { signUp, signInWithGoogle, isGuest } = useAuth();
+  const [signUpSuccess, setSignUpSuccess] = useState(false);
+
+  // Safe navigation: Wait for global auth state to catch up before navigating
+  React.useEffect(() => {
+    if (signUpSuccess && !isGuest) {
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Home' }],
+      });
+    }
+  }, [signUpSuccess, isGuest, navigation]);
 
   const getPasswordRequirements = (password: string) => ({
     length: password.length >= 8,
@@ -92,11 +103,8 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
         if (error) {
           Alert.alert('Sign Up Failed', error.message);
         } else {
-          // Success! Navigation reset to Home
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'Home' }],
-          });
+          // Success! Mark as success and wait for useEffect to navigate
+          setSignUpSuccess(true);
         }
       } catch (err) {
         Alert.alert('Error', 'An unexpected error occurred. Please try again.');
