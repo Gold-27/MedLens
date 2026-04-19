@@ -46,20 +46,42 @@ export class OpenFDAService {
 
   async getAutocomplete(query: string): Promise<string[]> {
     try {
-      // OpenFDA doesn't have a direct autocomplete, but we can search for brand names
-      const url = `${this.baseUrl}?search=openfda.brand_name:${query}*&limit=10${this.apiKey ? `&api_key=${this.apiKey}` : ''}&count=openfda.brand_name.exact`;
+      const encodedQuery = encodeURIComponent(query);
       
-      const response = await axios.get(url);
+      // We perform two counts to get both brand and generic suggestions
+      const brandUrl = `${this.baseUrl}?search=openfda.brand_name:${encodedQuery}*&limit=10${this.apiKey ? `&api_key=${this.apiKey}` : ''}&count=openfda.brand_name.exact`;
+      const genericUrl = `${this.baseUrl}?search=openfda.generic_name:${encodedQuery}*&limit=10${this.apiKey ? `&api_key=${this.apiKey}` : ''}&count=openfda.generic_name.exact`;
       
-      if (!response.data.results) {
-        return [];
+      const [brandRes, genericRes] = await Promise.all([
+        axios.get(brandUrl).catch(() => ({ data: { results: [] } })),
+        axios.get(genericUrl).catch(() => ({ data: { results: [] } }))
+      ]);
+      
+      const suggestions = new Set<string>();
+      
+      // Add brand names
+      if (brandRes.data.results) {
+        brandRes.data.results.forEach((r: any) => {
+          if (r.term) suggestions.add(this.capitalizeWords(r.term));
+        });
+      }
+      
+      // Add generic names
+      if (genericRes.data.results) {
+        genericRes.data.results.forEach((r: any) => {
+          if (r.term) suggestions.add(this.capitalizeWords(r.term));
+        });
       }
 
-      return response.data.results.map((r: any) => r.term).filter(Boolean);
+      return Array.from(suggestions).slice(0, 10);
     } catch (error: any) {
       console.error('OpenFDA Autocomplete error:', error.message);
       return [];
     }
+  }
+
+  private capitalizeWords(str: string): string {
+    return str.toLowerCase().replace(/(^|\s)\S/g, l => l.toUpperCase());
   }
 }
 

@@ -55,7 +55,7 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
       clearTimeout(debounceTimeout.current);
     }
 
-    if (query.trim().length > 1 && fetchSuggestions) {
+    if (query.trim().length >= 1 && fetchSuggestions) {
       debounceTimeout.current = setTimeout(async () => {
         try {
           const results = await fetchSuggestions(query);
@@ -65,7 +65,7 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
           console.error('Failed to fetch suggestions:', error);
           setSuggestions([]);
         }
-      }, 350);
+      }, 300);
     } else {
       setSuggestions([]);
       setShowSuggestions(false);

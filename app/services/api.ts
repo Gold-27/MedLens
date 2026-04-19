@@ -146,11 +146,15 @@ export async function getAutocomplete(query: string): Promise<AutocompleteRespon
       method: 'GET',
     });
     
-    // Merge results, prioritizing local hits but removing duplicates
+    // Merge results: prioritizing local hits, then adding unique API suggestions
     const combined = [...localSuggestions];
+    const seenNames = new Set(localSuggestions.map(s => s.name.toLowerCase()));
+
     apiResponse.suggestions.forEach(apiSug => {
-      if (!combined.some(c => c.name.toLowerCase() === apiSug.name.toLowerCase())) {
+      const normalizedName = apiSug.name.toLowerCase();
+      if (!seenNames.has(normalizedName)) {
         combined.push(apiSug);
+        seenNames.add(normalizedName);
       }
     });
 
