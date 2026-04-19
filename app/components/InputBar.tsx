@@ -86,12 +86,21 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
   };
 
   const handleSuggestionPress = (suggestion: Suggestion) => {
-    setQuery(suggestion.name);
+    if (!suggestion || !suggestion.name) return;
+    
+    const drugName = suggestion.name.trim();
+    setQuery(drugName);
     setShowSuggestions(false);
+    Keyboard.dismiss();
+    
     if (onSuggestionSelect) {
       onSuggestionSelect(suggestion);
     }
-    onSubmit(suggestion.name, eli12Enabled);
+    
+    // Trigger immediate search
+    if (drugName && !loading) {
+      onSubmit(drugName, eli12Enabled);
+    }
   };
 
   const handleFocus = () => {

@@ -67,6 +67,23 @@ const HomeScreen: React.FC = () => {
     }
   }, [result]);
 
+  // Helper for immediate ELI12 refinement after search selection
+  const handleSearchWithEli = async (baseResult: api.SearchResponse) => {
+    setState('loading');
+    try {
+      if (!baseResult.data) return;
+      const eliResponse = await api.getELI12(baseResult.data, baseResult.summary);
+      setResult({ ...baseResult, eli12: eliResponse.eli12 });
+      setEli12Enabled(true);
+      setState('success');
+    } catch (err) {
+      console.error('Initial ELI12 pass failed:', err);
+      // Fall back to showing the base result we already have
+      setResult(baseResult);
+      setState('success');
+    }
+  };
+
   const handleSearch = useCallback(async (searchQuery: string, withEli: boolean = false) => {
     if (!searchQuery.trim()) return;
     setQuery(searchQuery);
@@ -80,9 +97,11 @@ const HomeScreen: React.FC = () => {
         setResult(cached);
         setState('success');
         
-        // If searched via ELI12 button, trigger the refinement
+        // If searched via ELI12 button, trigger the refinement using the cached data directly
         if (withEli) {
-          handleToggleELI12(true);
+          if (cached.data) {
+            handleSearchWithEli(cached);
+          }
         }
 
         // Update recent searches in background
@@ -103,16 +122,13 @@ const HomeScreen: React.FC = () => {
       
       setState('success');
 
-      // 4. If searched via ELI12 button, trigger the refinement AFTER Layer 1 is ready
+      // 4. If searched via ELI12 button, trigger refinement using the response directly
       if (withEli) {
-        // We pass the response directly since state might not have updated yet
-        setState('loading'); // Show loading again for the simplification pass
         if (response.data) {
-          const eliResponse = await api.getELI12(response.data, response.summary);
-          setResult({ ...response, eli12: eliResponse.eli12 });
-          setEli12Enabled(true);
+          handleSearchWithEli(response);
+        } else {
+          setState('success');
         }
-        setState('success');
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
