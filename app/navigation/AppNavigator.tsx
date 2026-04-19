@@ -29,7 +29,7 @@ export type RootStackParamList = {
 };
 
 export type DrawerParamList = {
-  HomeDrawer: undefined;
+  HomeDrawer: { searchQuery?: string };
   CabinetDrawer: undefined;
   SettingsDrawer: undefined;
 };
