@@ -37,36 +37,23 @@ export const searchMedication = async (req: Request, res: Response) => {
       console.log('[Search] Attempting DeepSeek Layer 1...');
       layer1 = await deepseekService.generateSummary(fdaData);
       aiProvider = 'DeepSeek';
-      
-      // If ELI12 requested, chain to Layer 2
-      if (eli12) {
-        console.log('[Search] DeepSeek Layer 1 success. Chaining to Layer 2 (ELI12)...');
-        layer2 = await deepseekService.generateELI12(layer1);
-        console.log('[Search] DeepSeek Layer 2 success.');
-      }
     } catch (dsError: any) {
-      console.warn(`[Search] DeepSeek failed at some layer: ${dsError.message}`);
+      console.warn(`[Search] DeepSeek failed: ${dsError.message}`);
       
       // Attempt 2: Gemini Failover
       try {
         console.log('[Search] Attempting Gemini failover Layer 1...');
         layer1 = await geminiService.generateSummary(fdaData);
         aiProvider = 'Gemini';
-
-        if (eli12) {
-          console.log('[Search] Gemini Layer 1 success. Chaining to Layer 2 (ELI12)...');
-          layer2 = await geminiService.generateELI12(layer1);
-          console.log('[Search] Gemini Layer 2 success.');
-        }
       } catch (gemError: any) {
         console.error(`[Search] Gemini also failed: ${gemError.message}`);
         
         // Final Fallback: Safe Mode
         layer1 = {
-          what_it_does: fdaData.indications || 'We do not have enough reliable information for this section.',
-          how_to_take: fdaData.dosage || 'We do not have enough reliable information for this section.',
-          warnings: fdaData.warnings || 'We do not have enough reliable information for this section.',
-          side_effects: fdaData.side_effects || 'We do not have enough reliable information for this section.',
+          what_it_does: fdaData.indications || '',
+          how_to_take: fdaData.dosage || '',
+          warnings: fdaData.warnings || '',
+          side_effects: fdaData.side_effects || '',
         };
         aiProvider = 'Fallback (Manual)';
       }
@@ -93,8 +80,8 @@ export const searchMedication = async (req: Request, res: Response) => {
       data: fdaData,
       summary: validatedSummary,
       eli12: {
-        enabled: !!layer2,
-        content: layer2 ? JSON.stringify(layer2) : null,
+        enabled: false,
+        content: null,
       },
       disclaimer: 'MedLens simplifies medical information for understanding. It does not replace professional medical advice.',
     });
@@ -148,12 +135,12 @@ export const generateELI12 = async (req: Request, res: Response) => {
           }
         } catch (gemError: any) {
           console.error(`[ELI12] Gemini failed: ${gemError.message}`);
-          // Safe mode fallback
+          // Safe mode fallback - pass empty or raw data, not the "We do not have enough" message
           summary = current_summary || {
-            what_it_does: drug_data?.indications || 'We do not have enough reliable information for this section.',
-            how_to_take: drug_data?.dosage || 'We do not have enough reliable information for this section.',
-            warnings: drug_data?.warnings || 'We do not have enough reliable information for this section.',
-            side_effects: drug_data?.side_effects || 'We do not have enough reliable information for this section.',
+            what_it_does: drug_data?.indications || '',
+            how_to_take: drug_data?.dosage || '',
+            warnings: drug_data?.warnings || '',
+            side_effects: drug_data?.side_effects || '',
           };
           aiProvider = 'Fallback';
         }

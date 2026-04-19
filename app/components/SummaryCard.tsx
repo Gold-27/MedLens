@@ -18,7 +18,6 @@ export interface SummaryCardProps {
   };
   onSave?: () => void;
   onExport?: () => void;
-  onToggleEli12?: (enabled: boolean) => void;
   isEli12?: boolean;
   isSaved?: boolean;
   requiresAuth?: boolean;
@@ -30,7 +29,6 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
   sections,
   onSave,
   onExport,
-  onToggleEli12,
   isEli12 = false,
   isSaved = false,
   requiresAuth = false,
@@ -43,11 +41,6 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
   useEffect(() => {
     setEli12Enabled(isEli12);
   }, [isEli12]);
-
-  const toggleEli12 = (value: boolean) => {
-    setEli12Enabled(value);
-    onToggleEli12?.(value);
-  };
 
   const toggleSection = (id: string) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -131,19 +124,6 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
               </View>
             </View>
           </View>
-          
-          <View style={styles.toggleWrapper}>
-            <Text style={[styles.toggleLabel, { color: eli12Enabled ? theme.colors.primary : theme.colors.outline }]}>
-              ELI12
-            </Text>
-            <Switch
-              value={eli12Enabled}
-              onValueChange={toggleEli12}
-              trackColor={{ false: theme.colors.surfaceVariant, true: theme.colors.primaryContainer }}
-              thumbColor={eli12Enabled ? theme.colors.primary : theme.colors.outline}
-              ios_backgroundColor={theme.colors.surfaceVariant}
-            />
-          </View>
         </View>
 
         {eli12Enabled && (
@@ -187,7 +167,7 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
                 <View style={styles.expandedContent}>
                   {section.content ? formatContent(section.content) : (
                     <Text style={styles.missingDataText}>
-                      We do not have enough reliable information for this section.
+                      Section not available for this medication.
                     </Text>
                   )}
                 </View>
@@ -197,7 +177,7 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
                     style={styles.previewText} 
                     numberOfLines={2}
                   >
-                    {section.content || 'Information not available.'}
+                    {section.content || ''}
                   </Text>
                 </View>
               )}

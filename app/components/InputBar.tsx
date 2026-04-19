@@ -14,7 +14,7 @@ export interface InputBarHandle {
 }
 
 interface InputBarProps {
-  onSubmit: (query: string) => void;
+  onSubmit: (query: string, withEli?: boolean) => void;
   loading?: boolean;
   onSuggestionSelect?: (suggestion: Suggestion) => void;
   fetchSuggestions?: (query: string) => Promise<Suggestion[]>;
@@ -80,7 +80,7 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
 
   const handleSubmit = () => {
     if (query.trim() && !loading) {
-      onSubmit(query.trim());
+      onSubmit(query.trim(), eli12Enabled);
       setShowSuggestions(false);
     }
   };
@@ -91,7 +91,7 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
     if (onSuggestionSelect) {
       onSuggestionSelect(suggestion);
     }
-    onSubmit(suggestion.name);
+    onSubmit(suggestion.name, eli12Enabled);
   };
 
   const handleFocus = () => {
@@ -172,15 +172,20 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
           style={[
             styles.eliButton, 
             { 
-              backgroundColor: theme.colors.primary,
+              backgroundColor: eli12Enabled ? theme.colors.primary : theme.colors.surface,
+              borderColor: theme.colors.primary,
+              borderWidth: 1,
               shadowOpacity: eli12Enabled ? 0.2 : 0.05
             }
           ]}
           onPress={() => onToggleEli12?.(!eli12Enabled)}
         >
+          {eli12Enabled && (
+            <Ionicons name="checkmark-circle" size={16} color={theme.colors.onPrimary} />
+          )}
           <Animated.Text style={[
             styles.eliButtonText, 
-            { color: theme.colors.onPrimary }
+            { color: eli12Enabled ? theme.colors.onPrimary : theme.colors.primary }
           ]}>
             ELI 12
           </Animated.Text>

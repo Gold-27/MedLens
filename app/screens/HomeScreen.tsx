@@ -40,47 +40,6 @@ const HomeScreen: React.FC = () => {
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
 
-  const handleSearch = useCallback(async (searchQuery: string) => {
-    if (!searchQuery.trim()) return;
-    setQuery(searchQuery);
-    setState('loading');
-    
-    try {
-      // 1. Check Local Cache First (Optimization)
-      const cached = await LocalStorageService.getCachedResult(searchQuery.trim());
-      if (cached) {
-        setResult(cached);
-        setState('success');
-        // Update recent searches in background
-        const updated = await LocalStorageService.addRecentSearch(searchQuery.trim());
-        setRecentSearches(updated);
-        return;
-      }
-
-      // 2. Fallback to API/DB
-      const response = await api.searchMedication(searchQuery.trim(), eli12Enabled);
-      setResult(response);
-      setEli12Enabled(response.eli12.enabled);
-      
-      // 3. Save to local storage for future use
-      await Promise.all([
-        LocalStorageService.setCachedResult(searchQuery.trim(), response),
-        LocalStorageService.addRecentSearch(searchQuery.trim()).then(updated => setRecentSearches(updated))
-      ]);
-      
-      setState('success');
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
-      if (message.includes('not found') || message.includes('404')) {
-        setState('notFound');
-      } else {
-        setState('error');
-      }
-    } finally {
-      inputBarRef.current?.clear();
-    }
-  }, [eli12Enabled]);
-
   const handleToggleELI12 = useCallback(async (enabled: boolean) => {
     setEli12Enabled(enabled);
     // Persist preference locally
@@ -106,6 +65,65 @@ const HomeScreen: React.FC = () => {
       setState('error');
     }
   }, [result]);
+
+  const handleSearch = useCallback(async (searchQuery: string, withEli: boolean = false) => {
+    if (!searchQuery.trim()) return;
+    setQuery(searchQuery);
+    setState('loading');
+    // REMOVED: setEli12Enabled(false); // Now it's a master toggle, so respect the current state
+    
+    try {
+      // 1. Check Local Cache First (Optimization)
+      const cached = await LocalStorageService.getCachedResult(searchQuery.trim());
+      if (cached) {
+        setResult(cached);
+        setState('success');
+        
+        // If searched via ELI12 button, trigger the refinement
+        if (withEli) {
+          handleToggleELI12(true);
+        }
+
+        // Update recent searches in background
+        const updated = await LocalStorageService.addRecentSearch(searchQuery.trim());
+        setRecentSearches(updated);
+        return;
+      }
+
+      // 2. Fallback to API/DB
+      const response = await api.searchMedication(searchQuery.trim(), false); // Backend always returns Layer 1 now
+      setResult(response);
+      
+      // 3. Save to local storage for future use
+      await Promise.all([
+        LocalStorageService.setCachedResult(searchQuery.trim(), response),
+        LocalStorageService.addRecentSearch(searchQuery.trim()).then(updated => setRecentSearches(updated))
+      ]);
+      
+      setState('success');
+
+      // 4. If searched via ELI12 button, trigger the refinement AFTER Layer 1 is ready
+      if (withEli) {
+        // We pass the response directly since state might not have updated yet
+        setState('loading'); // Show loading again for the simplification pass
+        if (response.data) {
+          const eliResponse = await api.getELI12(response.data, response.summary);
+          setResult({ ...response, eli12: eliResponse.eli12 });
+          setEli12Enabled(true);
+        }
+        setState('success');
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      if (message.includes('not found') || message.includes('404')) {
+        setState('notFound');
+      } else {
+        setState('error');
+      }
+    } finally {
+      inputBarRef.current?.clear();
+    }
+  }, [handleToggleELI12]);
 
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
@@ -135,12 +153,10 @@ const HomeScreen: React.FC = () => {
   useEffect(() => {
     // Load local data on mount
     const loadLocalData = async () => {
-      const [recent, settings] = await Promise.all([
+      const [recent] = await Promise.all([
         LocalStorageService.getRecentSearches(),
-        LocalStorageService.getSettings()
       ]);
       setRecentSearches(recent);
-      setEli12Enabled(settings.eli12Enabled);
     };
     loadLocalData();
   }, []);
@@ -278,7 +294,6 @@ const HomeScreen: React.FC = () => {
               isEli12={eli12Enabled}
               onSave={handleSave}
               onExport={handleExport}
-              onToggleEli12={handleToggleELI12}
               isSaved={savedDrugs.has(result.drug_name.toLowerCase())}
               requiresAuth={isGuest}
             />
