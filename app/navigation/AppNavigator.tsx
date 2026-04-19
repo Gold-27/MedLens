@@ -94,6 +94,11 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
           <Ionicons name="medical" size={32} color={theme.colors.onPrimary} />
         </View>
         <Text style={[styles.appName, { color: theme.colors.onSurface }]}>MedLens</Text>
+        {!isGuest && (
+          <Text style={[styles.userEmail, { color: theme.colors.onSurfaceVariant }]} numberOfLines={1}>
+            {user?.email}
+          </Text>
+        )}
       </View>
 
       <View style={styles.historySection}>
@@ -138,14 +143,11 @@ const DrawerNavigator: React.FC = () => {
   const theme = useTheme();
   return (
     <Drawer.Navigator
+      useLegacyImplementation={false}
       drawerContent={(props: DrawerContentComponentProps) => <CustomDrawerContent {...props} />}
       screenOptions={{
         headerShown: false,
         drawerStyle: { backgroundColor: theme.colors.background, width: 300 },
-        drawerType: 'slide', // Use slide for better gesture/state synchronization
-        unmountOnBlur: false, // Keep screens mounted
-        swipeEdgeWidth: 100, // Large swipe edge for accessibility
-        overlayColor: 'rgba(0,0,0,0.5)',
       }}
     >
       <Drawer.Screen

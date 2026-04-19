@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Share, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation, useRoute, DrawerActions } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import type { DrawerNavigationProp } from '@react-navigation/drawer';
 import { DrawerParamList, RootStackParamList } from '../navigation/AppNavigator';
 
@@ -334,12 +334,11 @@ const HomeScreen: React.FC = () => {
   };
 
   return (
-    <View style={styles.root}>
-      <KeyboardAvoidingView
-        style={styles.keyboardView}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
-      >
+    <KeyboardAvoidingView
+      style={styles.keyboardView}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
+    >
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
         {/* Static Background Headline */}
         {state === 'empty' && (
@@ -352,7 +351,7 @@ const HomeScreen: React.FC = () => {
 
         {/* Top Navigation */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.dispatch(DrawerActions.openDrawer())}>
+          <TouchableOpacity onPress={() => navigation.openDrawer()}>
             <Ionicons name="menu-outline" size={28} color={theme.colors.onSurface} />
           </TouchableOpacity>
           <View style={styles.headerActions}>
@@ -415,15 +414,10 @@ const HomeScreen: React.FC = () => {
         pendingAction={pendingAction}
       />
     </KeyboardAvoidingView>
-    </View>
   );
 };
 
 const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
   keyboardView: {
     flex: 1,
     backgroundColor: theme.colors.background,

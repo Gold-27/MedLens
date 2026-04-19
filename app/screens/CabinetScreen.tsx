@@ -232,17 +232,15 @@ const CabinetScreen: React.FC = () => {
 
   if (loading) {
     return (
-      <View style={styles.root}>
-        <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-          <View style={styles.header}>
-            <Text style={[styles.headerTitle, { color: theme.colors.onSurface }]}>My Cabinet</Text>
-          </View>
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={theme.colors.primary} />
-            <Text style={[styles.loadingText, { color: theme.colors.onSurfaceVariant }]}>
-              Loading your cabinet...
-            </Text>
-          </View>
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <View style={styles.header}>
+          <Text style={[styles.headerTitle, { color: theme.colors.onSurface }]}>My Cabinet</Text>
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <Text style={[styles.loadingText, { color: theme.colors.onSurfaceVariant }]}>
+            Loading your cabinet...
+          </Text>
         </View>
       </View>
     );
@@ -250,25 +248,22 @@ const CabinetScreen: React.FC = () => {
 
   if (!user) {
     return (
-      <View style={styles.root}>
-        <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-          <View style={styles.header}>
-            <Text style={[styles.headerTitle, { color: theme.colors.onSurface }]}>My Cabinet</Text>
-          </View>
-          <EmptyState
-            type="empty_cabinet"
-            title="Sign in to access your cabinet"
-            subtitle="Save medications from search results to see them here"
-            onAction={() => navigation.navigate('Settings')}
-            actionLabel="Go to Settings"
-          />
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <View style={styles.header}>
+          <Text style={[styles.headerTitle, { color: theme.colors.onSurface }]}>My Cabinet</Text>
         </View>
+        <EmptyState
+          type="empty_cabinet"
+          title="Sign in to access your cabinet"
+          subtitle="Save medications from search results to see them here"
+          onAction={() => navigation.navigate('Settings')}
+          actionLabel="Go to Settings"
+        />
       </View>
     );
   }
 
-  return (
-    <View style={styles.root}>
+return (
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <View style={[styles.header, { borderBottomColor: theme.colors.outlineVariant }]}>
           <View style={styles.headerRow}>
@@ -321,15 +316,11 @@ const CabinetScreen: React.FC = () => {
       ) : (
         renderEmptyState()
       )}
-      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-  },
   container: {
     flex: 1,
   },
