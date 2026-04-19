@@ -251,8 +251,16 @@ const HomeScreen: React.FC = () => {
       navigation.navigate('SignUp');
       return; 
     }
-    const shareContent = `MedLens Summary: ${result.drug_name}\n\nWhat it does: ${result.summary.what_it_does}\n\nDisclaimer: Not medical advice.`;
-    try { await Share.share({ title: result.drug_name, message: shareContent }); }
+    const summary = result.summary;
+    const shareContent = `MedLens Summary: ${result.drug_name}\n\n` +
+      `WHAT IT DOES:\n${summary.what_it_does}\n\n` +
+      `HOW TO TAKE IT:\n${summary.how_to_take}\n\n` +
+      `WARNINGS:\n${summary.warnings}\n\n` +
+      `POSSIBLE SIDE EFFECTS:\n${summary.side_effects}\n\n` +
+      `Source: OpenFDA\n` +
+      `MedLens simplifies medical information for understanding. It does not replace professional medical advice.`;
+    
+    try { await Share.share({ title: `Medication Summary: ${result.drug_name}`, message: shareContent }); }
     catch (error) { console.error('Share failed:', error); }
   }, [result, isGuest]);
 

@@ -54,6 +54,7 @@ export const getCabinetItems = async (req: AuthenticatedRequest, res: Response) 
 
 export const saveCabinetItem = async (req: AuthenticatedRequest, res: Response) => {
   const { drug_name, drug_key } = req.body;
+  console.log(`[Cabinet] Saving ${drug_name} for user: ${req.userId}`);
 
   if (!drug_name || !drug_key) {
     return res.status(400).json({ error: 'drug_name and drug_key are required' });
@@ -62,7 +63,7 @@ export const saveCabinetItem = async (req: AuthenticatedRequest, res: Response) 
   try {
     const supabase = getUserScopedClient(req.userToken!);
 
-    const { data, error } = await supabase
+    const { data, error, status } = await supabase
       .from('cabinet_items')
       .upsert(
         [{ user_id: req.userId, drug_name, drug_key, source: 'OpenFDA' }],
@@ -72,10 +73,19 @@ export const saveCabinetItem = async (req: AuthenticatedRequest, res: Response) 
       .single();
 
     if (error) {
-      console.error('[Cabinet] Save error:', error.message);
+      console.error(`[Cabinet] Save error (Status ${status}):`, error.message);
+      
+      if (error.message.includes('schema cache')) {
+        return res.status(503).json({ 
+          error: 'Cabinet service is initializing', 
+          message: 'The database schema is being refreshed. Please try again in a few moments.' 
+        });
+      }
+
       return res.status(500).json({ error: 'Failed to save medication', message: error.message });
     }
 
+    console.log(`[Cabinet] Successfully saved ${drug_name} for ${req.userId}`);
     return res.json({ success: true, item: data });
   } catch (error: any) {
     console.error('[Cabinet] saveCabinetItem error:', error.message);
