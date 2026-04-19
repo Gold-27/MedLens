@@ -211,7 +211,7 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
     paddingBottom: 4,
   },
   mainWrapper: {

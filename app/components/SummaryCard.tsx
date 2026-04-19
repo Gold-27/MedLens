@@ -36,7 +36,7 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
   const theme = useTheme();
   const styles = makeStyles(theme);
   const [eli12Enabled, setEli12Enabled] = useState(isEli12);
-  const [activeSection, setActiveSection] = useState<string | null>('whatItDoes');
+  const [activeSection, setActiveSection] = useState<string | null>(null);
 
   useEffect(() => {
     setEli12Enabled(isEli12);
@@ -130,9 +130,9 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
           <View style={[styles.eliInfoCard, { backgroundColor: theme.colors.primaryContainer + '40' }]}>
             <Ionicons name="information-circle" size={20} color={theme.colors.primary} />
             <View style={styles.eliInfoTextContainer}>
-              <Text style={[styles.eliInfoText, { color: theme.colors.onPrimaryContainer }]}>
+              <Text style={[styles.eliInfoText, { color: theme.colors.outline }]}>
                 Simplified mode is ON. We've translated complex terms into easy-to-understand language.
-                <Text style={styles.learnMore}> Learn more</Text>
+                <Text style={[styles.learnMore, { color: theme.colors.onPrimaryContainer }]}> Learn more</Text>
               </Text>
             </View>
           </View>
