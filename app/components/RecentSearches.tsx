@@ -15,7 +15,7 @@ const RecentSearches: React.FC<RecentSearchesProps> = ({ searches, onSearchPress
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={[styles.title, { color: theme.colors.onSurface }]}>Recent searches</Text>
+        <Text style={[styles.title, { color: theme.colors.outline }]}>Recent Searches</Text>
         <TouchableOpacity onPress={onViewAll}>
           <Text style={[styles.viewAll, { color: theme.colors.primary }]}>View all ›</Text>
         </TouchableOpacity>

@@ -66,7 +66,7 @@ const SettingsScreen: React.FC = () => {
         { 
           label: 'Privacy Policy', 
           type: 'button', 
-          content: 'We do not store sensitive health data. All medication information is fetched from OpenFDA in real-time. Your search history is stored locally on your device.' 
+          content: 'We do not store sensitive health data. All medication information is fetched from OpenFDA in real-time. Your recent searches are stored locally on your device.' 
         },
         { 
           label: 'Disclaimer', 

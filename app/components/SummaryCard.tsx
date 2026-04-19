@@ -246,7 +246,7 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
   drugName: {
     fontSize: 22,
     fontWeight: '700',
-    color: theme.colors.onSurface,
+    color: theme.colors.inverseSurface,
     letterSpacing: -0.5,
   },
   sourceRow: {

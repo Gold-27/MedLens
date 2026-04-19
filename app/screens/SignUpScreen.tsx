@@ -26,7 +26,7 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
   });
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const { signInWithGoogle } = useAuth();
+  const { signUp, signInWithGoogle } = useAuth();
 
   const getPasswordRequirements = (password: string) => ({
     length: password.length >= 8,
@@ -79,22 +79,37 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
     }
   };
 
-  const handleSignUp = () => {
+  const handleSignUp = async () => {
     // Basic validation check before starting loading
     const hasErrors = Object.values(errors).some(err => err !== '');
     const isComplete = form.name && form.email && form.password;
 
     if (!hasErrors && isComplete) {
       setLoading(true);
-      setTimeout(() => {
+      try {
+        const { error } = await signUp(form.email, form.password, form.name);
+        
+        if (error) {
+          Alert.alert('Sign Up Failed', error.message);
+        } else {
+          // Success! Navigation reset to Home
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Home' }],
+          });
+        }
+      } catch (err) {
+        Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+      } finally {
         setLoading(false);
-        navigation.replace('Home');
-      }, 3000);
+      }
     } else {
       // Trigger empty field errors if user tries to submit incomplete form
       const newErrors = { ...errors };
       if (!form.name) newErrors.name = 'Field must not be empty';
       if (!form.email) newErrors.email = 'Field must not be empty';
+      if (!form.password) newErrors.password = 'Field must not be empty';
+      setErrors(newErrors);
     }
   };
 

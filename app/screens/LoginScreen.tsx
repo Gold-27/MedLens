@@ -39,7 +39,7 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
   });
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const { signInWithGoogle } = useAuth();
+  const { signIn, signInWithGoogle } = useAuth();
 
   const handleBlur = (field: keyof typeof form) => {
     setFocusedInput(null);
@@ -72,26 +72,30 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
     }
   };
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     // If both fields are empty, do nothing and don't show the general error
     if (!form.email.trim() && !form.password.trim()) {
       return;
     }
 
-    const isEmailValid = form.email.toLowerCase().endsWith('@gmail.com') || 
-                         form.email.toLowerCase().endsWith('@yahoo.com') || 
-                         form.email.toLowerCase().endsWith('@icloud.com');
-    
-    if (!form.email || !form.password || !isEmailValid) {
-      setErrors((prev) => ({ ...prev, general: 'Invalid email or password' }));
-      return;
-    }
-
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const { error } = await signIn(form.email, form.password);
+      
+      if (error) {
+        setErrors((prev) => ({ ...prev, general: error.message }));
+      } else {
+        // Success! Navigation reset to Home
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Home' }],
+        });
+      }
+    } catch (err) {
+      setErrors((prev) => ({ ...prev, general: 'An unexpected error occurred. Please try again.' }));
+    } finally {
       setLoading(false);
-      navigation.replace('Home');
-    }, 3000);
+    }
   };
 
   const handleGoogleAuth = async () => {

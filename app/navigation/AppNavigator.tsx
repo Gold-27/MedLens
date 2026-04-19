@@ -103,7 +103,7 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
 
       <View style={styles.historySection}>
         <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.onSurfaceVariant }]}>SEARCH HISTORY</Text>
+          <Text style={[styles.sectionTitle, { color: theme.colors.outline }]}>Recent Searches</Text>
           {history.length > 0 && (
             <TouchableOpacity onPress={clearHistory}>
               <Text style={[styles.clearText, { color: theme.colors.primary }]}>Clear</Text>
@@ -115,7 +115,7 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
           <View style={styles.emptyHistory}>
             <Ionicons name="time-outline" size={48} color={theme.colors.outlineVariant} />
             <Text style={[styles.emptyText, { color: theme.colors.onSurfaceVariant }]}>
-              You do not have any search history yet
+              You do not have any recent searches yet
             </Text>
           </View>
         ) : (
