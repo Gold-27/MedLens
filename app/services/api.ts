@@ -169,10 +169,13 @@ export async function getAutocomplete(query: string): Promise<AutocompleteRespon
 }
 
 // ELI12 toggle
-export async function getELI12(drugData: DrugData): Promise<SearchResponse> {
+export async function getELI12(drugData: DrugData, currentSummary?: SearchResponse['summary']): Promise<SearchResponse> {
   return apiRequest<SearchResponse>(Config.ENDPOINTS.ELI12, {
     method: 'POST',
-    body: JSON.stringify({ drug_data: drugData }),
+    body: JSON.stringify({ 
+      drug_data: drugData,
+      current_summary: currentSummary 
+    }),
   });
 }
 

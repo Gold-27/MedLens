@@ -91,7 +91,7 @@ const HomeScreen: React.FC = () => {
     setState('loading');
     try {
       if (!result.data) throw new Error('No drug data available');
-      const response = await api.getELI12(result.data);
+      const response = await api.getELI12(result.data, result.summary);
       setResult({ ...result, eli12: response.eli12 });
       setState('success');
     } catch (error) {
