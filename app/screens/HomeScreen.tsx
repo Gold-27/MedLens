@@ -512,7 +512,6 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 0,
-    paddingBottom: 100, // Visual balance for the input bar area
   },
 });
 
