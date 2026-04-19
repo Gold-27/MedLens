@@ -132,7 +132,6 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
             <View style={styles.eliInfoTextContainer}>
               <Text style={[styles.eliInfoText, { color: theme.colors.outline }]}>
                 Simplified mode is ON. We've translated complex terms into easy-to-understand language.
-                <Text style={[styles.learnMore, { color: theme.colors.onPrimaryContainer }]}> Learn more</Text>
               </Text>
             </View>
           </View>
@@ -331,12 +330,12 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
   previewText: {
     fontSize: 15,
     lineHeight: 22,
-    color: theme.colors.onSurface,
+    color: theme.colors.outline,
   },
   sectionContent: {
     fontSize: 15,
     lineHeight: 22,
-    color: theme.colors.onSurface,
+    color: theme.colors.outline,
   },
   bulletContainer: {
     gap: 10,
@@ -354,7 +353,7 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
     flex: 1,
     fontSize: 15,
     lineHeight: 22,
-    color: theme.colors.onSurface,
+    color: theme.colors.outline,
   },
   missingDataText: {
     fontSize: 14,
