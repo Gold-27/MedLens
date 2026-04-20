@@ -11,7 +11,7 @@ type SplashScreenProps = any;
 
 const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
   const theme = useTheme();
-  const { user, isGuest, loading: authLoading } = useAuth();
+  const { session, user, isGuest, loading: authLoading } = useAuth();
   const pulseAnim = new Animated.Value(1);
 
   useEffect(() => {
@@ -55,25 +55,40 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
         // Wait for auth to initialize — but don't wait if it's still loading
         if (authLoading) return;
 
+        console.log(`[Splash] Starting check: sessionUser=${session?.user?.id}, isGuest=${isGuest}`);
+        
         const hasSeenOnboarding = await AsyncStorage.getItem('hasSeenOnboarding');
         await new Promise(resolve => setTimeout(resolve, 2000)); // Minimum splash time
         
-        // Priority 1: Valid session (Authenticated)
-        if (user && !isGuest) {
+        // Priority 1: Valid Session (Authenticated)
+        // STRICT: Only treat as authenticated if session and user.id both exist
+        if (session?.user?.id && !isGuest) {
+          console.log('[Splash] Priority 1: Validated session -> Home');
           navigate('Home');
           return;
         }
 
-        // Priority 2: Guest Mode
+        // Priority 2: Guest Mode (Already chosen in previous session)
         if (isGuest) {
+          console.log('[Splash] Priority 2: Guest mode detected -> Home');
           navigate('Home');
           return;
         }
 
-        // Priority 3: Unauthenticated / New User
+        // Priority 3: First-time user (New User)
+        // If they haven't finished onboarding, they MUST go there
+        if (hasSeenOnboarding !== 'true') {
+          console.log('[Splash] Priority 3: New user (no onboarding flag) -> Onboarding');
+          navigate('Onboarding');
+          return;
+        }
+
+        // Priority 4: Fallback (Returning user, no session)
+        // STRICT: Do NOT go to Home. Default to Onboarding (or Login, but project prefers Onboarding as hub)
+        console.log('[Splash] Priority 4: Returning user, no session -> Onboarding');
         navigate('Onboarding');
       } catch (error) {
-        console.error('Error checking status:', error);
+        console.error('[Splash] Check failed:', error);
         navigate('Onboarding');
       }
     };
@@ -82,19 +97,15 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
       checkStatus();
     }
 
-    // Safety timeout: if auth never resolves, force navigation after 5 seconds
+    // Safety timeout: if auth never resolves, force navigation to Onboarding
     const safetyTimer = setTimeout(async () => {
       if (hasNavigated) return;
-      console.warn('Splash safety timeout reached — forcing navigation');
-      try {
-        navigate('Onboarding');
-      } catch {
-        navigate('Onboarding');
-      }
+      console.warn('[Splash] Safety timeout reached — forcing Onboarding');
+      navigate('Onboarding');
     }, 5000);
 
     return () => clearTimeout(safetyTimer);
-  }, [authLoading, user]);
+  }, [authLoading, user, isGuest, session]);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.primary }]}>

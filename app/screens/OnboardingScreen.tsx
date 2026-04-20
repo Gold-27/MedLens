@@ -225,28 +225,19 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
                   width: '100%',
                 },
               ]}
-              onPress={handleSignUp}
+              onPress={() => navigation.navigate('SignUp')}
             >
               <Text style={[styles.signUpButtonText, { color: theme.colors.onPrimary }]}>
-                Create Account
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.loginLinkButton}
-              onPress={handleLogin}
-            >
-              <Text style={[styles.loginLinkText, { color: theme.colors.onSurfaceVariant }]}>
-                Already have an account? <Text style={{ color: theme.colors.primary, fontWeight: '700' }}>Log In</Text>
+                Sign in / Sign up
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.guestLinkButton}
-              onPress={handleNext}
+              onPress={handleFinish}
             >
               <Text style={[styles.guestLinkText, { color: theme.colors.primary }]}>
-                Continue as Guest
+                Continue as guest
               </Text>
             </TouchableOpacity>
           </View>
