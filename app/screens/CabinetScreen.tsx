@@ -58,7 +58,7 @@ const CabinetScreen: React.FC = () => {
   const [interactionCount, setInteractionCount] = useState(0);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [viewLoading, setViewLoading] = useState(false);
+  const [viewingItemId, setViewingItemId] = useState<string | null>(null);
   const [selectedDrugSummary, setSelectedDrugSummary] = useState<api.SearchResponse | null>(null);
 
   const fetchCabinetData = useCallback(async () => {
@@ -100,8 +100,8 @@ const CabinetScreen: React.FC = () => {
     navigation.navigate('Interaction', { drugKeys: selectedKeys });
   };
 
-  const handleViewDrug = async (drugName: string) => {
-    setViewLoading(true);
+  const handleViewDrug = async (itemId: string, drugName: string) => {
+    setViewingItemId(itemId);
     try {
       // 1. Check Cache
       const cached = await LocalStorageService.getCachedResult(drugName);
@@ -123,7 +123,7 @@ const CabinetScreen: React.FC = () => {
       console.error('Failed to fetch drug summary:', error);
       Alert.alert('Error', 'Failed to load medication details. Please check your connection.');
     } finally {
-      setViewLoading(false);
+      setViewingItemId(null);
     }
   };
 
@@ -141,11 +141,11 @@ const CabinetScreen: React.FC = () => {
 
       <View style={styles.statsRow}>
         <View style={[styles.statsCard, { backgroundColor: theme.colors.surfaceContainerHigh }]}>
-          <Text style={[styles.statsValue, { color: theme.colors.secondary }]}>{items.length}</Text>
+          <Text style={[styles.statsValue, { color: theme.colors.primary }]}>{items.length}</Text>
           <Text style={[styles.statsLabel, { color: theme.colors.onSurfaceVariant }]}>Medications saved</Text>
         </View>
         <View style={[styles.statsCard, { backgroundColor: theme.colors.surfaceContainerHigh }]}>
-          <Text style={[styles.statsValue, { color: theme.colors.secondary }]}>{interactionCount}</Text>
+          <Text style={[styles.statsValue, { color: theme.colors.tertiary }]}>{interactionCount}</Text>
           <Text style={[styles.statsLabel, { color: theme.colors.onSurfaceVariant }]}>Interactions checked</Text>
         </View>
       </View>
@@ -162,14 +162,14 @@ const CabinetScreen: React.FC = () => {
         style={[
           styles.checkButton,
           { 
-            backgroundColor: selectedItems.size >= 2 ? theme.colors.primary : theme.colors.outlineVariant,
+            backgroundColor: selectedItems.size >= 2 ? theme.colors.secondary : theme.colors.outlineVariant,
             opacity: selectedItems.size >= 2 ? 1 : 0.6 
           }
         ]}
         disabled={selectedItems.size < 2}
         onPress={handleCheckNow}
       >
-        <Text style={[styles.checkButtonText, { color: theme.colors.onPrimary }]}>Check now</Text>
+        <Text style={[styles.checkButtonText, { color: theme.colors.onSecondary }]}>Check now</Text>
       </TouchableOpacity>
     </View>
   );
@@ -200,10 +200,10 @@ const CabinetScreen: React.FC = () => {
 
         <TouchableOpacity 
           style={[styles.viewButton, { backgroundColor: theme.colors.secondaryContainer }]}
-          onPress={() => handleViewDrug(item.drug_name)}
-          disabled={viewLoading}
+          onPress={() => handleViewDrug(item.id, item.drug_name)}
+          disabled={viewingItemId !== null}
         >
-          {viewLoading ? (
+          {viewingItemId === item.id ? (
             <ActivityIndicator size="small" color={theme.colors.onSecondaryContainer} />
           ) : (
             <Text style={[styles.viewButtonText, { color: theme.colors.onSecondaryContainer }]}>View</Text>
