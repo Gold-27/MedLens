@@ -131,7 +131,7 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
             <Ionicons name="information-circle" size={20} color={theme.colors.primary} />
             <View style={styles.eliInfoTextContainer}>
               <Text style={[styles.eliInfoText, { color: theme.colors.outline }]}>
-                Simplified mode is ON. We've translated complex terms into easy-to-understand language.
+                Explain like i'm 12 mode is ON. We've translated complex terms into easy-to-understand language.
               </Text>
             </View>
           </View>
