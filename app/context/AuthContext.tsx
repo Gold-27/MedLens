@@ -5,6 +5,7 @@ import * as Linking from 'expo-linking';
 import * as AuthSession from 'expo-auth-session';
 import { supabase } from '../services/supabase';
 import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 if (Platform.OS === 'web') {
   WebBrowser.maybeCompleteAuthSession();
@@ -31,11 +32,21 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
+  const [isGuest, setIsGuest] = useState(false);
   const [loading, setLoading] = useState(true);
   
-  // Derived state to ensure consistency
+  // Derived user state
   const user = session?.user ?? null;
-  const isGuest = !user;
+
+  // Persist guest state
+  const setGuestState = async (value: boolean) => {
+    setIsGuest(value);
+    try {
+      await AsyncStorage.setItem('@is_guest', value ? 'true' : 'false');
+    } catch (error) {
+      console.error('Error saving guest state:', error);
+    }
+  };
 
   useEffect(() => {
     // Check active sessions and subscribe to auth changes
@@ -43,6 +54,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setLoading(true);
 
       try {
+        // Load persistent guest info first
+        const guestItem = await AsyncStorage.getItem('@is_guest');
+        if (guestItem === 'true') {
+          setIsGuest(true);
+        }
+
         // Race the session check against a timeout to prevent hanging
         const sessionPromise = supabase.auth.getSession();
         const timeoutPromise = new Promise<never>((_, reject) =>
@@ -71,6 +88,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
       console.log(`[Auth] Event: ${event}`);
       setSession(currentSession);
+      if (currentSession?.user) {
+        setGuestState(false);
+      }
       setLoading(false);
     });
 
@@ -84,6 +104,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const { data: { session: newSession }, error } = await supabase.auth.signInWithPassword({ email, password });
       if (newSession) {
         setSession(newSession);
+        await setGuestState(false);
       }
       return { error };
     } catch (error) {
@@ -111,9 +132,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (refreshedSession) {
           console.log('[Auth] Session refreshed successfully');
           setSession(refreshedSession);
+          await setGuestState(false);
         } else if (newSession) {
           console.log('[Auth] Using newSession from signUp');
           setSession(newSession);
+          await setGuestState(false);
         } else {
           console.warn('[Auth] No session found after signUp - email confirmation might be required');
         }
@@ -130,6 +153,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       await supabase.auth.signOut();
       setSession(null);
+      await setGuestState(false);
     } catch (error) {
       console.error('Sign out error:', error);
     }
@@ -140,6 +164,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Clear any existing session to ensure clean guest state
       await supabase.auth.signOut();
       setSession(null);
+      await setGuestState(true);
       console.log('[Auth] Continued as guest - session cleared');
     } catch (error) {
       console.error('Guest transition error:', error);
@@ -152,7 +177,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('Starting Google Auth...');
       const redirectUrl = AuthSession.makeRedirectUri({
         scheme: 'medlens',
-        preferImplicitFlow: true,
       });
       console.log('AuthSession Redirect URL:', redirectUrl);
 

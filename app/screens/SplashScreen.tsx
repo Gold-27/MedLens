@@ -11,7 +11,7 @@ type SplashScreenProps = any;
 
 const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
   const theme = useTheme();
-  const { user, loading: authLoading } = useAuth();
+  const { user, isGuest, loading: authLoading } = useAuth();
   const pulseAnim = new Animated.Value(1);
 
   useEffect(() => {
@@ -58,15 +58,22 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
         const hasSeenOnboarding = await AsyncStorage.getItem('hasSeenOnboarding');
         await new Promise(resolve => setTimeout(resolve, 2000)); // Minimum splash time
         
-        if (hasSeenOnboarding !== 'true') {
-          navigate('Onboarding');
+        // Priority 1: Valid session (Authenticated)
+        if (user && !isGuest) {
+          navigate('Home');
           return;
         }
 
-        if (user) {
+        // Priority 2: Guest Mode
+        if (isGuest) {
           navigate('Home');
+          return;
+        }
+
+        // Priority 3: New User or Login
+        if (hasSeenOnboarding !== 'true') {
+          navigate('Onboarding');
         } else {
-          // If we've seen onboarding but aren't logged in, go to Login
           navigate('Login');
         }
       } catch (error) {
