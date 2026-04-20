@@ -52,7 +52,7 @@ const getDrugDescription = (name: string): string => {
 const CabinetScreen: React.FC = () => {
   const theme = useTheme();
   const { user, getToken } = useAuth();
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation() as any;
   const [items, setItems] = useState<CabinetItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [interactionCount, setInteractionCount] = useState(0);
