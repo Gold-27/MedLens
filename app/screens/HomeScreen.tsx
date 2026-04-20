@@ -33,76 +33,61 @@ const HomeScreen: React.FC = () => {
   const [query, setQuery] = useState('');
   const inputBarRef = useRef<InputBarHandle>(null);
   const [state, setState] = useState<AppState>('empty');
-  const [result, setResult] = useState<api.SearchResponse | null>(null);
-  const [eli12Enabled, setEli12Enabled] = useState(false);
-  const [showAuthModal, setShowAuthModal] = useState(false);
   const [pendingAction, setPendingAction] = useState<string>('');
   const [savedDrugs, setSavedDrugs] = useState<Set<string>>(new Set());
+  const [baseResult, setBaseResult] = useState<api.SearchResponse | null>(null);
+  const [eli12Result, setEli12Result] = useState<api.SearchResponse['summary'] | null>(null);
+  const [isELI12, setIsELI12] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
 
   const handleToggleELI12 = useCallback(async (enabled: boolean) => {
-    setEli12Enabled(enabled);
+    setIsELI12(enabled);
     // Persist preference locally
     LocalStorageService.updateSettings({ eli12Enabled: enabled });
     
-    if (!result) return;
+    if (!baseResult) return;
     
-    // Cache logic: If we already have the ELI12 content, just toggle and return
-    if (enabled && result.eli12.content) {
-      return;
+    // If we're enabling and don't have the result yet, fetch it
+    if (enabled && !eli12Result) {
+      setState('loading');
+      try {
+        if (!baseResult.data) throw new Error('No drug data available');
+        const response = await api.getELI12(baseResult.data, baseResult.summary);
+        
+        if (response.eli12.content) {
+          try {
+            const parsedEli = JSON.parse(response.eli12.content);
+            setEli12Result(parsedEli);
+          } catch (e) {
+            console.error('Failed to parse ELI12 content:', e);
+          }
+        }
+        setState('success');
+      } catch (error) {
+        console.error('ELI12 fetch failed:', error);
+        setState('error');
+      }
     }
+  }, [baseResult, eli12Result]);
 
-    if (!enabled) return;
 
-    // Only fetch Layer 2 if enabled and we don't have it yet
-    setState('loading');
-    try {
-      if (!result.data) throw new Error('No drug data available');
-      const response = await api.getELI12(result.data, result.summary);
-      setResult({ ...result, eli12: response.eli12 });
-      setState('success');
-    } catch (error) {
-      setState('error');
-    }
-  }, [result]);
-
-  // Helper for immediate ELI12 refinement after search selection
-  const handleSearchWithEli = async (baseResult: api.SearchResponse) => {
-    setState('loading');
-    try {
-      if (!baseResult.data) return;
-      const eliResponse = await api.getELI12(baseResult.data, baseResult.summary);
-      setResult({ ...baseResult, eli12: eliResponse.eli12 });
-      setEli12Enabled(true);
-      setState('success');
-    } catch (err) {
-      console.error('Initial ELI12 pass failed:', err);
-      // Fall back to showing the base result we already have
-      setResult(baseResult);
-      setState('success');
-    }
-  };
-
-  const handleSearch = useCallback(async (searchQuery: string, withEli: boolean = false) => {
+  const handleSearch = useCallback(async (searchQuery: string) => {
     if (!searchQuery.trim()) return;
     setQuery(searchQuery);
     setState('loading');
-    // REMOVED: setEli12Enabled(false); // Now it's a master toggle, so respect the current state
     
+    // New requirements: Reset ELI12 states on every new search
+    setIsELI12(false);
+    setEli12Result(null);
+
     try {
       // 1. Check Local Cache First (Optimization)
       const cached = await LocalStorageService.getCachedResult(searchQuery.trim());
       if (cached) {
-        setResult(cached);
+        setBaseResult(cached);
         setState('success');
-        
-        // If searched via ELI12 button, trigger the refinement using the cached data directly
-        if (withEli) {
-          if (cached.data) {
-            handleSearchWithEli(cached);
-          }
-        }
 
         // Update recent searches in background
         const updated = await LocalStorageService.addRecentSearch(searchQuery.trim());
@@ -111,8 +96,8 @@ const HomeScreen: React.FC = () => {
       }
 
       // 2. Fallback to API/DB
-      const response = await api.searchMedication(searchQuery.trim(), false); // Backend always returns Layer 1 now
-      setResult(response);
+      const response = await api.searchMedication(searchQuery.trim(), false); // Backend always returns Layer 1
+      setBaseResult(response);
       
       // 3. Save to local storage for future use
       await Promise.all([
@@ -121,15 +106,6 @@ const HomeScreen: React.FC = () => {
       ]);
       
       setState('success');
-
-      // 4. If searched via ELI12 button, trigger refinement using the response directly
-      if (withEli) {
-        if (response.data) {
-          handleSearchWithEli(response);
-        } else {
-          setState('success');
-        }
-      }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       if (message.includes('not found') || message.includes('404')) {
@@ -140,7 +116,7 @@ const HomeScreen: React.FC = () => {
     } finally {
       inputBarRef.current?.clear();
     }
-  }, [handleToggleELI12]);
+  }, []);
 
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
@@ -211,48 +187,52 @@ const HomeScreen: React.FC = () => {
   }, [user, isGuest, getToken]);
 
   const handleSave = useCallback(async () => {
-    if (!result) return;
+    if (!baseResult) return;
     if (isGuest) { 
-      navigation.navigate('SignUp');
+      setShowAuthModal(true);
+      setPendingAction('save');
       return; 
     }
-    try {
-      const token = await getToken();
-      if (!token) return;
-      const drugKey = result.drug_name.toLowerCase().replace(/\s+/g, '-');
-      await api.saveCabinetItem(result.drug_name, drugKey, token);
-      
-      // Update state and refresh cache immediately (Optimistic UI style)
-      setSavedDrugs(prev => {
-        const next = new Set(prev);
-        next.add(result.drug_name.toLowerCase());
-        return next;
-      });
+      try {
+        const token = await getToken();
+        if (!token) return;
+        const drugKey = baseResult.drug_name.toLowerCase().replace(/\s+/g, '-');
+        await api.saveCabinetItem(baseResult.drug_name, drugKey, token);
+        
+        // Update state and refresh cache immediately (Optimistic UI style)
+        setSavedDrugs(prev => {
+          const next = new Set(prev);
+          next.add(baseResult.drug_name.toLowerCase());
+          return next;
+        });
 
       // Silently refresh the full cabinet cache in background
       api.getCabinetItems(token).then(resp => {
         LocalStorageService.setCachedCabinet(resp.items);
       }).catch(() => {});
 
-      Alert.alert('Saved', `${result.drug_name} has been saved to your cabinet.`);
+      Alert.alert('Saved', `${baseResult.drug_name} has been saved to your cabinet.`);
       
       // Reset Home screen to empty state after saving
       setState('empty');
-      setResult(null);
+      setBaseResult(null);
+      setEli12Result(null);
+      setIsELI12(false);
     } catch (error) {
       console.error('Save failed:', error);
       Alert.alert('Error', 'Failed to save medication. Please check your connection.');
     }
-  }, [result, isGuest, getToken]);
+  }, [baseResult, isGuest, getToken]);
 
   const handleExport = useCallback(async () => {
-    if (!result) return;
+    if (!baseResult) return;
     if (isGuest) { 
-      navigation.navigate('SignUp');
+      setShowAuthModal(true);
+      setPendingAction('export');
       return; 
     }
-    const summary = result.summary;
-    const shareContent = `MedLens Summary: ${result.drug_name}\n\n` +
+    const summary = isELI12 && eli12Result ? eli12Result : baseResult.summary;
+    const shareContent = `MedLens Summary: ${baseResult.drug_name}\n\n` +
       `WHAT IT DOES:\n${summary.what_it_does}\n\n` +
       `HOW TO TAKE IT:\n${summary.how_to_take}\n\n` +
       `WARNINGS:\n${summary.warnings}\n\n` +
@@ -260,15 +240,15 @@ const HomeScreen: React.FC = () => {
       `Source: OpenFDA\n` +
       `MedLens simplifies medical information for understanding. It does not replace professional medical advice.`;
     
-    try { await Share.share({ title: `Medication Summary: ${result.drug_name}`, message: shareContent }); }
+    try { await Share.share({ title: `Medication Summary: ${baseResult.drug_name}`, message: shareContent }); }
     catch (error) { console.error('Share failed:', error); }
-  }, [result, isGuest]);
+  }, [baseResult, isELI12, eli12Result, isGuest]);
 
   const handleAuthSuccess = useCallback(() => {
     if (pendingAction.includes('save')) handleSave();
     else if (pendingAction.includes('export')) handleExport();
     setPendingAction('');
-  }, [pendingAction, result, handleSave, handleExport]);
+  }, [pendingAction, baseResult, handleSave, handleExport]);
 
   const fetchSuggestions = useCallback(async (suggestionQuery: string) => {
     try {
@@ -294,26 +274,24 @@ const HomeScreen: React.FC = () => {
 
       case 'success':
       case 'partial':
-        if (!result) return null;
-        let sections = {
-          whatItDoes: result.summary.what_it_does || null,
-          howToTake: result.summary.how_to_take || null,
-          warnings: result.summary.warnings || null,
-          sideEffects: result.summary.side_effects || null,
-        };
-        if (eli12Enabled && result.eli12.content) {
-          try { sections = { ...JSON.parse(result.eli12.content) }; } catch (e) {}
-        }
+        if (!baseResult) return null;
+        const currentSummary = (isELI12 && eli12Result) ? eli12Result : baseResult.summary;
+        
         return (
           <View style={styles.resultContainer}>
             <SummaryCard
-              drugName={result.drug_name}
-              source={result.source}
-              sections={sections}
-              isEli12={eli12Enabled}
+              drugName={baseResult.drug_name}
+              source={baseResult.source}
+              sections={{
+                whatItDoes: currentSummary.what_it_does || null,
+                howToTake: currentSummary.how_to_take || null,
+                warnings: currentSummary.warnings || null,
+                sideEffects: currentSummary.side_effects || null,
+              }}
+              isEli12={isELI12}
               onSave={handleSave}
               onExport={handleExport}
-              isSaved={savedDrugs.has(result.drug_name.toLowerCase())}
+              isSaved={savedDrugs.has(baseResult.drug_name.toLowerCase())}
               requiresAuth={isGuest}
             />
           </View>
@@ -401,7 +379,7 @@ const HomeScreen: React.FC = () => {
             onSubmit={handleSearch}
             loading={state === 'loading'}
             fetchSuggestions={fetchSuggestions}
-            eli12Enabled={eli12Enabled}
+            eli12Enabled={isELI12}
             onToggleEli12={handleToggleELI12}
           />
         </View>
