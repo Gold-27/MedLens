@@ -139,6 +139,9 @@ const InteractionScreen: React.FC = () => {
         <View style={styles.header}>
           <View style={styles.headerTop}>
             <Text style={[styles.headerTitle, { color: theme.colors.onSurface }]}>Interaction Checker</Text>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton}>
+              <Ionicons name="close" size={28} color={theme.colors.onSurface} />
+            </TouchableOpacity>
           </View>
         </View>
         <View style={styles.loadingContainer}>
@@ -157,7 +160,9 @@ const InteractionScreen: React.FC = () => {
         <View style={styles.header}>
           <View style={styles.headerTop}>
             <Text style={[styles.headerTitle, { color: theme.colors.onSurface }]}>Interaction Checker</Text>
-          </TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton}>
+              <Ionicons name="close" size={28} color={theme.colors.onSurface} />
+            </TouchableOpacity>
           </View>
           <Text style={[styles.headerSubtitle, { color: theme.colors.outline }]}>
             Select two or more medications to check for potential interactions
