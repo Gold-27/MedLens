@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 import { useAuth } from '../context/AuthContext';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -182,36 +183,52 @@ const InteractionScreen: React.FC = () => {
   return (
     <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: theme.colors.onSurface }]}>Interaction Checker</Text>
-        <Text style={[styles.headerSubtitle, { color: theme.colors.onSurfaceVariant }]}>
+        <View style={styles.headerTop}>
+          <Text style={[styles.headerTitle, { color: theme.colors.onSurface }]}>Interaction Checker</Text>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton}>
+            <Ionicons name="close" size={28} color={theme.colors.onSurface} />
+          </TouchableOpacity>
+        </View>
+        <Text style={[styles.headerSubtitle, { color: theme.colors.outline }]}>
           Select two or more medications to check for potential interactions
         </Text>
       </View>
 
       <View style={styles.drugSelection}>
-        <Text style={[styles.sectionLabel, { color: theme.colors.onSurface }]}>Select Medications</Text>
-        <View style={styles.drugList}>
-          {availableDrugs.map(drug => (
-            <TouchableOpacity
-              key={drug.id}
-              style={[
-                styles.drugChip,
-                { backgroundColor: selectedDrugs.includes(drug.key) ? theme.colors.primary : theme.colors.surfaceContainer },
-              ]}
-              onPress={() => toggleDrug(drug.key)}
-            >
-              <Text style={[
-                styles.drugChipText,
-                { color: selectedDrugs.includes(drug.key) ? theme.colors.onPrimary : theme.colors.onSurface },
-              ]}>
-                {drug.name}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-        <Text style={[styles.selectedCount, { color: theme.colors.onSurfaceVariant }]}>
+        <Text style={[styles.sectionLabel, { color: theme.colors.onSurface }]}>
           {selectedDrugs.length} medication{selectedDrugs.length !== 1 ? 's' : ''} selected
         </Text>
+        <View style={styles.drugList}>
+          {availableDrugs.map(drug => {
+            const isSelected = selectedDrugs.includes(drug.key);
+            return (
+              <TouchableOpacity
+                key={drug.id}
+                style={[
+                  styles.drugChip,
+                  { 
+                    backgroundColor: 'transparent',
+                    borderColor: isSelected ? theme.colors.primary : theme.colors.outlineVariant,
+                    borderWidth: 1.5,
+                  },
+                ]}
+                onPress={() => toggleDrug(drug.key)}
+              >
+                <View style={styles.chipContent}>
+                  <Text style={[
+                    styles.drugChipText,
+                    { color: isSelected ? theme.colors.primary : theme.colors.onSurface },
+                  ]}>
+                    {drug.name}
+                  </Text>
+                  {isSelected && (
+                    <Ionicons name="close-circle" size={18} color={theme.colors.primary} style={styles.chipIcon} />
+                  )}
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
       </View>
 
       <TouchableOpacity
@@ -244,7 +261,7 @@ const InteractionScreen: React.FC = () => {
           { 
             backgroundColor: result.status === 'potential_interaction' 
               ? theme.colors.errorContainer 
-              : theme.colors.surfaceContainer 
+              : theme.colors.accentContainer 
           },
         ]}>
           <Text style={[
@@ -252,7 +269,7 @@ const InteractionScreen: React.FC = () => {
             { 
               color: result.status === 'potential_interaction' 
                 ? theme.colors.onErrorContainer 
-                : theme.colors.onSurface 
+                : theme.colors.onAccentContainer 
             },
           ]}>
             {result.status === 'potential_interaction' ? 'Potential Interaction' : 'Insufficient Data'}
@@ -262,7 +279,7 @@ const InteractionScreen: React.FC = () => {
             { 
               color: result.status === 'potential_interaction' 
                 ? theme.colors.onErrorContainer 
-                : theme.colors.onSurfaceVariant 
+                : theme.colors.onAccentContainer 
             },
           ]}>
             {result.message}
@@ -292,24 +309,15 @@ const InteractionScreen: React.FC = () => {
               ))}
             </View>
           )}
-          <TouchableOpacity
-            style={[styles.consultButton, { backgroundColor: theme.colors.primary }]}
-            onPress={() => Alert.alert(
-              'Consult Healthcare Professional', 
-              'Always consult a healthcare professional for personalized medical advice about drug interactions.'
-            )}
-          >
-            <Text style={[styles.consultButtonText, { color: theme.colors.onPrimary }]}>
-              Consult a Healthcare Professional
-            </Text>
-          </TouchableOpacity>
+            </View>
+          )}
         </View>
       )}
 
-      <View style={[styles.disclaimerContainer, { backgroundColor: theme.colors.surfaceContainer }]}>
-        <Text style={[styles.disclaimerTitle, { color: theme.colors.onSurface }]}>Important Safety Information</Text>
-        <Text style={[styles.disclaimerText, { color: theme.colors.onSurfaceVariant }]}>
-          MedLens does not provide medical advice. The interaction checker uses data from OpenFDA and may not include all possible interactions. Always consult a healthcare professional before making any changes to your medications.
+      <View style={[styles.disclaimerContainer, { backgroundColor: theme.colors.accentContainer }]}>
+        <Ionicons name="information-circle-outline" size={24} color={theme.colors.onAccentContainer} style={styles.disclaimerIcon} />
+        <Text style={[styles.disclaimerText, { color: theme.colors.onAccentContainer }]}>
+          MedLens simplifies medical information for understanding. It does not replace professional medical advice, diagnosis, or treatment.
         </Text>
       </View>
     </ScrollView>
@@ -320,19 +328,25 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 16,
-  },
-  headerTitle: {
-    fontSize: 32,
-    fontWeight: '600',
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 8,
   },
+  closeButton: {
+    padding: 4,
+    marginRight: -4,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    letterSpacing: -0.5,
+  },
   headerSubtitle: {
-    fontSize: 16,
-    lineHeight: 22,
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: '500',
   },
   loadingContainer: {
     flex: 1,
@@ -378,107 +392,112 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   sectionLabel: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 12,
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 16,
+    letterSpacing: -0.3,
   },
   drugList: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
-    marginBottom: 12,
+    gap: 10,
   },
   drugChip: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 24,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  chipContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   drugChipText: {
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: 15,
+    fontWeight: '600',
   },
-  selectedCount: {
-    fontSize: 14,
+  chipIcon: {
+    marginRight: -4,
   },
   checkButton: {
     marginHorizontal: 24,
-    marginBottom: 24,
-    paddingVertical: 18,
-    borderRadius: 12,
+    marginBottom: 32,
+    paddingVertical: 16,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 56,
   },
   checkButtonText: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   resultCard: {
     marginHorizontal: 24,
-    marginBottom: 24,
+    marginBottom: 32,
     padding: 24,
-    borderRadius: 16,
+    borderRadius: 20,
   },
   resultTitle: {
     fontSize: 20,
-    fontWeight: '600',
-    marginBottom: 12,
+    fontWeight: '700',
+    marginBottom: 8,
   },
   resultMessage: {
-    fontSize: 16,
-    lineHeight: 24,
-    marginBottom: 20,
+    fontSize: 15,
+    lineHeight: 22,
+    fontWeight: '500',
   },
   interactionDetails: {
-    marginBottom: 20,
+    marginTop: 20,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.05)',
   },
   detailsTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
     marginBottom: 12,
   },
   interactionItem: {
-    marginBottom: 16,
+    marginBottom: 12,
   },
   drugKey: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
     marginBottom: 4,
   },
   interactionText: {
     fontSize: 14,
     lineHeight: 20,
-    marginLeft: 8,
-    marginBottom: 2,
+    fontWeight: '500',
+    opacity: 0.8,
   },
   noInteractionText: {
     fontSize: 14,
     fontStyle: 'italic',
-    marginLeft: 8,
-  },
-  consultButton: {
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  consultButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
+    opacity: 0.6,
   },
   disclaimerContainer: {
     marginHorizontal: 24,
     marginBottom: 40,
     padding: 20,
-    borderRadius: 12,
+    borderRadius: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
   },
-  disclaimerTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
+  disclaimerIcon: {
+    // Vertically centered via parent
   },
   disclaimerText: {
     fontSize: 14,
     lineHeight: 20,
+    fontWeight: '500',
+    flex: 1,
+    opacity: 0.9,
   },
 });
 
