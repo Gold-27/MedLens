@@ -341,11 +341,11 @@ const HomeScreen: React.FC = () => {
               <Text style={[styles.cabinetText, { color: theme.colors.onPrimaryContainer }]}>Cabinet</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.profileCircle, { backgroundColor: user ? theme.colors.primary : 'transparent', borderWidth: 0 }]}
+              style={[styles.profileCircle, { backgroundColor: 'transparent', borderWidth: 0 }]}
               onPress={() => navigation.navigate('Settings')}
             >
               {user ? (
-                <Text style={[styles.initialsText, { color: theme.colors.onPrimary }]}>
+                <Text style={[styles.initialsText, { color: theme.colors.onSurface }]}>
                   {(() => {
                     const name = user.user_metadata?.full_name;
                     if (name) {
@@ -440,11 +440,6 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   initialsText: {
     fontSize: 16,
