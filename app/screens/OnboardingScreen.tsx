@@ -146,6 +146,11 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
 
   const handleSkip = () => handleFinish();
 
+  const handleLogin = async () => {
+    try { await AsyncStorage.setItem('hasSeenOnboarding', 'true'); } catch {}
+    navigation.navigate('Login');
+  };
+
   const handleFinish = async () => {
     try { 
       await AsyncStorage.setItem('hasSeenOnboarding', 'true');
@@ -228,11 +233,20 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
             </TouchableOpacity>
 
             <TouchableOpacity
+              style={styles.loginLinkButton}
+              onPress={handleLogin}
+            >
+              <Text style={[styles.loginLinkText, { color: theme.colors.onSurfaceVariant }]}>
+                Already have an account? <Text style={{ color: theme.colors.primary, fontWeight: '700' }}>Log In</Text>
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
               style={styles.guestLinkButton}
               onPress={handleNext}
             >
               <Text style={[styles.guestLinkText, { color: theme.colors.primary }]}>
-                Use as Guest
+                Continue as Guest
               </Text>
             </TouchableOpacity>
           </View>
@@ -345,6 +359,14 @@ const styles = StyleSheet.create({
   },
   guestLinkText: {
     fontSize: 16,
+    fontWeight: '600',
+  },
+  loginLinkButton: {
+    marginTop: 8,
+    paddingVertical: 8,
+  },
+  loginLinkText: {
+    fontSize: 14,
     fontWeight: '500',
   },
 });

@@ -70,12 +70,8 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
           return;
         }
 
-        // Priority 3: New User or Login
-        if (hasSeenOnboarding !== 'true') {
-          navigate('Onboarding');
-        } else {
-          navigate('Login');
-        }
+        // Priority 3: Unauthenticated / New User
+        navigate('Onboarding');
       } catch (error) {
         console.error('Error checking status:', error);
         navigate('Onboarding');
@@ -91,12 +87,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
       if (hasNavigated) return;
       console.warn('Splash safety timeout reached — forcing navigation');
       try {
-        const hasSeenOnboarding = await AsyncStorage.getItem('hasSeenOnboarding');
-        if (hasSeenOnboarding === 'true') {
-          navigate('Login');
-        } else {
-          navigate('Onboarding');
-        }
+        navigate('Onboarding');
       } catch {
         navigate('Onboarding');
       }
