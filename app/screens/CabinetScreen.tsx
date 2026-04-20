@@ -182,11 +182,15 @@ const CabinetScreen: React.FC = () => {
           style={styles.checkboxArea} 
           onPress={() => toggleSelection(item.drug_key)}
         >
-          <Ionicons 
-            name={isSelected ? "checkbox" : "square-outline"} 
-            size={24} 
-            color={isSelected ? theme.colors.primary : theme.colors.outline} 
-          />
+          <View style={[
+            styles.customCheckbox, 
+            { borderColor: isSelected ? theme.colors.secondary : theme.colors.outline },
+            isSelected && { backgroundColor: theme.colors.secondary }
+          ]}>
+            {isSelected && (
+              <Ionicons name="checkmark" size={16} color={theme.colors.onSecondary} />
+            )}
+          </View>
         </TouchableOpacity>
         
         <View style={styles.itemInfo}>
@@ -340,6 +344,14 @@ const styles = StyleSheet.create({
   },
   checkboxArea: {
     paddingRight: 16,
+  },
+  customCheckbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   itemInfo: {
     flex: 1,
