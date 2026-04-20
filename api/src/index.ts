@@ -1,6 +1,11 @@
 import dotenv from 'dotenv';
+import path from 'path';
+
 // Load environment variables immediately before other imports
+// Look in current directory and parent (for root-level starts)
 dotenv.config();
+dotenv.config({ path: path.join(__dirname, '../.env') });
+dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 import express from 'express';
 import cors from 'cors';
@@ -58,4 +63,31 @@ app.post('/api/interactions', (req, res) => {
 app.listen(PORT, () => {
   console.log(`MedLens API server running on port ${PORT}`);
   console.log(`Health check: http://localhost:${PORT}/health`);
+  
+  // Log configuration status (masked for safety)
+  console.log('--- Configuration Status ---');
+  console.log(`PORT: ${PORT}`);
+  console.log(`SUPABASE_URL: ${process.env.SUPABASE_URL ? 'PRESENT (' + process.env.SUPABASE_URL.substring(0, 15) + '...)' : 'MISSING'}`);
+  console.log(`SUPABASE_ANON_KEY: ${process.env.SUPABASE_ANON_KEY ? 'PRESENT' : 'MISSING'}`);
+  console.log(`OPENFDA_API_KEY: ${process.env.OPENFDA_API_KEY ? 'PRESENT' : 'MISSING'}`);
+  console.log(`DEEPSEEK_API_KEY: ${process.env.DEEPSEEK_API_KEY ? 'PRESENT' : 'MISSING'}`);
+  console.log('---------------------------');
+});
+
+// 404 Handler for debugging
+app.use((req, res) => {
+  console.warn(`[404] ${req.method} ${req.url}`);
+  res.status(404).json({
+    error: 'Not Found',
+    message: `The endpoint ${req.method} ${req.url} does not exist on this server.`,
+    available_routes: [
+      'POST /api/search',
+      'GET /api/autocomplete',
+      'POST /api/eli12',
+      'GET /api/cabinet/items',
+      'POST /api/cabinet/save',
+      'POST /api/interactions',
+      'GET /health'
+    ]
+  });
 });

@@ -32,6 +32,11 @@ const getApiBaseUrl = (): string => {
 
 const API_BASE_URL = getApiBaseUrl();
 
+// Debug logging for configuration
+console.log('[Config] API_BASE_URL:', API_BASE_URL);
+console.log('[Config] Supabase URL:', process.env.EXPO_PUBLIC_SUPABASE_URL ? 'PRESENT' : 'MISSING');
+console.log('[Config] Supabase Key:', process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ? 'PRESENT' : 'MISSING');
+
 
 
 export const Config = {
@@ -40,13 +45,13 @@ export const Config = {
     SEARCH: `${API_BASE_URL}/api/search`,
     ELI12: `${API_BASE_URL}/api/eli12`,
     INTERACTIONS: `${API_BASE_URL}/api/interactions`,
-    AUTOCCOMPLETE: `${API_BASE_URL}/api/autocomplete`,
+    AUTOCOMPLETE: `${API_BASE_URL}/api/autocomplete`,
     CABINET_SAVE: `${API_BASE_URL}/api/cabinet/save`,
     CABINET_ITEMS: `${API_BASE_URL}/api/cabinet/items`,
     CABINET_DELETE: (drugKey: string) => `${API_BASE_URL}/api/cabinet/items/${drugKey}`,
   },
   SUPABASE: {
-    URL: process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://fallback.supabase.co',
-    ANON_KEY: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'fallback_key',
+    URL: process.env.EXPO_PUBLIC_SUPABASE_URL || '',
+    ANON_KEY: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '',
   },
 } as const;

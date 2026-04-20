@@ -142,7 +142,7 @@ export async function getAutocomplete(query: string): Promise<AutocompleteRespon
 
   try {
     // 2. Attempt API Search for more comprehensive results
-    const apiResponse = await apiRequest<AutocompleteResponse>(`${Config.ENDPOINTS.AUTOCCOMPLETE}?q=${encodeURIComponent(query)}`, {
+    const apiResponse = await apiRequest<AutocompleteResponse>(`${Config.ENDPOINTS.AUTOCOMPLETE}?q=${encodeURIComponent(query)}`, {
       method: 'GET',
     });
     

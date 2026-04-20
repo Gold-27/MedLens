@@ -64,10 +64,12 @@ const HomeScreen: React.FC = () => {
             console.error('Failed to parse ELI12 content:', e);
           }
         }
-        setState('success');
       } catch (error) {
         console.error('ELI12 fetch failed:', error);
-        setState('error');
+        // On error, toggle back off so user isn't stuck in loading
+        setIsELI12(false);
+      } finally {
+        setState('success');
       }
     }
   }, [baseResult, eli12Result]);
@@ -341,11 +343,11 @@ const HomeScreen: React.FC = () => {
               <Text style={[styles.cabinetText, { color: theme.colors.onPrimaryContainer }]}>Cabinet</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.profileCircle, { backgroundColor: 'transparent', borderWidth: 0 }]}
+              style={[styles.profileCircle, { backgroundColor: theme.colors.onSurface, borderWidth: 0 }]}
               onPress={() => navigation.navigate('Settings')}
             >
               {user ? (
-                <Text style={[styles.initialsText, { color: theme.colors.onSurface }]}>
+                <Text style={[styles.initialsText, { color: theme.colors.surface }]}>
                   {(() => {
                     const name = user.user_metadata?.full_name;
                     if (name) {
@@ -357,7 +359,7 @@ const HomeScreen: React.FC = () => {
                   })()}
                 </Text>
               ) : (
-                <Ionicons name="person-circle" size={32} color={theme.colors.onSurface} />
+                <Ionicons name="person" size={20} color={theme.colors.surface} />
               )}
             </TouchableOpacity>
           </View>

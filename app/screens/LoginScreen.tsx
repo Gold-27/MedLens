@@ -39,18 +39,18 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
   });
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const { signIn, signInWithGoogle, isGuest } = useAuth();
+  const { signIn, signInWithGoogle, isGuest, continueAsGuest } = useAuth();
   const [loginSuccess, setLoginSuccess] = useState(false);
 
   // Safe navigation: Wait for global auth state to catch up before navigating
   React.useEffect(() => {
-    if (loginSuccess && !isGuest) {
+    if (loginSuccess && !isGuest && !loading) {
       navigation.reset({
         index: 0,
         routes: [{ name: 'Home' }],
       });
     }
-  }, [loginSuccess, isGuest, navigation]);
+  }, [loginSuccess, isGuest, loading, navigation]);
 
   const handleBlur = (field: keyof typeof form) => {
     setFocusedInput(null);
@@ -116,6 +116,14 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
     } else if (!error) {
        navigation.replace('Home');
     }
+  };
+
+  const handleGuestMode = async () => {
+    await continueAsGuest();
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Home' }],
+    });
   };
 
   return (
@@ -261,6 +269,9 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
             <Text style={[styles.footerText, { color: theme.colors.onSurfaceVariant }]}>
               Don't have an account? <Text style={{ color: theme.colors.primary, fontWeight: '600' }} onPress={() => navigation.navigate('SignUp')}>Create Account</Text>
             </Text>
+            <TouchableOpacity style={styles.guestLink} onPress={handleGuestMode}>
+              <Text style={[styles.guestLinkText, { color: theme.colors.primary }]}>Continue as Guest</Text>
+            </TouchableOpacity>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -405,6 +416,15 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
     marginTop: 4,
     marginLeft: 4,
     fontFamily: 'Outfit',
+  },
+  guestLink: {
+    marginTop: 20,
+    paddingVertical: 8,
+  },
+  guestLinkText: {
+    fontSize: 15,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });
 

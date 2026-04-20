@@ -3,7 +3,7 @@ const dotenv = require('dotenv');
 const path = require('path');
 
 // Load .env from the api directory
-dotenv.config({ path: path.join(__dirname, '..', '..', '..', '..', '..', 'Users', 'user', 'Desktop', 'MedLens', 'api', '.env') });
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 async function testSupabase() {
   const url = process.env.SUPABASE_URL;

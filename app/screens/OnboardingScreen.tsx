@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { Asset } from 'expo-asset';
 import { useTheme } from '../theme/ThemeProvider';
+import { useAuth } from '../context/AuthContext';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -111,6 +112,7 @@ const SlideView = ({ item, theme }: { item: Slide; theme: any }) => {
 // ─── Main screen ──────────────────────────────────────────────────────────────
 const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
   const theme = useTheme();
+  const { continueAsGuest } = useAuth();
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
   const [ready, setReady] = useState(false);
@@ -145,7 +147,10 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
   const handleSkip = () => handleFinish();
 
   const handleFinish = async () => {
-    try { await AsyncStorage.setItem('hasSeenOnboarding', 'true'); } catch {}
+    try { 
+      await AsyncStorage.setItem('hasSeenOnboarding', 'true');
+      await continueAsGuest();
+    } catch {}
     navigation.replace('Home');
   };
 

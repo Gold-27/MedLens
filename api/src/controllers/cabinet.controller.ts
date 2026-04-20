@@ -63,16 +63,35 @@ export const saveCabinetItem = async (req: AuthenticatedRequest, res: Response) 
   try {
     const supabase = getUserScopedClient(req.userToken!);
 
+    console.log(`[Cabinet] Attempting save for user ${req.userId} on drug ${drug_key}`);
+
+    // Try to insert first
     const { data, error, status } = await supabase
       .from('cabinet_items')
-      .upsert(
-        [{ user_id: req.userId, drug_name, drug_key, source: 'OpenFDA' }],
-        { onConflict: 'user_id,drug_key' }
-      )
+      .insert([{ user_id: req.userId, drug_name, drug_key, source: 'OpenFDA' }])
       .select()
       .single();
 
     if (error) {
+      // If the error is a unique violation (code 23505), it means the item was already saved.
+      // We can just return success or update it.
+      if (error.code === '23505') {
+        console.log(`[Cabinet] Item already exists, updating existing record for ${drug_name}`);
+        const { data: updateData, error: updateError } = await supabase
+          .from('cabinet_items')
+          .update({ drug_name, updated_at: new Date().toISOString(), deleted_at: null })
+          .match({ user_id: req.userId, drug_key })
+          .select()
+          .single();
+        
+        if (updateError) {
+          console.error(`[Cabinet] Update fallback error:`, updateError.message);
+          return res.status(500).json({ error: 'Failed to update existing medication', message: updateError.message });
+        }
+        
+        return res.json({ success: true, item: updateData });
+      }
+
       console.error(`[Cabinet] Save error (Status ${status}):`, error.message);
       
       if (error.message.includes('schema cache')) {

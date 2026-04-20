@@ -19,6 +19,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, displayName?: string) => Promise<{ error: AuthError | null }>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
+  continueAsGuest: () => Promise<void>;
   getToken: () => Promise<string | null>;
 }
 
@@ -133,6 +134,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.error('Sign out error:', error);
     }
   };
+  
+  const continueAsGuest = async () => {
+    try {
+      // Clear any existing session to ensure clean guest state
+      await supabase.auth.signOut();
+      setSession(null);
+      console.log('[Auth] Continued as guest - session cleared');
+    } catch (error) {
+      console.error('Guest transition error:', error);
+      setSession(null);
+    }
+  };
 
   const signInWithGoogle = async () => {
     try {
@@ -211,6 +224,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     signUp,
     signInWithGoogle,
     signOut,
+    continueAsGuest,
     getToken,
   };
 
