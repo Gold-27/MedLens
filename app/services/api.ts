@@ -28,7 +28,8 @@ export interface AutocompleteResponse {
 }
 
 export interface InteractionResponse {
-  status: 'potential_interaction' | 'insufficient_data';
+  status: 'safe' | 'caution' | 'risky' | 'unknown' | 'potential_interaction' | 'insufficient_data';
+  severity?: 'safe' | 'caution' | 'risky' | 'unknown';
   message: string;
   details?: {
     interactions: Array<{

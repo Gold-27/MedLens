@@ -269,27 +269,38 @@ const InteractionScreen: React.FC = () => {
         <View style={[
           styles.resultCard,
           { 
-            backgroundColor: result.status === 'potential_interaction' 
-              ? theme.colors.errorContainer 
-              : theme.colors.accentContainer 
+            backgroundColor: 
+              result.status === 'risky' || result.status === 'potential_interaction' ? theme.colors.errorContainer : 
+              result.status === 'caution' ? theme.colors.accentContainer :
+              result.status === 'safe' ? theme.colors.successContainer :
+              theme.colors.surfaceContainerHighest
           },
         ]}>
           <Text style={[
             styles.resultTitle,
             { 
-              color: result.status === 'potential_interaction' 
-                ? theme.colors.onErrorContainer 
-                : theme.colors.onAccentContainer 
+              color: 
+                result.status === 'risky' || result.status === 'potential_interaction' ? theme.colors.onErrorContainer : 
+                result.status === 'caution' ? theme.colors.onAccentContainer :
+                result.status === 'safe' ? theme.colors.onSuccessContainer :
+                theme.colors.onSurfaceVariant
             },
           ]}>
-            {result.status === 'potential_interaction' ? 'Potential Interaction' : 'Insufficient Data'}
+            {
+              result.status === 'risky' || result.status === 'potential_interaction' ? 'Dangerous Interaction' : 
+              result.status === 'caution' ? 'Caution Advised' :
+              result.status === 'safe' ? 'No Known Interaction' :
+              'Unknown'
+            }
           </Text>
           <Text style={[
             styles.resultMessage,
             { 
-              color: result.status === 'potential_interaction' 
-                ? theme.colors.onErrorContainer 
-                : theme.colors.onAccentContainer 
+              color: 
+                result.status === 'risky' || result.status === 'potential_interaction' ? theme.colors.onErrorContainer : 
+                result.status === 'caution' ? theme.colors.onAccentContainer :
+                result.status === 'safe' ? theme.colors.onSuccessContainer :
+                theme.colors.onSurfaceVariant
             },
           ]}>
             {result.message}

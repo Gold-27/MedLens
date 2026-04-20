@@ -228,7 +228,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
               onPress={() => navigation.navigate('SignUp')}
             >
               <Text style={[styles.signUpButtonText, { color: theme.colors.onPrimary }]}>
-                Sign in / Sign up
+                Create account
               </Text>
             </TouchableOpacity>
 
@@ -237,7 +237,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
               onPress={handleFinish}
             >
               <Text style={[styles.guestLinkText, { color: theme.colors.primary }]}>
-                Continue as guest
+                Use as guest
               </Text>
             </TouchableOpacity>
           </View>

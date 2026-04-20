@@ -12,6 +12,8 @@ import cors from 'cors';
 import { searchMedication, generateELI12, autocomplete } from './controllers/search.controller';
 import { getCabinetItems, saveCabinetItem, deleteCabinetItem } from './controllers/cabinet.controller';
 import { requireAuth } from './middleware/auth.middleware';
+import OpenFDAService from './services/openfda.service';
+import DeepSeekService from './services/deepseek.service';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -44,19 +46,52 @@ app.post('/api/cabinet/save', requireAuth, saveCabinetItem);
 app.delete('/api/cabinet/items/:drugKey', requireAuth, deleteCabinetItem);
 
 // ── Interaction Checker ──────────────────────────────────────────────────────
-// PRD Rule: Never say "safe" — always advise professional consultation
-app.post('/api/interactions', (req, res) => {
+app.post('/api/interactions', async (req, res) => {
   const { drug_keys } = req.body;
 
   if (!drug_keys || !Array.isArray(drug_keys) || drug_keys.length < 2) {
-    return res.status(400).json({ error: 'At least two drug keys are required' });
+    return res.status(400).json({ error: 'At least two drug names are required' });
   }
 
-  res.json({
-    status: 'insufficient_data',
-    message: 'We cannot confirm drug interactions from this data. Please consult a healthcare professional.',
-    consult_professional: true,
-  });
+  // MedLens currently supports pairwise check for simplicity
+  const drug1Name = drug_keys[0];
+  const drug2Name = drug_keys[1];
+
+  try {
+    const [drug1Data, drug2Data] = await Promise.all([
+      OpenFDAService.searchDrug(drug1Name),
+      OpenFDAService.searchDrug(drug2Name)
+    ]);
+
+    const info1 = drug1Data?.drug_interactions || 'N/A';
+    const info2 = drug2Data?.drug_interactions || 'N/A';
+
+    // If both have no data at all, return unknown
+    if (info1 === 'N/A' && info2 === 'N/A') {
+      return res.json({
+        status: 'unknown',
+        message: 'No interaction data is available for these medications in the FDA database.',
+        summary: 'We could not find interaction records for these medications. Please consult a pharmacist or doctor.',
+        severity: 'unknown'
+      });
+    }
+
+    // Call DeepSeek for analysis
+    const analysis = await DeepSeekService.analyzeInteractions(
+      drug1Name, info1,
+      drug2Name, info2
+    );
+
+    res.json({
+      status: analysis.severity, // 'safe', 'caution', 'risky', 'unknown'
+      message: analysis.summary,
+      severity: analysis.severity
+    });
+
+  } catch (error: any) {
+    console.error('Interaction API Error:', error.message);
+    res.status(500).json({ error: 'Failed to check interactions' });
+  }
 });
 
 // Start server

@@ -126,6 +126,76 @@ export class DeepSeekService {
       throw new Error(`ELI12 simplify failed: ${error.message}`);
     }
   }
+
+  async analyzeInteractions(drug1: string, info1: string, drug2: string, info2: string): Promise<{ severity: string; summary: string }> {
+    if (!this.apiKey) {
+      throw new Error('DeepSeek API key is not configured');
+    }
+
+    const systemPrompt = `
+      You are MedLens, an AI pharmacological safety analyzer.
+      Your goal is to analyze the interaction between two medications based on their FDA label text.
+      
+      CLASSIFICATION RULES:
+      - risky: Serious or life-threatening interaction. Clear warning against combined use.
+      - caution: Moderate interaction. Potential side effects or reduced effectiveness. Monitor closely.
+      - safe: No known significant interaction found in the provided text.
+      - unknown: No usable medical data provided to make a determination.
+      
+      OUTPUT RULES:
+      1. If the label text mentions common interactions or reasons for caution, classify accordingly.
+      2. If the text is present but does NOT mention an interaction between these specific classes or drugs, classify as "safe".
+      3. Only use "unknown" if the provided info strings are generic placeholders like "N/A" or "No data".
+      4. Provide a clear, plain-language summary in 2-3 sentences.
+      
+      OUTPUT FORMAT:
+      Return a JSON object: { "severity": "risky|caution|safe|unknown", "summary": "..." }
+    `;
+
+    const userPrompt = `
+      Analyze the interaction between:
+      
+      Drug 1: ${drug1}
+      Interaction Info 1: ${info1}
+      
+      Drug 2: ${drug2}
+      Interaction Info 2: ${info2}
+      
+      Determine the severity and provide a summary.
+    `;
+
+    try {
+      const response = await axios.post(
+        this.baseUrl,
+        {
+          model: 'deepseek-chat',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ],
+          response_format: { type: 'json_object' }
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      const content = JSON.parse(response.data.choices[0].message.content);
+      return {
+        severity: content.severity || 'unknown',
+        summary: content.summary || 'Unable to determine interaction details.'
+      };
+    } catch (error: any) {
+      console.error('DeepSeek Interaction Error:', error.message);
+      return {
+        severity: 'unknown',
+        summary: 'We encountered an error analyzing these medications. Please consult a professional.'
+      };
+    }
+  }
 }
 
 export default new DeepSeekService();
