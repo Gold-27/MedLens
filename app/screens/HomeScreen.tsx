@@ -332,7 +332,7 @@ const HomeScreen: React.FC = () => {
         {/* Top Navigation */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.openDrawer()}>
-            <Ionicons name="menu-outline" size={28} color={theme.colors.onSurface} />
+            <Ionicons name="menu-outline" size={28} color={theme.colors.onSurfaceVariant} />
           </TouchableOpacity>
           <View style={styles.headerActions}>
             <TouchableOpacity
@@ -343,7 +343,13 @@ const HomeScreen: React.FC = () => {
               <Text style={[styles.cabinetText, { color: theme.colors.onPrimaryContainer }]}>Cabinet</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.profileCircle, { backgroundColor: theme.colors.onSurface, borderWidth: 0 }]}
+              style={[
+                styles.profileCircle, 
+                { 
+                  backgroundColor: user ? theme.colors.onSurfaceVariant : theme.colors.outlineVariant, 
+                  borderWidth: 0 
+                }
+              ]}
               onPress={() => navigation.navigate('Settings')}
             >
               {user ? (
@@ -359,7 +365,7 @@ const HomeScreen: React.FC = () => {
                   })()}
                 </Text>
               ) : (
-                <Ionicons name="person" size={20} color={theme.colors.surface} />
+                <Ionicons name="person" size={20} color={theme.colors.onSurfaceVariant} />
               )}
             </TouchableOpacity>
           </View>
