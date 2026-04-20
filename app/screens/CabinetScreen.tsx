@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, SafeAreaView, Modal } from 'react-native';
 import { useTheme, ThemeContextType } from '../theme/ThemeProvider';
 import { useAuth } from '../context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as api from '../services/api';
 import { LocalStorageService } from '../services/storage';
 import EmptyState from '../components/EmptyState';
+import SummaryCard from '../components/SummaryCard';
 
 interface CabinetItem {
   id: string;
@@ -56,6 +57,9 @@ const CabinetScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [interactionCount, setInteractionCount] = useState(0);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [viewLoading, setViewLoading] = useState(false);
+  const [selectedDrugSummary, setSelectedDrugSummary] = useState<api.SearchResponse | null>(null);
 
   const fetchCabinetData = useCallback(async () => {
     if (!user) return;
@@ -96,6 +100,33 @@ const CabinetScreen: React.FC = () => {
     navigation.navigate('Interaction', { drugKeys: selectedKeys });
   };
 
+  const handleViewDrug = async (drugName: string) => {
+    setViewLoading(true);
+    try {
+      // 1. Check Cache
+      const cached = await LocalStorageService.getCachedResult(drugName);
+      if (cached) {
+        setSelectedDrugSummary(cached);
+        setIsModalVisible(true);
+        return;
+      }
+
+      // 2. Fetch from API
+      const response = await api.searchMedication(drugName);
+      setSelectedDrugSummary(response);
+      
+      // 3. Cache it
+      await LocalStorageService.setCachedResult(drugName, response);
+      
+      setIsModalVisible(true);
+    } catch (error) {
+      console.error('Failed to fetch drug summary:', error);
+      Alert.alert('Error', 'Failed to load medication details. Please check your connection.');
+    } finally {
+      setViewLoading(false);
+    }
+  };
+
   const renderHeader = () => (
     <View style={styles.headerContainer}>
       <View style={styles.topRow}>
@@ -104,13 +135,13 @@ const CabinetScreen: React.FC = () => {
         </TouchableOpacity>
         <Text style={[styles.title, { color: theme.colors.onSurface }]}>My Cabinet</Text>
       </View>
-      <Text style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>
+      <Text style={[styles.subtitle, { color: theme.colors.outline }]}>
         Your saved medications, always at your fingertips.
       </Text>
 
       <View style={styles.statsRow}>
         <View style={[styles.statsCard, { backgroundColor: theme.colors.surfaceContainerHigh }]}>
-          <Text style={[styles.statsValue, { color: theme.colors.primary }]}>{items.length}</Text>
+          <Text style={[styles.statsValue, { color: theme.colors.secondary }]}>{items.length}</Text>
           <Text style={[styles.statsLabel, { color: theme.colors.onSurfaceVariant }]}>Medications saved</Text>
         </View>
         <View style={[styles.statsCard, { backgroundColor: theme.colors.surfaceContainerHigh }]}>
@@ -122,9 +153,9 @@ const CabinetScreen: React.FC = () => {
   );
 
   const renderFooter = () => (
-    <View style={[styles.interactionCard, { backgroundColor: theme.colors.primaryContainer }]}>
-      <Text style={[styles.interactionTitle, { color: theme.colors.onPrimaryContainer }]}>Check for interactions</Text>
-      <Text style={[styles.interactionText, { color: theme.colors.onPrimaryContainer }]}>
+    <View style={[styles.interactionCard, { backgroundColor: theme.colors.secondaryContainer }]}>
+      <Text style={[styles.interactionTitle, { color: theme.colors.onSecondaryContainer }]}>Check for interactions</Text>
+      <Text style={[styles.interactionText, { color: theme.colors.onSecondaryContainer }]}>
         Select two or more medications to see if there are known interactions.
       </Text>
       <TouchableOpacity
@@ -160,14 +191,19 @@ const CabinetScreen: React.FC = () => {
         
         <View style={styles.itemInfo}>
           <Text style={[styles.itemName, { color: theme.colors.onSurface }]}>{item.drug_name}</Text>
-          <Text style={[styles.itemDesc, { color: theme.colors.onSurfaceVariant }]}>{getDrugDescription(item.drug_name)}</Text>
+          <Text style={[styles.itemDesc, { color: theme.colors.outline }]}>{getDrugDescription(item.drug_name)}</Text>
         </View>
 
         <TouchableOpacity 
           style={[styles.viewButton, { backgroundColor: theme.colors.secondaryContainer }]}
-          onPress={() => navigation.navigate('Home', { searchQuery: item.drug_name })}
+          onPress={() => handleViewDrug(item.drug_name)}
+          disabled={viewLoading}
         >
-          <Text style={[styles.viewButtonText, { color: theme.colors.onSecondaryContainer }]}>View</Text>
+          {viewLoading ? (
+            <ActivityIndicator size="small" color={theme.colors.onSecondaryContainer} />
+          ) : (
+            <Text style={[styles.viewButtonText, { color: theme.colors.onSecondaryContainer }]}>View</Text>
+          )}
         </TouchableOpacity>
       </View>
     );
@@ -192,6 +228,48 @@ const CabinetScreen: React.FC = () => {
         contentContainerStyle={styles.scrollContent}
         ListEmptyComponent={<EmptyState type="empty_cabinet" title="No medications saved" subtitle="Search and save drugs to populate your cabinet." />}
       />
+
+      <Modal
+        visible={isModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setIsModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: theme.colors.background }]}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: theme.colors.onSurface }]}>Medication Summary</Text>
+              <TouchableOpacity
+                onPress={() => setIsModalVisible(false)}
+                style={styles.closeButton}
+              >
+                <Ionicons name="close" size={28} color={theme.colors.onSurface} />
+              </TouchableOpacity>
+            </View>
+
+            <FlatList
+              data={[selectedDrugSummary]}
+              keyExtractor={() => 'summary'}
+              renderItem={() => selectedDrugSummary ? (
+                <View style={styles.cardWrapper}>
+                  <SummaryCard
+                    drugName={selectedDrugSummary.drug_name}
+                    source={selectedDrugSummary.source}
+                    sections={{
+                      whatItDoes: selectedDrugSummary.summary.what_it_does,
+                      howToTake: selectedDrugSummary.summary.how_to_take,
+                      warnings: selectedDrugSummary.summary.warnings,
+                      sideEffects: selectedDrugSummary.summary.side_effects,
+                    }}
+                    isSaved={true}
+                  />
+                </View>
+              ) : null}
+              contentContainerStyle={styles.modalScrollContent}
+            />
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -306,6 +384,38 @@ const styles = StyleSheet.create({
   checkButtonText: {
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    height: '92%',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    paddingTop: 20,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  closeButton: {
+    padding: 4,
+  },
+  modalScrollContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+  },
+  cardWrapper: {
+    paddingTop: 8,
   },
 });
 
