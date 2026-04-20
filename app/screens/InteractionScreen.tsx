@@ -137,7 +137,9 @@ const InteractionScreen: React.FC = () => {
     return (
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <View style={styles.header}>
-          <Text style={[styles.headerTitle, { color: theme.colors.onSurface }]}>Interaction Checker</Text>
+          <View style={styles.headerTop}>
+            <Text style={[styles.headerTitle, { color: theme.colors.onSurface }]}>Interaction Checker</Text>
+          </View>
         </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
@@ -153,8 +155,11 @@ const InteractionScreen: React.FC = () => {
     return (
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <View style={styles.header}>
-          <Text style={[styles.headerTitle, { color: theme.colors.onSurface }]}>Interaction Checker</Text>
-          <Text style={[styles.headerSubtitle, { color: theme.colors.onSurfaceVariant }]}>
+          <View style={styles.headerTop}>
+            <Text style={[styles.headerTitle, { color: theme.colors.onSurface }]}>Interaction Checker</Text>
+          </TouchableOpacity>
+          </View>
+          <Text style={[styles.headerSubtitle, { color: theme.colors.outline }]}>
             Select two or more medications to check for potential interactions
           </Text>
         </View>
@@ -309,8 +314,6 @@ const InteractionScreen: React.FC = () => {
               ))}
             </View>
           )}
-            </View>
-          )}
         </View>
       )}
 
@@ -327,6 +330,11 @@ const InteractionScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  header: {
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 16,
   },
   headerTop: {
     flexDirection: 'row',
