@@ -41,11 +41,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Persist guest state
   const setGuestState = async (value: boolean) => {
     setIsGuest(value);
-    try {
-      await AsyncStorage.setItem('@is_guest', value ? 'true' : 'false');
-    } catch (error) {
-      console.error('Error saving guest state:', error);
-    }
+    // Persisting guest state across restarts is no longer desired per PRD logic
   };
 
   useEffect(() => {
@@ -54,11 +50,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setLoading(true);
 
       try {
-        // Load persistent guest info first
-        const guestItem = await AsyncStorage.getItem('@is_guest');
-        if (guestItem === 'true') {
-          setIsGuest(true);
-        }
+        // Guest info is now memory-only and resets on launch
 
         // Race the session check against a timeout to prevent hanging
         const sessionPromise = supabase.auth.getSession();

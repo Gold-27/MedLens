@@ -140,20 +140,17 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
   };
 
   const handleSignUp = async () => {
-    try { await AsyncStorage.setItem('hasSeenOnboarding', 'true'); } catch {}
     navigation.replace('SignUp');
   };
 
   const handleSkip = () => handleFinish();
 
   const handleLogin = async () => {
-    try { await AsyncStorage.setItem('hasSeenOnboarding', 'true'); } catch {}
     navigation.navigate('Login');
   };
 
   const handleFinish = async () => {
     try { 
-      await AsyncStorage.setItem('hasSeenOnboarding', 'true');
       await continueAsGuest();
     } catch {}
     navigation.replace('Home');

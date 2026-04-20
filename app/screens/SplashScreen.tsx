@@ -55,38 +55,18 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
         // Wait for auth to initialize — but don't wait if it's still loading
         if (authLoading) return;
 
-        console.log(`[Splash] Starting check: sessionUser=${session?.user?.id}, isGuest=${isGuest}`);
+        console.log(`[Splash] Starting check: sessionUser=${session?.user?.id}`);
         
-        const hasSeenOnboarding = await AsyncStorage.getItem('hasSeenOnboarding');
         await new Promise(resolve => setTimeout(resolve, 2000)); // Minimum splash time
         
-        // Priority 1: Valid Session (Authenticated)
-        // STRICT: Only treat as authenticated if session and user.id both exist
-        if (session?.user?.id && !isGuest) {
-          console.log('[Splash] Priority 1: Validated session -> Home');
+        // STRICT PRD RULE: Only authenticated users bypass onboarding
+        if (session?.user?.id) {
+          console.log('[Splash] Authenticated session detected -> Home');
           navigate('Home');
-          return;
-        }
-
-        // Priority 2: Guest Mode (Already chosen in previous session)
-        if (isGuest) {
-          console.log('[Splash] Priority 2: Guest mode detected -> Home');
-          navigate('Home');
-          return;
-        }
-
-        // Priority 3: First-time user (New User)
-        // If they haven't finished onboarding, they MUST go there
-        if (hasSeenOnboarding !== 'true') {
-          console.log('[Splash] Priority 3: New user (no onboarding flag) -> Onboarding');
+        } else {
+          console.log('[Splash] No session found -> Onboarding');
           navigate('Onboarding');
-          return;
         }
-
-        // Priority 4: Fallback (Returning user, no session)
-        // STRICT: Do NOT go to Home. Default to Onboarding (or Login, but project prefers Onboarding as hub)
-        console.log('[Splash] Priority 4: Returning user, no session -> Onboarding');
-        navigate('Onboarding');
       } catch (error) {
         console.error('[Splash] Check failed:', error);
         navigate('Onboarding');
