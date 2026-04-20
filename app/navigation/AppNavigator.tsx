@@ -182,7 +182,7 @@ const AppNavigator = () => {
         <Stack.Screen
           name="Interaction"
           component={InteractionScreen}
-          options={{ presentation: 'modal' }}
+          options={{ presentation: 'modal', gestureEnabled: false }}
         />
       </Stack.Navigator>
     </NavigationContainer>
