@@ -108,8 +108,18 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
       headers,
     });
 
-    return await response.json();
-  } catch (error: unknown) {
+    const data = await response.json();
+
+    if (!response.ok) {
+      const error = new Error(`API Error: ${response.status}`);
+      (error as any).status = response.status;
+      (error as any).data = data;
+      throw error;
+    }
+
+    return data;
+  } catch (error: any) {
+    if (error.status) throw error;
     const message = error instanceof Error ? error.message : 'Unknown error';
     throw new Error(`API request failed: ${message}`);
   }

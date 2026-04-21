@@ -152,6 +152,13 @@ const HomeScreen: React.FC = () => {
     } catch (error: any) {
       if (error.name === 'AbortError') return;
       
+      // Handle known 404 (Medication not found) cases without triggering error screens
+      if (error.status === 404) {
+        console.log(`[Search] Medication not found: ${cleanQuery}`);
+        setState('notFound');
+        return;
+      }
+
       console.error('Search error:', error);
       if (error.message === 'TIMEOUT') {
         Alert.alert(
