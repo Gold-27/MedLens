@@ -127,6 +127,53 @@ const CabinetScreen: React.FC = () => {
     }
   };
 
+  const handleDeleteDrug = async (drugKey: string, drugName: string) => {
+    Alert.alert(
+      'Remove Medication',
+      `Are you sure you want to remove ${drugName} from your cabinet?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Remove', 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const token = await getToken();
+              if (!token) return;
+              await api.deleteCabinetItem(drugKey, token);
+              setItems(prev => prev.filter(i => i.drug_key !== drugKey));
+              // Also update cached cabinet
+              const updated = items.filter(i => i.drug_key !== drugKey);
+              await LocalStorageService.setCachedCabinet(updated);
+            } catch (error) {
+              console.error('Failed to delete drug:', error);
+              Alert.alert('Error', 'Failed to remove medication. Please try again.');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const showActionMenu = (item: CabinetItem) => {
+    Alert.alert(
+      item.drug_name,
+      'Select an action',
+      [
+        { 
+          text: 'View summary', 
+          onPress: () => handleViewDrug(item.id, item.drug_name) 
+        },
+        { 
+          text: 'Delete from cabinet', 
+          style: 'destructive',
+          onPress: () => handleDeleteDrug(item.drug_key, item.drug_name)
+        },
+        { text: 'Cancel', style: 'cancel' }
+      ]
+    );
+  };
+
   const renderHeader = () => (
     <View style={styles.headerContainer}>
       <View style={styles.topRow}>
@@ -199,14 +246,14 @@ const CabinetScreen: React.FC = () => {
         </View>
 
         <TouchableOpacity 
-          style={[styles.viewButton, { backgroundColor: theme.colors.secondaryContainer }]}
-          onPress={() => handleViewDrug(item.id, item.drug_name)}
+          style={styles.menuButton}
+          onPress={() => showActionMenu(item)}
           disabled={viewingItemId !== null}
         >
           {viewingItemId === item.id ? (
-            <ActivityIndicator size="small" color={theme.colors.onSecondaryContainer} />
+            <ActivityIndicator size="small" color={theme.colors.primary} />
           ) : (
-            <Text style={[styles.viewButtonText, { color: theme.colors.onSecondaryContainer }]}>View</Text>
+            <Ionicons name="ellipsis-vertical" size={22} color={theme.colors.outline} />
           )}
         </TouchableOpacity>
       </View>
@@ -364,14 +411,9 @@ const styles = StyleSheet.create({
   itemDesc: {
     fontSize: 14,
   },
-  viewButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  viewButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
+  menuButton: {
+    padding: 8,
+    marginRight: -4,
   },
   interactionCard: {
     marginTop: 24,
