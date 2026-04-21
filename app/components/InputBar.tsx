@@ -54,7 +54,7 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
   const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false);
   
   const debounceTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const resultsCache = useRef<Map<string, Suggestion[]>>(new Map());
+  const latestFetchId = useRef(0);
   const inputShadow = useRef(new Animated.Value(0)).current;
   const micScale = useRef(new Animated.Value(1)).current;
   const pulseAnimation = useRef<Animated.CompositeAnimation | null>(null);
@@ -93,8 +93,6 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
     });
 
     return () => {
-      // Logic to unsubscribe if provided by the module, 
-      // but usually expo-speech-recognition uses hooks internally
     };
   }, []);
 
@@ -130,10 +128,12 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
   useEffect(() => {
     const trimmed = query.trim().toLowerCase();
     
+    // Clear any pending API calls
     if (debounceTimeout.current) {
       clearTimeout(debounceTimeout.current);
     }
 
+    // IMMEDIATELY clear suggestions and hide dropdown if query is empty
     if (!trimmed || !fetchSuggestions || loading) {
       setSuggestions([]);
       setShowSuggestions(false);
@@ -142,6 +142,7 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
     }
 
     // 1. Instant Local Filter (Synchronous)
+    // Strictly filter based on current query
     const localMatches: Suggestion[] = (COMMON_DRUGS as any[])
       .filter(d => 
         (d.name?.toLowerCase() || '').startsWith(trimmed) || 
@@ -154,30 +155,30 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
         type: (d.type === 'brand' || d.type === 'generic') ? d.type : 'brand'
       }));
 
-    // 2. Immediate Display for responsiveness
+    // 2. Sync results strictly with current input
     setSuggestions(localMatches);
     setShowSuggestions(true);
     setIsSuggestionsLoading(localMatches.length === 0);
 
-    // 3. API Fetch (Debounced & Cached)
-    debounceTimeout.current = setTimeout(async () => {
-      // Check Cache First
-      if (resultsCache.current.has(trimmed)) {
-        const cached = resultsCache.current.get(trimmed)!;
-        mergeResults(localMatches, cached);
-        setIsSuggestionsLoading(false);
-        return;
-      }
+    // 3. API Fetch (Debounced)
+    // We increment the fetch ID to ignore results from previous keystrokes
+    const currentFetchId = ++latestFetchId.current;
 
+    debounceTimeout.current = setTimeout(async () => {
       setIsSuggestionsLoading(true);
       try {
         const results = await fetchSuggestions(query);
-        resultsCache.current.set(trimmed, results);
-        mergeResults(localMatches, results);
+        
+        // ONLY update if this is still the latest fetch request
+        if (currentFetchId === latestFetchId.current) {
+          mergeResults(localMatches, results);
+        }
       } catch (error) {
         console.error('[InputBar] Suggestions fetch error:', error);
       } finally {
-        setIsSuggestionsLoading(false);
+        if (currentFetchId === latestFetchId.current) {
+          setIsSuggestionsLoading(false);
+        }
       }
     }, 250);
 
@@ -186,7 +187,7 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
         clearTimeout(debounceTimeout.current);
       }
     };
-  }, [query, fetchSuggestions]);
+  }, [query, fetchSuggestions, loading]);
 
   useEffect(() => {
     if (isListening) {
