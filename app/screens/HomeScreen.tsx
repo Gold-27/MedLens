@@ -19,6 +19,7 @@ import TrustBadges from '../components/TrustBadges';
 import * as api from '../services/api';
 import { LocalStorageService } from '../services/storage';
 import RecentSearches from '../components/RecentSearches';
+import { useCabinet } from '../context/CabinetContext';
 
 type AppState = 'empty' | 'loading' | 'success' | 'partial' | 'notFound' | 'error';
 
@@ -34,7 +35,7 @@ const HomeScreen: React.FC = () => {
   const inputBarRef = useRef<InputBarHandle>(null);
   const [state, setState] = useState<AppState>('empty');
   const [pendingAction, setPendingAction] = useState<string>('');
-  const [savedDrugs, setSavedDrugs] = useState<Set<string>>(new Set());
+  const { savedDrugNames, addItem: addToCabinet } = useCabinet();
   const [baseResult, setBaseResult] = useState<api.SearchResponse | null>(null);
   const [eli12Result, setEli12Result] = useState<api.SearchResponse['summary'] | null>(null);
   const [isELI12, setIsELI12] = useState(false);
@@ -221,38 +222,6 @@ const HomeScreen: React.FC = () => {
     loadLocalData();
   }, []);
 
-  useEffect(() => {
-    // Only fetch cabinet data for authenticated users
-    if (isGuest || !user) {
-      setSavedDrugs(new Set());
-      return;
-    }
-
-    const initData = async () => {
-      try {
-        // 1. Initial Load from Cache (Local-First)
-        const cached = await LocalStorageService.getCachedCabinet();
-        if (cached.length > 0) {
-          setSavedDrugs(new Set(cached.map(item => item.drug_name.toLowerCase())));
-        }
-
-        // 2. Background Revalidation (SWR)
-        const token = await getToken();
-        if (token) {
-          const response = await api.getCabinetItems(token);
-          const drugNames = response.items.map(item => item.drug_name.toLowerCase());
-          
-          // Update both state and local storage
-          setSavedDrugs(new Set(drugNames));
-          await LocalStorageService.setCachedCabinet(response.items);
-        }
-      } catch (error) {
-        console.error('Cabinet revalidation failed:', error);
-      }
-    };
-    initData();
-  }, [user, isGuest, getToken]);
-
   const handleSave = useCallback(async () => {
     if (!baseResult) return;
     if (isGuest) { 
@@ -265,37 +234,18 @@ const HomeScreen: React.FC = () => {
     const drugNameLower = drugName.toLowerCase();
     const drugKey = drugNameLower.replace(/\s+/g, '-');
 
-    // 1. Optimistic UI Update: Update state immediately
-    setSavedDrugs(prev => {
-      const next = new Set(prev);
-      next.add(drugNameLower);
-      return next;
-    });
-
+    // 1. Optimistic Update is handled inside CabinetContext via state updates
+    
     // 2. Immediate Feedback: Show alert right away
     Alert.alert('Saved', `${drugName} has been saved to your cabinet.`);
     
-    // 3. Background Persistence: Run the API call without blocking UI
+    // 3. Trigger context method
     (async () => {
       try {
-        const token = await getToken();
-        if (!token) return;
-        
-        await api.saveCabinetItem(drugName, drugKey, token);
-        
-        // Silently refresh the full cabinet cache in background
-        const resp = await api.getCabinetItems(token);
-        await LocalStorageService.setCachedCabinet(resp.items);
-        
-        console.log(`[Cabinet] Background save successful for: ${drugName}`);
+        await addToCabinet(drugName, drugKey);
+        console.log(`[Cabinet] Add successful for: ${drugName}`);
       } catch (error) {
-        console.error('[Cabinet] Background save failed:', error);
-        // Optional: Rollback UI state if it's a critical failure
-        // setSavedDrugs(prev => {
-        //   const next = new Set(prev);
-        //   next.delete(drugNameLower);
-        //   return next;
-        // });
+        console.error('[Cabinet] Save failed:', error);
       }
     })();
 
@@ -396,7 +346,7 @@ const HomeScreen: React.FC = () => {
                 setEli12Result(null);
                 setQuery('');
               }}
-              isSaved={savedDrugs.has(baseResult.drug_name.toLowerCase())}
+              isSaved={savedDrugNames.has(baseResult.drug_name.toLowerCase())}
               requiresAuth={isGuest}
             />
           </View>
