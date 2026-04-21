@@ -16,6 +16,7 @@ import SettingsScreen from '../screens/SettingsScreen';
 import SignUpScreen from '../screens/SignUpScreen';
 import LoginScreen from '../screens/LoginScreen';
 import { useAuth } from '../context/AuthContext';
+import { CabinetProvider } from '../context/CabinetContext';
 
 export type RootStackParamList = {
   Splash: undefined;
