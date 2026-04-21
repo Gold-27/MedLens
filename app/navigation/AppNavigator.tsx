@@ -13,6 +13,7 @@ import HomeScreen from '../screens/HomeScreen';
 import CabinetScreen from '../screens/CabinetScreen';
 import InteractionScreen from '../screens/InteractionScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import SignUpScreen from '../screens/SignUpScreen';
 import LoginScreen from '../screens/LoginScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import { useAuth } from '../context/AuthContext';
