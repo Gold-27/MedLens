@@ -93,20 +93,42 @@ async function main() {
   console.log("📱 SCAN THIS QR CODE WITH YOUR PHONE CAMERA");
   console.log("==========================================================\n");
 
-  qrCode.toString(`exp://${host}`, { type: 'terminal', small: true }, (err, str) => {
-    if (!err) console.log(str);
-    
-    console.log("==========================================================");
-    console.log(`URL: exp://${host}`);
-    console.log("==========================================================\n");
-    
-    console.log("📡 Starting Expo Bundler with cache clear...");
-    spawn('npx', ['expo', 'start', '--clear'], { 
-      cwd: APP_DIR, 
-      shell: true, 
-      stdio: 'inherit',
-      env: { ...process.env, EXPO_PACKAGER_PROXY_URL: frontendTunnel.url }
+  // Promisify QR code generation to keep main clean
+  const qrStr = await new Promise((resolve) => {
+    qrCode.toString(`exp://${host}`, { type: 'terminal', small: true }, (err, str) => {
+      resolve(err ? "Failed to generate QR code" : str);
     });
+  });
+  console.log(qrStr);
+  
+  console.log("==========================================================");
+  console.log(`URL: exp://${host}`);
+  console.log("==========================================================\n");
+  
+  console.log("📡 Starting Expo Bundler with cache clear...");
+  const expoProcess = spawn('npx', ['expo', 'start', '--clear'], { 
+    cwd: APP_DIR, 
+    shell: true, 
+    stdio: 'inherit',
+    env: { ...process.env, EXPO_PACKAGER_PROXY_URL: frontendTunnel.url }
+  });
+
+  // Handle tunnel exits
+  const handleExit = (label, code) => {
+    console.log(`\n🛑 ${label} process exited with code ${code}`);
+    cleanup();
+    process.exit(code || 0);
+  };
+
+  expoProcess.on('exit', (code) => handleExit('Expo Bundler', code));
+  backendTunnel.process.on('exit', (code) => handleExit('Backend Tunnel', code));
+  frontendTunnel.process.on('exit', (code) => handleExit('Frontend Tunnel', code));
+
+  // Catch Ctrl+C
+  process.on('SIGINT', () => {
+    console.log("\n👋 Shutting down...");
+    cleanup();
+    process.exit(0);
   });
 }
 
