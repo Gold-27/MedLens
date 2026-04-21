@@ -124,12 +124,12 @@ export const deleteCabinetItem = async (req: AuthenticatedRequest, res: Response
 
     const { error } = await supabase
       .from('cabinet_items')
-      .update({ deleted_at: new Date().toISOString() })
+      .delete()
       .match({ user_id: req.userId, drug_key: drugKey });
 
     if (error) {
       console.error('[Cabinet] Delete error:', error.message);
-      return res.status(500).json({ error: 'Failed to remove medication', message: error.message });
+      return res.status(500).json({ error: 'Failed to permanently delete medication', message: error.message });
     }
 
     return res.json({ success: true, message: `${drugKey} removed from cabinet` });
