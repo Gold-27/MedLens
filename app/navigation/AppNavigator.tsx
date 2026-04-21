@@ -124,7 +124,7 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
       <View style={styles.historySection}>
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: theme.colors.outline }]}>Recent Searches</Text>
-          {history.length > 0 && (
+          {history && history.length > 0 && (
             <TouchableOpacity onPress={clearHistory}>
               <Text style={[styles.clearText, { color: theme.colors.primary }]}>Clear</Text>
             </TouchableOpacity>

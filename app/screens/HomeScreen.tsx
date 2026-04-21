@@ -41,6 +41,12 @@ const HomeScreen: React.FC = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+  
+  // Performance and Cache Refs
+  const sessionCache = useRef<Map<string, api.SearchResponse>>(new Map());
+  const abortController = useRef<AbortController | null>(null);
+  const suggestionAbortController = useRef<AbortController | null>(null);
+  const searchStartTime = useRef<number>(0);
 
   const prefetchELI12 = useCallback(async (data: any, summary: any) => {
     if (!data || !summary) return;
@@ -50,6 +56,8 @@ const HomeScreen: React.FC = () => {
         setEli12Result(JSON.parse(response.eli12.content));
       }
     } catch (error) {
+      // Don't log abort errors as failures
+      if (error instanceof Error && error.name === 'AbortError') return;
       console.error('Background ELI12 prefetch failed:', error);
     }
   }, []);
@@ -60,8 +68,6 @@ const HomeScreen: React.FC = () => {
     
     if (!baseResult) return;
     
-    // If we're enabling and don't have the result yet, it might be pre-fetching
-    // or we need to start a foreground fetch
     if (enabled && !eli12Result) {
       setState('loading');
       await prefetchELI12(baseResult.data, baseResult.summary);
@@ -71,44 +77,72 @@ const HomeScreen: React.FC = () => {
 
   const handleSearch = useCallback(async (searchQuery: string) => {
     if (!searchQuery.trim()) return;
-    const cleanQuery = searchQuery.trim();
-    setQuery(cleanQuery);
-    setState('loading');
+    const cleanQuery = searchQuery.trim().toLowerCase();
     
-    // Reset ELI12 states for new search
+    // 1. Cancel previous in-flight request
+    if (abortController.current) {
+      abortController.current.abort();
+    }
+    abortController.current = new AbortController();
+    
+    setQuery(searchQuery.trim());
+    setState('loading');
     setEli12Result(null);
+    searchStartTime.current = performance.now();
 
     try {
-      // 1. Check Local Cache First
-      const cached = await LocalStorageService.getCachedResult(cleanQuery);
-      if (cached) {
+      // 2. Memory Cache Check (Instant)
+      if (sessionCache.current.has(cleanQuery)) {
+        const cached = sessionCache.current.get(cleanQuery)!;
         setBaseResult(cached);
         setState('success');
-        
-        // Start pre-fetching ELI12 in background immediately
-        prefetchELI12(cached.data, cached.summary);
-        
-        const updated = await LocalStorageService.addRecentSearch(cleanQuery);
-        setRecentSearches(updated);
+        console.log(`[Perf] Memory cache hit for: ${cleanQuery}`);
         return;
       }
 
-      // 2. Fetch Layer 1
-      const response = await api.searchMedication(cleanQuery, false);
-      setBaseResult(response);
-      setState('success'); // Show regular result ASAP
+      // 3. Disk Cache Check
+      const diskCached = await LocalStorageService.getCachedResult(cleanQuery);
+      if (diskCached) {
+        sessionCache.current.set(cleanQuery, diskCached);
+        setBaseResult(diskCached);
+        setState('success');
+        prefetchELI12(diskCached.data, diskCached.summary);
+        console.log(`[Perf] Disk cache hit for: ${cleanQuery}`);
+        return;
+      }
 
-      // 3. Proactive Background Pre-fetch
-      // We don't 'await' this so the regular result stays visible while Layer 2 loads
+      // 4. API Fetch with Timeout
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('TIMEOUT')), 15000)
+      );
+
+      const fetchPromise = api.searchMedication(searchQuery.trim(), false);
+      
+      const response = await Promise.race([fetchPromise, timeoutPromise]) as api.SearchResponse;
+      
+      const duration = Math.round(performance.now() - searchStartTime.current);
+      console.log(`[Perf] API Search took ${duration}ms for: ${cleanQuery}`);
+
+      sessionCache.current.set(cleanQuery, response);
+      setBaseResult(response);
+      setState('success');
+
+      // Proactive background pre-fetch (ELI12)
       prefetchELI12(response.data, response.summary);
       
-      // 4. Persistence
-      await Promise.all([
-        LocalStorageService.setCachedResult(cleanQuery, response),
-        LocalStorageService.addRecentSearch(cleanQuery).then(updated => setRecentSearches(updated))
-      ]);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
+      // Async persistence
+      LocalStorageService.setCachedResult(cleanQuery, response);
+      LocalStorageService.addRecentSearch(searchQuery.trim()).then(updated => setRecentSearches(updated));
+
+    } catch (error: any) {
+      if (error.name === 'AbortError') return;
+      
+      console.error('Search error:', error);
+      if (error.message === 'TIMEOUT') {
+        Alert.alert('Slow Connection', 'The search is taking longer than expected. Please check your internet.');
+      }
+      
+      const message = error.message || '';
       setState(message.includes('not found') || message.includes('404') ? 'notFound' : 'error');
     } finally {
       inputBarRef.current?.clear();
@@ -209,6 +243,12 @@ const HomeScreen: React.FC = () => {
       }).catch(() => {});
 
       Alert.alert('Saved', `${baseResult.drug_name} has been saved to your cabinet.`);
+      
+      // Reset state after save
+      setState('empty');
+      setBaseResult(null);
+      setEli12Result(null);
+      setQuery('');
     } catch (error) {
       console.error('Save failed:', error);
       Alert.alert('Error', 'Failed to save medication. Please check your connection.');
@@ -231,7 +271,15 @@ const HomeScreen: React.FC = () => {
       `Source: OpenFDA\n` +
       `MedLens simplifies medical information for understanding. It does not replace professional medical advice.`;
     
-    try { await Share.share({ title: `Medication Summary: ${baseResult.drug_name}`, message: shareContent }); }
+    try { 
+      await Share.share({ title: `Medication Summary: ${baseResult.drug_name}`, message: shareContent }); 
+      
+      // Reset state after export
+      setState('empty');
+      setBaseResult(null);
+      setEli12Result(null);
+      setQuery('');
+    }
     catch (error) { console.error('Share failed:', error); }
   }, [baseResult, isELI12, eli12Result, isGuest]);
 
@@ -242,10 +290,19 @@ const HomeScreen: React.FC = () => {
   }, [pendingAction, baseResult, handleSave, handleExport]);
 
   const fetchSuggestions = useCallback(async (suggestionQuery: string) => {
+    if (suggestionAbortController.current) {
+      suggestionAbortController.current.abort();
+    }
+    suggestionAbortController.current = new AbortController();
+
     try {
+      // suggestions are already debounced in InputBar component
       const response = await api.getAutocomplete(suggestionQuery);
       return response.suggestions || [];
-    } catch (error) { return []; }
+    } catch (error: any) { 
+      if (error.name === 'AbortError') return [];
+      return []; 
+    }
   }, []);
 
   const renderContent = () => {
