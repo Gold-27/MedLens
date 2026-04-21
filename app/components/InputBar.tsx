@@ -14,6 +14,8 @@ try {
   console.log('[Voice] expo-speech-recognition not available (Expo Go). Voice search disabled.');
 }
 
+import COMMON_DRUGS from '../assets/data/common_drugs.json';
+
 interface Suggestion {
   name: string;
   type: 'brand' | 'generic';
@@ -49,8 +51,10 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false);
   
   const debounceTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const resultsCache = useRef<Map<string, Suggestion[]>>(new Map());
   const inputShadow = useRef(new Animated.Value(0)).current;
   const micScale = useRef(new Animated.Value(1)).current;
   const pulseAnimation = useRef<Animated.CompositeAnimation | null>(null);
@@ -100,26 +104,76 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
     }
   }));
 
+  // ── Helper: Merge Results ──
+  const mergeResults = (local: Suggestion[], remote: Suggestion[]) => {
+    const seen = new Set(local.map(s => s.name.toLowerCase()));
+    const merged = [...local];
+    
+    remote.forEach(r => {
+      const normalizedName = r.name.toLowerCase();
+      if (!seen.has(normalizedName)) {
+        merged.push(r);
+        seen.add(normalizedName);
+      }
+    });
+    
+    setSuggestions(merged.slice(0, 10));
+  };
+
+  // ── Autocomplete Logic ──
   useEffect(() => {
+    const trimmed = query.trim().toLowerCase();
+    
     if (debounceTimeout.current) {
       clearTimeout(debounceTimeout.current);
     }
 
-    if (query.trim().length > 0 && fetchSuggestions) {
-      debounceTimeout.current = setTimeout(async () => {
-        try {
-          const results = await fetchSuggestions(query);
-          setSuggestions(results);
-          setShowSuggestions(true);
-        } catch (error) {
-          console.error('[InputBar] Suggestions fetch error:', error);
-          setSuggestions([]);
-        }
-      }, 300);
-    } else {
+    if (!trimmed || !fetchSuggestions) {
       setSuggestions([]);
       setShowSuggestions(false);
+      setIsSuggestionsLoading(false);
+      return;
     }
+
+    // 1. Instant Local Filter (Synchronous)
+    const localMatches: Suggestion[] = (COMMON_DRUGS as any[])
+      .filter(d => 
+        d.name.toLowerCase().startsWith(trimmed) || 
+        d.drug_name.toLowerCase().startsWith(trimmed)
+      )
+      .slice(0, 5)
+      .map(d => ({
+        name: d.name,
+        drug_name: d.drug_name,
+        type: (d.type === 'brand' || d.type === 'generic') ? d.type : 'brand'
+      }));
+
+    // 2. Immediate Display for responsiveness
+    setSuggestions(localMatches);
+    setShowSuggestions(true);
+    setIsSuggestionsLoading(localMatches.length === 0);
+
+    // 3. API Fetch (Debounced & Cached)
+    debounceTimeout.current = setTimeout(async () => {
+      // Check Cache First
+      if (resultsCache.current.has(trimmed)) {
+        const cached = resultsCache.current.get(trimmed)!;
+        mergeResults(localMatches, cached);
+        setIsSuggestionsLoading(false);
+        return;
+      }
+
+      setIsSuggestionsLoading(true);
+      try {
+        const results = await fetchSuggestions(query);
+        resultsCache.current.set(trimmed, results);
+        mergeResults(localMatches, results);
+      } catch (error) {
+        console.error('[InputBar] Suggestions fetch error:', error);
+      } finally {
+        setIsSuggestionsLoading(false);
+      }
+    }, 250);
 
     return () => {
       if (debounceTimeout.current) {
@@ -356,16 +410,28 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
         </TouchableOpacity>
       </View>
 
-      {showSuggestions && suggestions.length > 0 && (
+      {showSuggestions && (suggestions.length > 0 || isSuggestionsLoading) && (
         <View style={[styles.suggestionsContainer, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outlineVariant }]}>
-          <FlatList
-            data={suggestions}
-            renderItem={renderSuggestion}
-            keyExtractor={(item, index) => `${item.name}-${index}`}
-            style={styles.suggestionsList}
-            keyboardShouldPersistTaps="handled"
-            scrollEnabled={suggestions.length > 3}
-          />
+          {isSuggestionsLoading && suggestions.length === 0 ? (
+            <View style={styles.suggestionsLoading}>
+              <ActivityIndicator size="small" color={theme.colors.primary} />
+              <Animated.Text style={[styles.loadingText, { color: theme.colors.outline }]}>Searching medications...</Animated.Text>
+            </View>
+          ) : (
+            <FlatList
+              data={suggestions}
+              renderItem={renderSuggestion}
+              keyExtractor={(item, index) => `${item.name}-${index}`}
+              style={styles.suggestionsList}
+              keyboardShouldPersistTaps="handled"
+              scrollEnabled={suggestions.length > 3}
+              ListFooterComponent={isSuggestionsLoading ? (
+                <View style={styles.inlineLoading}>
+                  <ActivityIndicator size="small" color={theme.colors.primary} />
+                </View>
+              ) : null}
+            />
+          )}
         </View>
       )}
     </View>
@@ -472,6 +538,20 @@ const styles = StyleSheet.create({
   },
   suggestionType: {
     fontSize: 12,
+  },
+  suggestionsLoading: {
+    padding: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  loadingText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  inlineLoading: {
+    paddingVertical: 12,
+    alignItems: 'center',
   },
 });
 
