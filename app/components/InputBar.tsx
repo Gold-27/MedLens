@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, TextInput, TouchableOpacity, StyleSheet, FlatList, Platform, Animated, Keyboard } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import Voice, { SpeechResultsEvent, SpeechErrorEvent } from '@react-native-voice/voice';
+import { Vibration } from 'react-native';
 
 interface Suggestion {
   name: string;
@@ -36,8 +38,12 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  
   const debounceTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputShadow = useRef(new Animated.Value(0)).current;
+  const micScale = useRef(new Animated.Value(1)).current;
+  const pulseAnimation = useRef<Animated.CompositeAnimation | null>(null);
   const inputRef = useRef<TextInput>(null);
 
   React.useImperativeHandle(ref, () => ({
@@ -77,6 +83,72 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
       }
     };
   }, [query, fetchSuggestions]);
+
+  useEffect(() => {
+    // Voice event listeners
+    Voice.onSpeechStart = () => setIsListening(true);
+    Voice.onSpeechEnd = () => setIsListening(false);
+    Voice.onSpeechError = (e: SpeechErrorEvent) => {
+      console.error('Voice Error:', e);
+      setIsListening(false);
+    };
+    Voice.onSpeechResults = (e: SpeechResultsEvent) => {
+      if (e.value && e.value.length > 0) {
+        const spokenText = e.value[0];
+        setQuery(spokenText);
+      }
+    };
+
+    return () => {
+      Voice.destroy().then(Voice.removeAllListeners);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isListening) {
+      pulseAnimation.current = Animated.loop(
+        Animated.sequence([
+          Animated.timing(micScale, {
+            toValue: 1.2,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+          Animated.timing(micScale, {
+            toValue: 1,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      pulseAnimation.current.start();
+    } else {
+      pulseAnimation.current?.stop();
+      Animated.spring(micScale, {
+        toValue: 1,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [isListening]);
+
+  const toggleListening = async () => {
+    if (isListening) {
+      try {
+        await Voice.stop();
+        setIsListening(false);
+      } catch (e) {
+        console.error(e);
+      }
+    } else {
+      try {
+        setQuery('');
+        await Voice.start('en-US');
+        setIsListening(true);
+        Vibration.vibrate(50); // Feedback for starting
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  };
 
   const handleSubmit = () => {
     if (query.trim() && !loading) {
@@ -172,8 +244,17 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
             returnKeyType="search"
             autoFocus={autoFocus}
           />
-          <TouchableOpacity style={styles.micButton} onPress={query.trim() ? handleSubmit : undefined}>
-            <Ionicons name={query.trim() ? "send" : "mic-outline"} size={22} color={theme.colors.onSurfaceVariant} />
+          <TouchableOpacity 
+            style={styles.micButton} 
+            onPress={query.trim() ? handleSubmit : toggleListening}
+          >
+            <Animated.View style={{ transform: [{ scale: micScale }] }}>
+              <Ionicons 
+                name={query.trim() ? "send" : (isListening ? "mic" : "mic-outline")} 
+                size={22} 
+                color={isListening ? theme.colors.primary : theme.colors.onSurfaceVariant} 
+              />
+            </Animated.View>
           </TouchableOpacity>
         </Animated.View>
 
