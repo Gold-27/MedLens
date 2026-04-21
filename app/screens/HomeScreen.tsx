@@ -56,9 +56,11 @@ const HomeScreen: React.FC = () => {
         setEli12Result(JSON.parse(response.eli12.content));
       }
     } catch (error) {
-      // Don't log abort errors as failures
-      if (error instanceof Error && error.name === 'AbortError') return;
-      console.error('Background ELI12 prefetch failed:', error);
+      // Don't log abort or common timeout errors as failures for background tasks
+      const isAbort = error instanceof Error && (error.name === 'AbortError' || error.message.includes('Aborted'));
+      if (isAbort) return;
+      
+      console.warn('Background ELI12 prefetch failed (will retry on manual toggle):', error);
     }
   }, []);
 
@@ -258,35 +260,50 @@ const HomeScreen: React.FC = () => {
       setPendingAction('save');
       return; 
     }
+    
+    const drugName = baseResult.drug_name;
+    const drugNameLower = drugName.toLowerCase();
+    const drugKey = drugNameLower.replace(/\s+/g, '-');
+
+    // 1. Optimistic UI Update: Update state immediately
+    setSavedDrugs(prev => {
+      const next = new Set(prev);
+      next.add(drugNameLower);
+      return next;
+    });
+
+    // 2. Immediate Feedback: Show alert right away
+    Alert.alert('Saved', `${drugName} has been saved to your cabinet.`);
+    
+    // 3. Background Persistence: Run the API call without blocking UI
+    (async () => {
       try {
         const token = await getToken();
         if (!token) return;
-        const drugKey = baseResult.drug_name.toLowerCase().replace(/\s+/g, '-');
-        await api.saveCabinetItem(baseResult.drug_name, drugKey, token);
         
-        // Update state and refresh cache immediately (Optimistic UI style)
-        setSavedDrugs(prev => {
-          const next = new Set(prev);
-          next.add(baseResult.drug_name.toLowerCase());
-          return next;
-        });
+        await api.saveCabinetItem(drugName, drugKey, token);
+        
+        // Silently refresh the full cabinet cache in background
+        const resp = await api.getCabinetItems(token);
+        await LocalStorageService.setCachedCabinet(resp.items);
+        
+        console.log(`[Cabinet] Background save successful for: ${drugName}`);
+      } catch (error) {
+        console.error('[Cabinet] Background save failed:', error);
+        // Optional: Rollback UI state if it's a critical failure
+        // setSavedDrugs(prev => {
+        //   const next = new Set(prev);
+        //   next.delete(drugNameLower);
+        //   return next;
+        // });
+      }
+    })();
 
-      // Silently refresh the full cabinet cache in background
-      api.getCabinetItems(token).then(resp => {
-        LocalStorageService.setCachedCabinet(resp.items);
-      }).catch(() => {});
-
-      Alert.alert('Saved', `${baseResult.drug_name} has been saved to your cabinet.`);
-      
-      // Reset state after save
-      setState('empty');
-      setBaseResult(null);
-      setEli12Result(null);
-      setQuery('');
-    } catch (error) {
-      console.error('Save failed:', error);
-      Alert.alert('Error', 'Failed to save medication. Please check your connection.');
-    }
+    // 4. Reset search state immediately to let user continue
+    setState('empty');
+    setBaseResult(null);
+    setEli12Result(null);
+    setQuery('');
   }, [baseResult, isGuest, getToken]);
 
   const handleExport = useCallback(async () => {

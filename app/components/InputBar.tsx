@@ -3,9 +3,16 @@ import { View, TextInput, TouchableOpacity, StyleSheet, FlatList, Platform, Anim
 import { useTheme } from '../theme/ThemeProvider';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Vibration } from 'react-native';
-import { Audio } from 'expo-av';
-import * as FileSystem from 'expo-file-system/legacy';
-import { transcribeAudio } from '../services/api';
+// Safe import: expo-speech-recognition requires a development build (not available in Expo Go)
+let SpeechModule: any = null;
+let useSpeechEvent: any = () => {};
+try {
+  const speech = require('expo-speech-recognition');
+  SpeechModule = speech.ExpoSpeechRecognitionModule;
+  useSpeechEvent = speech.useSpeechRecognitionEvent;
+} catch (e) {
+  console.log('[Voice] expo-speech-recognition not available (Expo Go). Voice search disabled.');
+}
 
 interface Suggestion {
   name: string;
@@ -48,7 +55,40 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
   const micScale = useRef(new Animated.Value(1)).current;
   const pulseAnimation = useRef<Animated.CompositeAnimation | null>(null);
   const inputRef = useRef<TextInput>(null);
-  const recording = useRef<Audio.Recording | null>(null);
+
+  // ── On-Device Speech Recognition Events (only if native module is available) ──
+  if (SpeechModule) {
+    useSpeechEvent('result', (event: any) => {
+      const transcript = event.results[0]?.transcript;
+      if (transcript && transcript.length > 0) {
+        console.log(`[Voice] Recognized: "${transcript}" (final: ${event.isFinal})`);
+        setQuery(transcript);
+        if (event.isFinal) {
+          setIsTranscribing(false);
+          Vibration.vibrate(100);
+        }
+      }
+    });
+
+    useSpeechEvent('end', () => {
+      console.log('[Voice] Recognition ended');
+      setIsListening(false);
+      setIsTranscribing(false);
+    });
+
+    useSpeechEvent('error', (event: any) => {
+      console.error('[Voice] Error:', event.error, event.message);
+      setIsListening(false);
+      setIsTranscribing(false);
+      if (event.error === 'not-allowed') {
+        Alert.alert(
+          "Permission Required",
+          "MedLens needs microphone and speech recognition access. Please enable them in your settings.",
+          [{ text: "OK" }]
+        );
+      }
+    });
+  }
 
   React.useImperativeHandle(ref, () => ({
     clear: () => {
@@ -89,17 +129,6 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
   }, [query, fetchSuggestions]);
 
   useEffect(() => {
-    // Request permissions on mount
-    Audio.requestPermissionsAsync();
-    
-    return () => {
-      if (recording.current) {
-        recording.current.stopAndUnloadAsync();
-      }
-    };
-  }, []);
-
-  useEffect(() => {
     if (isListening) {
       pulseAnimation.current = Animated.loop(
         Animated.sequence([
@@ -125,77 +154,62 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
     }
   }, [isListening]);
 
-  const startRecording = async () => {
+  const startListening = async () => {
+    // Check if native speech recognition is available
+    if (!SpeechModule) {
+      Alert.alert(
+        "Voice Search Unavailable",
+        "Voice search requires a development build. You can type medication names instead.",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+
     try {
-      const { status } = await Audio.requestPermissionsAsync();
+      const { status } = await SpeechModule.requestPermissionsAsync();
       if (status !== 'granted') {
         Alert.alert(
           "Permission Required",
-          "MedLens needs microphone access to use voice search. Please enable it in your settings.",
+          "MedLens needs microphone and speech recognition access to use voice search.",
           [{ text: "OK" }]
         );
         return;
       }
 
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
+      console.log('[Voice] Starting on-device speech recognition...');
+      SpeechModule.start({
+        lang: 'en-US',
+        interimResults: true,
+        contextualStrings: [
+          'ibuprofen', 'acetaminophen', 'amoxicillin', 'metformin',
+          'lisinopril', 'atorvastatin', 'omeprazole', 'losartan',
+          'gabapentin', 'sertraline', 'montelukast', 'escitalopram',
+          'medication', 'prescription', 'medicine', 'tablet', 'capsule',
+        ],
       });
-
-      const { recording: newRecording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.LOW_QUALITY
-      );
-      recording.current = newRecording;
       setIsListening(true);
+      setIsTranscribing(true);
       Vibration.vibrate(50);
     } catch (err) {
-      console.error('Failed to start recording', err);
-      Alert.alert("Voice Error", "Could not access microphone.");
+      console.error('[Voice] Failed to start:', err);
+      Alert.alert("Voice Error", "Could not start speech recognition. Please type your search instead.");
     }
   };
 
-  const stopRecording = async () => {
-    if (!recording.current) return;
-
-    try {
-      setIsListening(false);
-      setIsTranscribing(true);
-      
-      await recording.current.stopAndUnloadAsync();
-      const uri = recording.current.getURI();
-      recording.current = null;
-
-      if (uri) {
-        // Convert to base64 using legacy API to ensure compatibility
-        try {
-          const base64 = await FileSystem.readAsStringAsync(uri, {
-            encoding: 'base64',
-          });
-
-          // Transcribe via backend
-          const results = await transcribeAudio(base64);
-          if (results.text && results.text !== 'No medication detected' && results.text.length > 1) {
-            setQuery(results.text);
-            Vibration.vibrate(100); // Success feedback
-          }
-        } catch (error) {
-          console.error('Transcription error:', error);
-        }
-      }
-    } catch (err) {
-      console.error('Failed to stop recording', err);
-    } finally {
-      setIsTranscribing(false);
-    }
+  const stopListening = () => {
+    if (!SpeechModule) return;
+    console.log('[Voice] Stopping speech recognition...');
+    SpeechModule.stop();
+    setIsListening(false);
   };
 
   const toggleListening = () => {
-    if (isTranscribing) return;
+    if (isTranscribing && !isListening) return;
     
     if (isListening) {
-      stopRecording();
+      stopListening();
     } else {
-      startRecording();
+      startListening();
     }
   };
 

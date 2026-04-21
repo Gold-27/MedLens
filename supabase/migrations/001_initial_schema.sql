@@ -18,7 +18,6 @@ CREATE TABLE IF NOT EXISTS cabinet_items (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   last_accessed_at TIMESTAMP WITH TIME ZONE,
-  deleted_at TIMESTAMP WITH TIME ZONE,
   
   -- Unique constraint to prevent duplicate saves for same user and drug
   UNIQUE(user_id, drug_key),
@@ -37,22 +36,17 @@ CREATE INDEX idx_cabinet_items_created_at ON cabinet_items(created_at DESC);
 ALTER TABLE cabinet_items ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
--- Users can only see their own cabinet items
+-- 1. SELECT: Users can only see their own cabinet items
 CREATE POLICY "Users can view own cabinet items" 
   ON cabinet_items FOR SELECT 
   USING (auth.uid() = user_id);
 
--- Users can insert their own cabinet items
+-- 2. INSERT: Users can insert their own cabinet items
 CREATE POLICY "Users can insert own cabinet items" 
   ON cabinet_items FOR INSERT 
   WITH CHECK (auth.uid() = user_id);
 
--- Users can update their own cabinet items
-CREATE POLICY "Users can update own cabinet items" 
-  ON cabinet_items FOR UPDATE 
-  USING (auth.uid() = user_id);
-
--- Users can delete their own cabinet items (soft delete via deleted_at)
+-- 3. DELETE: Users can delete their own cabinet items (Hard Delete)
 CREATE POLICY "Users can delete own cabinet items" 
   ON cabinet_items FOR DELETE 
   USING (auth.uid() = user_id);

@@ -34,6 +34,9 @@ const API_BASE_URL = getApiBaseUrl();
 
 // Debug logging for configuration
 console.log('[Config] API_BASE_URL:', API_BASE_URL);
+if (API_BASE_URL.includes('api.trycloudflare.com')) {
+  console.warn('[Config] WARNING: API_BASE_URL appears to be a placeholder!');
+}
 console.log('[Config] Supabase URL:', process.env.EXPO_PUBLIC_SUPABASE_URL ? 'PRESENT' : 'MISSING');
 console.log('[Config] Supabase Key:', process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ? 'PRESENT' : 'MISSING');
 
@@ -48,7 +51,7 @@ export const Config = {
     AUTOCOMPLETE: `${API_BASE_URL}/api/autocomplete`,
     CABINET_SAVE: `${API_BASE_URL}/api/cabinet/save`,
     CABINET_ITEMS: `${API_BASE_URL}/api/cabinet/items`,
-    CABINET_DELETE: (drugKey: string) => `${API_BASE_URL}/api/cabinet/items/${drugKey}`,
+    CABINET_DELETE: (id: string) => `${API_BASE_URL}/api/cabinet/items/${id}`,
   },
   SUPABASE: {
     URL: process.env.EXPO_PUBLIC_SUPABASE_URL || '',

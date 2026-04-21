@@ -68,8 +68,15 @@ const CabinetScreen: React.FC = () => {
       setItems(cabinetResponse.items);
       setInteractionCount(statsCount);
       await LocalStorageService.setCachedCabinet(cabinetResponse.items);
-    } catch (error) {
-      console.error('Failed to fetch cabinet data:', error);
+    } catch (error: any) {
+      console.error('[Cabinet] Fetch failed.');
+      console.error('Error Object:', JSON.stringify(error, null, 2));
+      if (error.status) console.error('HTTP Status:', error.status);
+      if (error.data) console.error('Response Data:', JSON.stringify(error.data, null, 2));
+      
+      // Specifically log the endpoint if we can
+      const endpoint = api.getCabinetItems ? 'getCabinetItems' : 'UNKNOWN';
+      console.error(`Attempted endpoint: ${endpoint}`);
     } finally {
       setLoading(false);
     }
@@ -121,38 +128,41 @@ const CabinetScreen: React.FC = () => {
     }
   };
 
-  const handleDeleteDrug = async (drugKey: string, drugName: string) => {
+  const handleDeleteDrug = async (item: CabinetItem) => {
     Alert.alert(
       'Remove Medication',
-      `Are you sure you want to remove ${drugName} from your cabinet?`,
+      `Are you sure you want to remove ${item.drug_name} from your cabinet?`,
       [
         { text: 'Cancel', style: 'cancel' },
         { 
           text: 'Remove', 
           style: 'destructive',
           onPress: async () => {
-            setIsDeleting(true);
+            const itemIdToDelete = item.id;
+            
+            // 1. Optimistic UI Update (Immediate)
+            setItems(prev => prev.filter(i => i.id !== itemIdToDelete));
+            
             try {
               const token = await getToken();
-              if (!token) {
-                setIsDeleting(false);
-                return;
+              if (!token) return;
+              
+              const response = await api.deleteCabinetItem(itemIdToDelete, token);
+              
+              if (response.success) {
+                // 2. Sync Cache using the MOST RECENT state
+                // We use a functional approach to get the fresh items list for storage
+                setItems(currentItems => {
+                  LocalStorageService.setCachedCabinet(currentItems);
+                  return currentItems;
+                });
+                console.log(`[Cabinet] Successfully hard deleted ${item.drug_name} (${itemIdToDelete})`);
               }
-              
-              // 1. Update Backend
-              await api.deleteCabinetItem(drugKey, token);
-              
-              // 2. Synchronize State and Cache using the LATEST data
-              const updatedItems = items.filter(i => i.drug_key !== drugKey);
-              setItems(updatedItems);
-              await LocalStorageService.setCachedCabinet(updatedItems);
-              
-              console.log(`[Cabinet] Successfully deleted ${drugKey} and updated cache.`);
             } catch (error) {
               console.error('[Cabinet] Failed to delete drug:', error);
+              // 3. Rollback on failure - fetch fresh from DB to be safe
+              fetchCabinetData();
               Alert.alert('Error', 'Failed to remove medication. Please try again.');
-            } finally {
-              setIsDeleting(false);
             }
           }
         }
@@ -172,7 +182,7 @@ const CabinetScreen: React.FC = () => {
         { 
           text: 'Delete from cabinet', 
           style: 'destructive',
-          onPress: () => handleDeleteDrug(item.drug_key, item.drug_name)
+          onPress: () => handleDeleteDrug(item)
         },
         { text: 'Cancel', style: 'cancel' }
       ]

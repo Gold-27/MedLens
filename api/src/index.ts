@@ -22,6 +22,17 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
+// Global Request Logger
+app.use((req, res, next) => {
+  const start = Date.now();
+  console.log(`[HTTP] ${req.method} ${req.url} started [${new Date().toISOString()}]`);
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    console.log(`[HTTP] ${req.method} ${req.url} finished in ${duration}ms with status ${res.statusCode}`);
+  });
+  next();
+});
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({
@@ -44,7 +55,7 @@ app.post('/api/search/transcribe', transcribeAudio);
 // ── Cabinet Routes (Auth Required) ───────────────────────────────────────────
 app.get('/api/cabinet/items', requireAuth, getCabinetItems);
 app.post('/api/cabinet/save', requireAuth, saveCabinetItem);
-app.delete('/api/cabinet/items/:drugKey', requireAuth, deleteCabinetItem);
+app.delete('/api/cabinet/items/:id', requireAuth, deleteCabinetItem);
 
 // ── Interaction Checker ──────────────────────────────────────────────────────
 app.post('/api/interactions', async (req, res) => {
@@ -95,27 +106,14 @@ app.post('/api/interactions', async (req, res) => {
   }
 });
 
-// Start server
-app.listen(Number(PORT), '0.0.0.0', () => {
-  console.log(`MedLens API server running on port ${PORT}`);
-  console.log(`Health check: http://localhost:${PORT}/health`);
-  
-  // Log configuration status (masked for safety)
-  console.log('--- Configuration Status ---');
-  console.log(`PORT: ${PORT}`);
-  console.log(`SUPABASE_URL: ${process.env.SUPABASE_URL ? 'PRESENT (' + process.env.SUPABASE_URL.substring(0, 15) + '...)' : 'MISSING'}`);
-  console.log(`SUPABASE_ANON_KEY: ${process.env.SUPABASE_ANON_KEY ? 'PRESENT' : 'MISSING'}`);
-  console.log(`OPENFDA_API_KEY: ${process.env.OPENFDA_API_KEY ? 'PRESENT' : 'MISSING'}`);
-  console.log(`DEEPSEEK_API_KEY: ${process.env.DEEPSEEK_API_KEY ? 'PRESENT' : 'MISSING'}`);
-  console.log('---------------------------');
-});
-
 // 404 Handler for debugging
 app.use((req, res) => {
-  console.warn(`[404] ${req.method} ${req.url}`);
+  const fullUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+  console.warn(`[404] No route found for: ${req.method} ${req.originalUrl} (Full: ${fullUrl})`);
+  
   res.status(404).json({
     error: 'Not Found',
-    message: `The endpoint ${req.method} ${req.url} does not exist on this server.`,
+    message: `The endpoint ${req.method} ${req.originalUrl} does not exist on this server.`,
     available_routes: [
       'POST /api/search',
       'GET /api/autocomplete',
@@ -127,3 +125,34 @@ app.use((req, res) => {
     ]
   });
 });
+
+// ── Server Start ─────────────────────────────────────────────────────────────
+
+const server = app.listen(Number(PORT), '0.0.0.0', () => {
+  console.log(`🚀 MedLens API server running on port ${PORT}`);
+  console.log(`🏥 Health check: http://localhost:${PORT}/health`);
+  
+  // Log configuration status
+  console.log('--- Configuration Status ---');
+  console.log(`PORT: ${PORT}`);
+  console.log(`SUPABASE_URL: ${process.env.SUPABASE_URL ? 'PRESENT' : 'MISSING'}`);
+  console.log(`OPENFDA_API_KEY: ${process.env.OPENFDA_API_KEY ? 'PRESENT' : 'MISSING'}`);
+  console.log(`DEEPSEEK_API_KEY: ${process.env.DEEPSEEK_API_KEY ? 'PRESENT' : 'MISSING'}`);
+  console.log('---------------------------');
+});
+
+// Catch unhandled rejections
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[Unhandled Rejection] at:', promise, 'reason:', reason);
+});
+
+// ── Stability Heartbeat ──────────────────────────────────────────────────────
+// This keeps the Node.js event loop active even when there is no traffic,
+// preventing "clean exit" issues on certain environments/Windows.
+const HEARTBEAT_INTERVAL = 30000; // 30 seconds
+const heartbeat = setInterval(() => {
+  console.log(`💓 Heartbeat: MedLens API is still alive and listening on port ${PORT} [${new Date().toISOString()}]`);
+}, HEARTBEAT_INTERVAL);
+
+// ── Entry Point Confirmation ──────────────────────────────────────────────────
+console.log('🏁 Entry point initialization complete. Server is ready to receive traffic.');

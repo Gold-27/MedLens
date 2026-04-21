@@ -27,7 +27,6 @@ export const getCabinetItems = async (req: AuthenticatedRequest, res: Response) 
     const { data, error, status } = await supabase
       .from('cabinet_items')
       .select('*')
-      .is('deleted_at', null)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -76,20 +75,18 @@ export const saveCabinetItem = async (req: AuthenticatedRequest, res: Response) 
       // If the error is a unique violation (code 23505), it means the item was already saved.
       // We can just return success or update it.
       if (error.code === '23505') {
-        console.log(`[Cabinet] Item already exists, updating existing record for ${drug_name}`);
-        const { data: updateData, error: updateError } = await supabase
+        console.log(`[Cabinet] Item already exists for user ${req.userId}, returning existing data.`);
+        const { data: existingData, error: fetchError } = await supabase
           .from('cabinet_items')
-          .update({ drug_name, updated_at: new Date().toISOString(), deleted_at: null })
-          .match({ user_id: req.userId, drug_key })
           .select()
+          .match({ user_id: req.userId, drug_key })
           .single();
         
-        if (updateError) {
-          console.error(`[Cabinet] Update fallback error:`, updateError.message);
-          return res.status(500).json({ error: 'Failed to update existing medication', message: updateError.message });
+        if (fetchError) {
+          return res.status(500).json({ error: 'Failed to retrieve existing medication', message: fetchError.message });
         }
         
-        return res.json({ success: true, item: updateData });
+        return res.json({ success: true, item: existingData });
       }
 
       console.error(`[Cabinet] Save error (Status ${status}):`, error.message);
@@ -113,26 +110,28 @@ export const saveCabinetItem = async (req: AuthenticatedRequest, res: Response) 
 };
 
 export const deleteCabinetItem = async (req: AuthenticatedRequest, res: Response) => {
-  const { drugKey } = req.params;
+  const { id } = req.params;
 
-  if (!drugKey) {
-    return res.status(400).json({ error: 'drugKey is required' });
+  if (!id) {
+    return res.status(400).json({ error: 'Item ID is required' });
   }
 
   try {
     const supabase = getUserScopedClient(req.userToken!);
 
-    const { error } = await supabase
+    console.log(`[Cabinet] Hard deleting item ${id} for user ${req.userId}`);
+
+    const { error, status } = await supabase
       .from('cabinet_items')
       .delete()
-      .match({ user_id: req.userId, drug_key: drugKey });
+      .match({ id: id, user_id: req.userId });
 
     if (error) {
-      console.error('[Cabinet] Delete error:', error.message);
-      return res.status(500).json({ error: 'Failed to permanently delete medication', message: error.message });
+      console.error(`[Cabinet] Delete error (Status ${status}):`, error.message);
+      return res.status(500).json({ error: 'Failed to delete medication from your database', message: error.message });
     }
 
-    return res.json({ success: true, message: `${drugKey} removed from cabinet` });
+    return res.json({ success: true, message: 'Medication removed from cabinet' });
   } catch (error: any) {
     console.error('[Cabinet] deleteCabinetItem error:', error.message);
     return res.status(500).json({ error: 'Unexpected error removing medication' });

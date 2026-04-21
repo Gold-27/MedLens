@@ -214,10 +214,17 @@ export const transcribeAudio = async (req: Request, res: Response) => {
   }
 
   try {
+    console.log(`[Transcription] Request received, mimeType: ${mimeType || 'unknown'}, data size: ${Math.round(audio.length / 1024)}KB`);
+    const startTime = Date.now();
+    
     const text = await geminiService.transcribeAudio(audio, mimeType);
+    
+    const duration = Date.now() - startTime;
+    console.log(`[Transcription] Success in ${duration}ms: "${text}"`);
+    
     res.json({ text });
   } catch (error: any) {
-    console.error('Transcription API Error:', error.message);
+    console.error('[Transcription] Error:', error.message);
     res.status(500).json({ error: 'Audio transcription failed' });
   }
 };

@@ -9,7 +9,7 @@ export interface AISummary {
 }
 
 export class GeminiService {
-  private readonly baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+  private readonly baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
   private get apiKey(): string | undefined {
     return process.env.GEMINI_API_KEY;

@@ -48,7 +48,6 @@ export interface CabinetItem {
   created_at: string;
   updated_at: string;
   last_accessed_at?: string;
-  deleted_at?: string;
 }
 
 export interface DrugData {
@@ -60,12 +59,15 @@ export interface DrugData {
   [key: string]: unknown;
 }
 
-const DEFAULT_TIMEOUT = 20000; // 20 seconds
+const DEFAULT_TIMEOUT = 60000; // 60 seconds - allowed for AI and multi-modal generation
 const MAX_RETRIES = 2;
 
-async function fetchWithRetry(url: string, options: RequestInit, retries = MAX_RETRIES): Promise<Response> {
+async function fetchWithRetry(url: string, options: RequestInit, retries = MAX_RETRIES, timeout = DEFAULT_TIMEOUT): Promise<Response> {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT);
+  const timeoutId = setTimeout(() => {
+    console.warn(`[API] Request timed out after ${timeout}ms: ${url}`);
+    controller.abort();
+  }, timeout);
 
   try {
     const response = await fetch(url, {
@@ -87,14 +89,14 @@ async function fetchWithRetry(url: string, options: RequestInit, retries = MAX_R
     if (retries > 0 && !isAbortError) {
       // Wait before retry (exponential backoff)
       await new Promise(resolve => setTimeout(resolve, 1000 * (MAX_RETRIES - retries + 1)));
-      return fetchWithRetry(url, options, retries - 1);
+      return fetchWithRetry(url, options, retries - 1, timeout);
     }
 
     throw error;
   }
 }
 
-async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+async function apiRequest<T>(endpoint: string, options: (RequestInit & { timeout?: number }) = {}): Promise<T> {
   const headers = {
     'Content-Type': 'application/json',
     'Bypass-Tunnel-Reminder': 'true',
@@ -106,7 +108,7 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
     const response = await fetchWithRetry(endpoint, {
       ...options,
       headers,
-    });
+    }, MAX_RETRIES, options.timeout || DEFAULT_TIMEOUT);
 
     const data = await response.json();
 
@@ -120,6 +122,7 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
     return data;
   } catch (error: any) {
     if (error.status) throw error;
+    if (error.name === 'AbortError') throw error; // Preserve AbortError for consumers
     const message = error instanceof Error ? error.message : 'Unknown error';
     throw new Error(`API request failed: ${message}`);
   }
@@ -222,8 +225,8 @@ export async function getCabinetItems(token: string): Promise<{ items: CabinetIt
   });
 }
 
-export async function deleteCabinetItem(drugKey: string, token: string): Promise<{ success: boolean; message: string }> {
-  return apiRequest<{ success: boolean; message: string }>(Config.ENDPOINTS.CABINET_DELETE(drugKey), {
+export async function deleteCabinetItem(id: string, token: string): Promise<{ success: boolean; message: string }> {
+  return apiRequest<{ success: boolean; message: string }>(Config.ENDPOINTS.CABINET_DELETE(id), {
     method: 'DELETE',
     headers: {
       Authorization: `Bearer ${token}`,
@@ -231,9 +234,10 @@ export async function deleteCabinetItem(drugKey: string, token: string): Promise
   });
 }
 
-export async function transcribeAudio(audioBase64: string): Promise<{ text: string }> {
+export async function transcribeAudio(audioBase64: string, mimeType: string = 'audio/m4a'): Promise<{ text: string }> {
   return apiRequest<{ text: string }>(Config.ENDPOINTS.SEARCH + '/transcribe', {
     method: 'POST',
-    body: JSON.stringify({ audio: audioBase64, mimeType: 'audio/m4a' }),
+    body: JSON.stringify({ audio: audioBase64, mimeType }),
+    timeout: 120000, // 2 minutes for audio + AI processing
   });
 }
