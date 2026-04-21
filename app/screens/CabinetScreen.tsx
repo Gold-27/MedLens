@@ -9,6 +9,7 @@ import { CabinetItem } from '../services/api';
 import { LocalStorageService } from '../services/storage';
 import EmptyState from '../components/EmptyState';
 import SummaryCard from '../components/SummaryCard';
+import { useCabinet } from '../context/CabinetContext';
 
 const DRUG_DESCRIPTIONS: Record<string, string> = {
   'advil': 'For pain and fever',
@@ -45,8 +46,8 @@ const CabinetScreen: React.FC = () => {
   const theme = useTheme();
   const { user, getToken } = useAuth();
   const navigation = useNavigation() as any;
-  const [items, setItems] = useState<CabinetItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { items, loading: cabinetLoading, removeItem: removeFromCabinet, refreshCabinet, savedDrugNames } = useCabinet();
+  const [loading, setLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [interactionCount, setInteractionCount] = useState(0);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
@@ -54,37 +55,19 @@ const CabinetScreen: React.FC = () => {
   const [viewingItemId, setViewingItemId] = useState<string | null>(null);
   const [selectedDrugSummary, setSelectedDrugSummary] = useState<api.SearchResponse | null>(null);
 
-  const fetchCabinetData = useCallback(async () => {
-    if (!user || isDeleting) return;
+  const fetchStats = useCallback(async () => {
     try {
-      const token = await getToken();
-      if (!token) return;
-      
-      const [cabinetResponse, statsCount] = await Promise.all([
-        api.getCabinetItems(token),
-        LocalStorageService.getInteractionCount()
-      ]);
-      
-      setItems(cabinetResponse.items);
+      const statsCount = await LocalStorageService.getInteractionCount();
       setInteractionCount(statsCount);
-      await LocalStorageService.setCachedCabinet(cabinetResponse.items);
-    } catch (error: any) {
-      console.error('[Cabinet] Fetch failed.');
-      console.error('Error Object:', JSON.stringify(error, null, 2));
-      if (error.status) console.error('HTTP Status:', error.status);
-      if (error.data) console.error('Response Data:', JSON.stringify(error.data, null, 2));
-      
-      // Specifically log the endpoint if we can
-      const endpoint = 'getCabinetItems';
-      console.error(`Attempted endpoint: ${endpoint}`);
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      console.error('[Cabinet] Stats fetch failed:', error);
     }
-  }, [user, getToken]);
+  }, []);
 
   useEffect(() => {
-    fetchCabinetData();
-  }, [fetchCabinetData]);
+    fetchStats();
+    refreshCabinet(); // Ensure fresh data on mount
+  }, [fetchStats, refreshCabinet]);
 
   const toggleSelection = (drugKey: string) => {
     setSelectedItems(prev => {
@@ -138,30 +121,11 @@ const CabinetScreen: React.FC = () => {
           text: 'Remove', 
           style: 'destructive',
           onPress: async () => {
-            const itemIdToDelete = item.id;
-            
-            // 1. Optimistic UI Update (Immediate)
-            setItems(prev => prev.filter(i => i.id !== itemIdToDelete));
-            
             try {
-              const token = await getToken();
-              if (!token) return;
-              
-              const response = await api.deleteCabinetItem(itemIdToDelete, token);
-              
-              if (response.success) {
-                // 2. Sync Cache using the MOST RECENT state
-                // We use a functional approach to get the fresh items list for storage
-                setItems(currentItems => {
-                  LocalStorageService.setCachedCabinet(currentItems);
-                  return currentItems;
-                });
-                console.log(`[Cabinet] Successfully hard deleted ${item.drug_name} (${itemIdToDelete})`);
-              }
+              await removeFromCabinet(item.id);
+              console.log(`[Cabinet] Successfully hard deleted ${item.drug_name}`);
             } catch (error) {
               console.error('[Cabinet] Failed to delete drug:', error);
-              // 3. Rollback on failure - fetch fresh from DB to be safe
-              fetchCabinetData();
               Alert.alert('Error', 'Failed to remove medication. Please try again.');
             }
           }
@@ -275,7 +239,7 @@ const CabinetScreen: React.FC = () => {
     );
   };
 
-  if (loading) {
+  if (cabinetLoading && items.length === 0) {
     return (
       <View style={[styles.container, { backgroundColor: theme.colors.background, justifyContent: 'center' }]}>
         <ActivityIndicator size="large" color={theme.colors.primary} />
@@ -330,7 +294,7 @@ const CabinetScreen: React.FC = () => {
                       warnings: selectedDrugSummary.summary.warnings,
                       sideEffects: selectedDrugSummary.summary.side_effects,
                     }}
-                    isSaved={true}
+                    isSaved={savedDrugNames.has(selectedDrugSummary.drug_name.toLowerCase())}
                   />
                 </View>
               ) : (
