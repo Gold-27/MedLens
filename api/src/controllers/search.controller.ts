@@ -3,6 +3,9 @@ import openFDAService from '../services/openfda.service';
 import deepseekService, { AISummary } from '../services/deepseek.service';
 import geminiService from '../services/gemini.service';
 
+// In-memory cache for medication summaries
+const searchCache = new Map<string, any>();
+
 export const searchMedication = async (req: Request, res: Response) => {
   const { query, eli12 } = req.body;
 
@@ -12,6 +15,12 @@ export const searchMedication = async (req: Request, res: Response) => {
 
   try {
     console.log(`[Search] Query: ${query}, ELI12: ${eli12}`);
+
+    const cacheKey = query.toLowerCase().trim();
+    if (searchCache.has(cacheKey)) {
+      console.log(`[Search] Cache hit for: ${cacheKey}`);
+      return res.json(searchCache.get(cacheKey));
+    }
 
     // Stage 1: Fetch from OpenFDA
     console.log('[Search] Fetching from OpenFDA...');
@@ -73,7 +82,7 @@ export const searchMedication = async (req: Request, res: Response) => {
 
     // Stage 4: Return structured response (including normalized data for ELI12 re-use)
     console.log('[Search] Returning success response');
-    return res.json({
+    const response = {
       drug_name: fdaData.drug_name,
       source: 'OpenFDA',
       ai_provider: aiProvider,
@@ -84,7 +93,12 @@ export const searchMedication = async (req: Request, res: Response) => {
         content: null,
       },
       disclaimer: 'MedLens simplifies medical information for understanding. It does not replace professional medical advice.',
-    });
+    };
+
+    // Save to cache
+    searchCache.set(cacheKey, response);
+    
+    return res.json(response);
 
   } catch (error: any) {
     console.error('[Search] Error caught in controller:', error);

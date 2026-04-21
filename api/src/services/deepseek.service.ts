@@ -61,7 +61,8 @@ export class DeepSeekService {
           headers: {
             'Authorization': `Bearer ${this.apiKey}`,
             'Content-Type': 'application/json'
-          }
+          },
+          timeout: 15000
         }
       );
 

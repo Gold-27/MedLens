@@ -111,14 +111,29 @@ const HomeScreen: React.FC = () => {
         return;
       }
 
-      // 4. API Fetch with Timeout
+      // 4. API Fetch with Timeout handling
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('TIMEOUT')), 15000)
+        setTimeout(() => reject(new Error('TIMEOUT')), 30000) // Raised to 30s
+      );
+      
+      const slowIndicatorPromise = new Promise((resolve) => 
+        setTimeout(() => resolve('SLOW'), 12000) // Show status after 12s
       );
 
       const fetchPromise = api.searchMedication(searchQuery.trim(), false);
       
-      const response = await Promise.race([fetchPromise, timeoutPromise]) as api.SearchResponse;
+      // Use a more nuanced race to handle the slow status
+      let response: api.SearchResponse;
+      const result = await Promise.race([fetchPromise, timeoutPromise, slowIndicatorPromise]);
+      
+      if (result === 'SLOW') {
+        console.log('[Perf] Search is slow, showing status update...');
+        // Here we could update a status state if we had one, 
+        // but for now we'll just wait for the actual fetchPromise
+        response = await Promise.race([fetchPromise, timeoutPromise]) as api.SearchResponse;
+      } else {
+        response = result as api.SearchResponse;
+      }
       
       const duration = Math.round(performance.now() - searchStartTime.current);
       console.log(`[Perf] API Search took ${duration}ms for: ${cleanQuery}`);
@@ -139,7 +154,19 @@ const HomeScreen: React.FC = () => {
       
       console.error('Search error:', error);
       if (error.message === 'TIMEOUT') {
-        Alert.alert('Slow Connection', 'The search is taking longer than expected. Please check your internet.');
+        Alert.alert(
+          'Still Working', 
+          'The clinical summary is taking a bit longer to generate than usual. We are still working on it!',
+          [{ text: 'Wait', style: 'default' }, { text: 'Cancel', style: 'cancel', onPress: () => setState('error') }]
+        );
+        // Try one last time to wait for the actual promise if it was just a frontend timeout
+        try {
+          const finalResponse = await api.searchMedication(searchQuery.trim(), false);
+          sessionCache.current.set(cleanQuery, finalResponse);
+          setBaseResult(finalResponse);
+          setState('success');
+          return;
+        } catch (e) {}
       }
       
       const message = error.message || '';
