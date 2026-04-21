@@ -294,7 +294,7 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
   },
   formContainer: {
     gap: 20,
-    marginBottom: 40,
+    marginBottom: 12,
   },
   errorBox: {
     flexDirection: 'row',
@@ -367,7 +367,7 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
   dividerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 32,
     gap: 16,
   },
   divider: {
