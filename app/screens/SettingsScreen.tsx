@@ -123,7 +123,7 @@ const SettingsScreen: React.FC = () => {
     Linking.openURL('mailto:support@medlens.ai?subject=Support Request');
   };
 
-  const sections: SettingsSection[] = [
+  const sections: SettingsSection[] = ([
     {
       title: 'Account',
       items: [
@@ -154,7 +154,7 @@ const SettingsScreen: React.FC = () => {
         { label: 'Sign Out', type: 'button', action: handleSignOut, destructive: true },
       ],
     },
-  ].filter(s => (isGuest && s.title !== '') ? false : true);
+  ] as SettingsSection[]).filter(s => (isGuest && s.title !== '') ? false : true);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>

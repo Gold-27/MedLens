@@ -75,7 +75,7 @@ const CabinetScreen: React.FC = () => {
       if (error.data) console.error('Response Data:', JSON.stringify(error.data, null, 2));
       
       // Specifically log the endpoint if we can
-      const endpoint = api.getCabinetItems ? 'getCabinetItems' : 'UNKNOWN';
+      const endpoint = 'getCabinetItems';
       console.error(`Attempted endpoint: ${endpoint}`);
     } finally {
       setLoading(false);
