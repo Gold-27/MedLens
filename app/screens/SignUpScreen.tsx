@@ -133,13 +133,7 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
     }
   };
 
-  const handleGuestMode = async () => {
-    await continueAsGuest();
-    navigation.reset({
-      index: 0,
-      routes: [{ name: 'Home' }],
-    });
-  };
+
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top', 'left', 'right']}>
@@ -306,9 +300,6 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
             <Text style={[styles.footerText, { color: theme.colors.onSurfaceVariant }]}>
               Already have an account? <Text style={{ color: theme.colors.primary, fontWeight: '600' }} onPress={() => navigation.navigate('Login')}>Log In</Text>
             </Text>
-            <TouchableOpacity style={styles.guestLink} onPress={handleGuestMode}>
-              <Text style={[styles.guestLinkText, { color: theme.colors.primary }]}>Continue as Guest</Text>
-            </TouchableOpacity>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

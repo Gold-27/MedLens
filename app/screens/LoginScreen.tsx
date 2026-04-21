@@ -118,13 +118,7 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
     }
   };
 
-  const handleGuestMode = async () => {
-    await continueAsGuest();
-    navigation.reset({
-      index: 0,
-      routes: [{ name: 'Home' }],
-    });
-  };
+
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top', 'left', 'right']}>
@@ -177,7 +171,12 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: theme.colors.onSurfaceVariant }]}>Enter Password</Text>
+              <View style={styles.labelRow}>
+                <Text style={[styles.label, { color: theme.colors.onSurfaceVariant }]}>Enter Password</Text>
+                <TouchableOpacity onPress={() => {/* Handle forgot password */}}>
+                  <Text style={[styles.forgotPasswordText, { color: theme.colors.primary }]}>Forgot Password?</Text>
+                </TouchableOpacity>
+              </View>
               <View style={styles.passwordContainer}>
                 <TextInput
                   style={[
@@ -224,16 +223,12 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
                 <Text style={[styles.submitButtonText, { color: theme.colors.onPrimary }]}>Log In</Text>
               )}
             </TouchableOpacity>
-
-            <TouchableOpacity style={styles.forgotPassword}>
-              <Text style={[styles.forgotPasswordText, { color: theme.colors.primary }]}>Forgot Password?</Text>
-            </TouchableOpacity>
           </View>
 
           <View style={styles.socialSection}>
             <View style={styles.dividerContainer}>
               <View style={[styles.divider, { backgroundColor: theme.colors.outlineVariant }]} />
-              <Text style={[styles.dividerText, { color: theme.colors.onSurfaceVariant }]}>or continue with</Text>
+              <Text style={[styles.dividerText, { color: theme.colors.onSurfaceVariant }]}>or</Text>
               <View style={[styles.divider, { backgroundColor: theme.colors.outlineVariant }]} />
             </View>
 
@@ -242,7 +237,7 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
                 styles.socialButton, 
                 { 
                   backgroundColor: theme.colors.background,
-                  borderColor: theme.colors.outlineVariant,
+                  borderColor: theme.colors.primary,
                 }
               ]}
               activeOpacity={0.7}
@@ -269,9 +264,6 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
             <Text style={[styles.footerText, { color: theme.colors.onSurfaceVariant }]}>
               Don't have an account? <Text style={{ color: theme.colors.primary, fontWeight: '600' }} onPress={() => navigation.navigate('SignUp')}>Create Account</Text>
             </Text>
-            <TouchableOpacity style={styles.guestLink} onPress={handleGuestMode}>
-              <Text style={[styles.guestLinkText, { color: theme.colors.primary }]}>Continue as Guest</Text>
-            </TouchableOpacity>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -320,6 +312,12 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
   inputGroup: {
     gap: 8,
   },
+  labelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingRight: 4,
+  },
   label: {
     fontSize: 14,
     fontWeight: '600',
@@ -359,12 +357,8 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
   },
-  forgotPassword: {
-    alignItems: 'center',
-    marginTop: 8,
-  },
   forgotPasswordText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
   },
   socialSection: {
