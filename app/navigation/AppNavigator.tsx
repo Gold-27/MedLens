@@ -13,8 +13,8 @@ import HomeScreen from '../screens/HomeScreen';
 import CabinetScreen from '../screens/CabinetScreen';
 import InteractionScreen from '../screens/InteractionScreen';
 import SettingsScreen from '../screens/SettingsScreen';
-import SignUpScreen from '../screens/SignUpScreen';
 import LoginScreen from '../screens/LoginScreen';
+import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import { useAuth } from '../context/AuthContext';
 import { CabinetProvider } from '../context/CabinetContext';
 
@@ -26,6 +26,7 @@ export type RootStackParamList = {
   Home: undefined;
   Cabinet: undefined;
   Settings: undefined;
+  ForgotPassword: undefined;
   Interaction: { drugKeys?: string[] };
 };
 
@@ -204,6 +205,11 @@ const AppNavigator = () => {
             name="Login" 
             component={LoginScreen} 
             options={{ gestureEnabled: false, headerBackVisible: false }} 
+          />
+          <Stack.Screen 
+            name="ForgotPassword" 
+            component={ForgotPasswordScreen} 
+            options={{ presentation: 'push' }} 
           />
           <Stack.Screen name="Home" component={DrawerNavigator} />
           <Stack.Screen name="Cabinet" component={CabinetScreen} />

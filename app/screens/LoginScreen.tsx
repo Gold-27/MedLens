@@ -173,7 +173,7 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
             <View style={styles.inputGroup}>
               <View style={styles.labelRow}>
                 <Text style={[styles.label, { color: theme.colors.onSurfaceVariant }]}>Enter Password</Text>
-                <TouchableOpacity onPress={() => {/* Handle forgot password */}}>
+                <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
                   <Text style={[styles.forgotPasswordText, { color: theme.colors.primary }]}>Forgot Password?</Text>
                 </TouchableOpacity>
               </View>

@@ -24,6 +24,7 @@ interface AuthContextType {
   getToken: () => Promise<string | null>;
   updateProfile: (data: { full_name?: string; email?: string }) => Promise<{ error: Error | null }>;
   deleteAccount: () => Promise<{ error: Error | null }>;
+  resetPassword: (email: string) => Promise<{ error: AuthError | null }>;
   isPro: boolean;
 }
 
@@ -277,6 +278,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const resetPassword = async (email: string) => {
+    try {
+      const redirectUrl = AuthSession.makeRedirectUri({
+        scheme: 'medlens',
+        path: 'reset-password'
+      });
+      
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: redirectUrl,
+      });
+      return { error };
+    } catch (error) {
+      console.error('Reset password error:', error);
+      return { error: error as AuthError };
+    }
+  };
+
   const value = {
     user,
     session,
@@ -290,6 +308,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     getToken,
     updateProfile,
     deleteAccount,
+    resetPassword,
     isPro,
   };
 
