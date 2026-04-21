@@ -210,7 +210,7 @@ const AppNavigator = () => {
           <Stack.Screen 
             name="ForgotPassword" 
             component={ForgotPasswordScreen} 
-            options={{ presentation: 'push' }} 
+            options={{ presentation: 'push', gestureEnabled: false }} 
           />
           <Stack.Screen name="Home" component={DrawerNavigator} />
           <Stack.Screen name="Cabinet" component={CabinetScreen} />

@@ -95,13 +95,6 @@ const ForgotPasswordScreen = ({ navigation }: Props) => {
           keyboardShouldPersistTaps="handled"
           scrollEnabled={false}
         >
-          <TouchableOpacity 
-            style={styles.backButton} 
-            onPress={() => navigation.goBack()}
-          >
-            <MaterialIcons name="arrow-back" size={24} color={theme.colors.onSurface} />
-          </TouchableOpacity>
-
           <View style={styles.header}>
             <Text style={[styles.title, { color: theme.colors.onSurface }]}>Reset Password</Text>
             <Text style={[styles.description, { color: theme.colors.onSurfaceVariant }]}>
@@ -173,17 +166,11 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    justifyContent: 'center',
-    paddingTop: 40,
+    justifyContent: 'flex-start',
+    paddingTop: 80,
     paddingBottom: 40,
   },
-  backButton: {
-    padding: 8,
-    position: 'absolute',
-    top: 20,
-    left: 16,
-    zIndex: 1,
-  },
+
   header: {
     alignItems: 'center',
     marginBottom: 40,
