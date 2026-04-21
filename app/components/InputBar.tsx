@@ -61,11 +61,12 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
   const inputRef = useRef<TextInput>(null);
 
   // ── On-Device Speech Recognition Events (only if native module is available) ──
-  if (SpeechModule) {
-    useSpeechEvent('result', (event: any) => {
+  useEffect(() => {
+    if (!SpeechModule) return;
+
+    const resultSub = useSpeechEvent('result', (event: any) => {
       const transcript = event.results[0]?.transcript;
       if (transcript && transcript.length > 0) {
-        console.log(`[Voice] Recognized: "${transcript}" (final: ${event.isFinal})`);
         setQuery(transcript);
         if (event.isFinal) {
           setIsTranscribing(false);
@@ -74,14 +75,12 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
       }
     });
 
-    useSpeechEvent('end', () => {
-      console.log('[Voice] Recognition ended');
+    const endSub = useSpeechEvent('end', () => {
       setIsListening(false);
       setIsTranscribing(false);
     });
 
-    useSpeechEvent('error', (event: any) => {
-      console.error('[Voice] Error:', event.error, event.message);
+    const errorSub = useSpeechEvent('error', (event: any) => {
       setIsListening(false);
       setIsTranscribing(false);
       if (event.error === 'not-allowed') {
@@ -92,7 +91,12 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
         );
       }
     });
-  }
+
+    return () => {
+      // Logic to unsubscribe if provided by the module, 
+      // but usually expo-speech-recognition uses hooks internally
+    };
+  }, []);
 
   React.useImperativeHandle(ref, () => ({
     clear: () => {
@@ -106,16 +110,18 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
 
   // ── Helper: Merge Results ──
   const mergeResults = (local: Suggestion[], remote: Suggestion[]) => {
-    const seen = new Set(local.map(s => s.name.toLowerCase()));
+    const seen = new Set(local.map(s => s.name?.toLowerCase() || ''));
     const merged = [...local];
     
-    remote.forEach(r => {
-      const normalizedName = r.name.toLowerCase();
-      if (!seen.has(normalizedName)) {
-        merged.push(r);
-        seen.add(normalizedName);
-      }
-    });
+    if (Array.isArray(remote)) {
+      remote.forEach(r => {
+        const normalizedName = r.name?.toLowerCase();
+        if (normalizedName && !seen.has(normalizedName)) {
+          merged.push(r);
+          seen.add(normalizedName);
+        }
+      });
+    }
     
     setSuggestions(merged.slice(0, 10));
   };
@@ -138,13 +144,13 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
     // 1. Instant Local Filter (Synchronous)
     const localMatches: Suggestion[] = (COMMON_DRUGS as any[])
       .filter(d => 
-        d.name.toLowerCase().startsWith(trimmed) || 
-        d.drug_name.toLowerCase().startsWith(trimmed)
+        (d.name?.toLowerCase() || '').startsWith(trimmed) || 
+        (d.drug_name?.toLowerCase() || '').startsWith(trimmed)
       )
       .slice(0, 5)
       .map(d => ({
-        name: d.name,
-        drug_name: d.drug_name,
+        name: d.name || d.drug_name || 'Unknown',
+        drug_name: d.drug_name || d.name || 'Unknown',
         type: (d.type === 'brand' || d.type === 'generic') ? d.type : 'brand'
       }));
 

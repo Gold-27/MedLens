@@ -15,7 +15,7 @@
   {"name": "Gabapentin", "drug_name": "Gabapentin", "type": "generic"},
   {"name": "Simvastatin", "drug_name": "Simvastatin", "type": "generic"},
   {"name": "Zyrtec", "drug_name": "Cetirizine", "type": "brand"},
-  {"name": "Claritin", "interactive": "Loratadine", "type": "brand"},
+  {"name": "Claritin", "drug_name": "Loratadine", "type": "brand"},
   {"name": "Benadryl", "drug_name": "Diphenhydramine", "type": "brand"},
   {"name": "Lipitor", "drug_name": "Atorvastatin", "type": "brand"},
   {"name": "Amoxicillin", "drug_name": "Amoxicillin", "type": "generic"},
