@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { createDrawerNavigator, DrawerContentScrollView, DrawerItemList, DrawerContentComponentProps } from '@react-navigation/drawer';
+import { createDrawerNavigator, DrawerContentScrollView, DrawerItemList, DrawerContentComponentProps, useDrawerStatus } from '@react-navigation/drawer';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme, ThemeContextType } from '../theme/ThemeProvider';
 import { LocalStorageService } from '../services/storage';
@@ -37,23 +37,48 @@ export type DrawerParamList = {
 const Stack = (createNativeStackNavigator as any)();
 const Drawer = (createDrawerNavigator as any)();
 
+// Global cache to avoid flicker when drawer opens
+let drawerHistoryCache: string[] | null = null;
+
 const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
   const theme = useTheme();
   const navigation = useNavigation();
   const { signOut, isGuest, user } = useAuth();
-  const [history, setHistory] = React.useState<string[]>([]);
+  const [history, setHistory] = React.useState<string[] | null>(drawerHistoryCache);
+  const [isLoading, setIsLoading] = React.useState(drawerHistoryCache === null);
+  const drawerStatus = useDrawerStatus();
 
-  React.useEffect(() => {
-    const loadHistory = async () => {
+  const loadHistory = React.useCallback(async () => {
+    try {
       const searches = await LocalStorageService.getRecentSearches();
       setHistory(searches);
-    };
-    
-    // Refresh history when drawer opens
+      drawerHistoryCache = searches;
+    } catch (error) {
+      console.error('Failed to load history in drawer:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Update history whenever drawer status changes (opening/open)
+  React.useEffect(() => {
+    if (drawerStatus !== 'closed') {
+      loadHistory();
+    }
+  }, [drawerStatus, loadHistory]);
+
+  React.useEffect(() => {
+    // Refresh history when drawer opens explicitly
     const unsubscribe = props.navigation.addListener('drawerOpen', loadHistory);
+    // Also refresh on generic state change for maximum reactivity
+    const unsubscribeState = props.navigation.addListener('state', loadHistory);
+    
     loadHistory();
-    return unsubscribe;
-  }, [props.navigation]);
+    return () => {
+      unsubscribe();
+      unsubscribeState();
+    };
+  }, [props.navigation, loadHistory]);
 
   const handleHistoryPress = (query: string) => {
     (navigation as any).navigate('HomeDrawer', { searchQuery: query });
@@ -106,7 +131,12 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
           )}
         </View>
 
-        {history.length === 0 ? (
+        {isLoading && (!history || history.length === 0) ? (
+          <View style={styles.loadingHistory}>
+            <ActivityIndicator size="small" color={theme.colors.primary} />
+            <Text style={[styles.loadingText, { color: theme.colors.outline }]}>Refreshing...</Text>
+          </View>
+        ) : !history || history.length === 0 ? (
           <View style={styles.emptyHistory}>
             <Ionicons name="time-outline" size={48} color={theme.colors.outlineVariant} />
             <Text style={[styles.emptyText, { color: theme.colors.onSurfaceVariant }]}>
@@ -264,6 +294,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 20,
+  },
+  loadingHistory: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingBottom: 100,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 12,
+    fontWeight: '600',
   },
 });
 
