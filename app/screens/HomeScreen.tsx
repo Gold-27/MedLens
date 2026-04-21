@@ -214,12 +214,6 @@ const HomeScreen: React.FC = () => {
       }).catch(() => {});
 
       Alert.alert('Saved', `${baseResult.drug_name} has been saved to your cabinet.`);
-      
-      // Reset Home screen to empty state after saving
-      setState('empty');
-      setBaseResult(null);
-      setEli12Result(null);
-      setIsELI12(false);
     } catch (error) {
       console.error('Save failed:', error);
       Alert.alert('Error', 'Failed to save medication. Please check your connection.');
