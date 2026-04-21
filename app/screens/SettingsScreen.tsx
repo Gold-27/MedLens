@@ -158,14 +158,13 @@ const SettingsScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      <ScrollView stickyHeaderIndices={[0]}>
+      <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header */}
-        <View style={[styles.stickyHeader, { backgroundColor: theme.colors.background }]}>
+        <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Ionicons name="chevron-back" size={28} color={theme.colors.onSurface} />
+            <Ionicons name="arrow-back" size={24} color={theme.colors.onSurface} />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: theme.colors.onSurface }]}>Settings</Text>
-          <View style={{ width: 28 }} />
         </View>
 
         {/* Profile Section (Centered) */}
@@ -310,16 +309,15 @@ const SettingsScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  stickyHeader: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    zIndex: 10,
+    paddingHorizontal: 20,
+    paddingTop: 24,
+    paddingBottom: 16,
   },
-  headerTitle: { fontSize: 20, fontWeight: '700' },
-  backButton: { padding: 4 },
+  headerTitle: { fontSize: 28, fontWeight: 'bold' },
+  backButton: { marginRight: 12 },
   centeredProfile: {
     alignItems: 'center',
     paddingBottom: 40,
