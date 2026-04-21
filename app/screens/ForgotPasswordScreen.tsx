@@ -167,7 +167,7 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: 24,
     justifyContent: 'flex-start',
-    paddingTop: 80,
+    paddingTop: 40,
     paddingBottom: 40,
   },
 

@@ -314,8 +314,8 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    justifyContent: 'center',
-    paddingTop: 60,
+    justifyContent: 'flex-start',
+    paddingTop: 40,
     paddingBottom: 40,
   },
   header: {
@@ -380,7 +380,7 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
   dividerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 32,
     gap: 16,
   },
   divider: {
@@ -411,8 +411,7 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
     height: 24,
   },
   footer: {
-    marginTop: 'auto',
-    paddingTop: 24,
+    marginTop: 32,
     alignItems: 'center',
   },
   footerText: {

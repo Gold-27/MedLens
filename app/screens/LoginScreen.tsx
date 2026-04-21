@@ -278,8 +278,8 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    justifyContent: 'center',
-    paddingTop: 60,
+    justifyContent: 'flex-start',
+    paddingTop: 40,
     paddingBottom: 40,
   },
   header: {
@@ -398,8 +398,7 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
     height: 24,
   },
   footer: {
-    marginTop: 'auto',
-    paddingTop: 32,
+    marginTop: 32,
     alignItems: 'center',
   },
   footerText: {
