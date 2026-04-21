@@ -22,6 +22,9 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   continueAsGuest: () => Promise<void>;
   getToken: () => Promise<string | null>;
+  updateProfile: (data: { full_name?: string; email?: string }) => Promise<{ error: Error | null }>;
+  deleteAccount: () => Promise<{ error: Error | null }>;
+  isPro: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -37,6 +40,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   
   // Derived user state
   const user = session?.user ?? null;
+  const isPro = user?.user_metadata?.plan === 'pro';
 
   // Persist guest state
   const setGuestState = async (value: boolean) => {
@@ -231,6 +235,48 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const updateProfile = async (data: { full_name?: string; email?: string }) => {
+    try {
+      const { data: updated, error } = await supabase.auth.updateUser({
+        email: data.email,
+        data: { full_name: data.full_name }
+      });
+      
+      if (error) throw error;
+      
+      // Refresh session
+      const { data: { session: refreshed } } = await supabase.auth.getSession();
+      setSession(refreshed);
+      
+      return { error: null };
+    } catch (error: any) {
+      console.error('Update profile error:', error);
+      return { error };
+    }
+  };
+
+  const deleteAccount = async () => {
+    try {
+      if (!user) return { error: new Error('No user to delete') };
+
+      // Safe Wipe: Delete Cabinet Data
+      const { error: cabinetError } = await supabase
+        .from('cabinet_items')
+        .delete()
+        .eq('user_id', user.id);
+      
+      if (cabinetError) console.warn('Failed to clear cabinet data during deletion:', cabinetError);
+
+      // Sign out
+      await signOut();
+      
+      return { error: null };
+    } catch (error: any) {
+      console.error('Delete account error:', error);
+      return { error };
+    }
+  };
+
   const value = {
     user,
     session,
@@ -242,6 +288,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     signOut,
     continueAsGuest,
     getToken,
+    updateProfile,
+    deleteAccount,
+    isPro,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

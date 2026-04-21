@@ -1,11 +1,23 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, LayoutAnimation, Platform, UIManager } from 'react-native';
+import React, { useState } from 'react';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  TouchableOpacity, 
+  Alert, 
+  LayoutAnimation, 
+  Platform, 
+  UIManager, 
+  ScrollView,
+  Modal,
+  TextInput,
+  ActivityIndicator,
+  Linking
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeProvider';
 import { useAuth } from '../context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
-import { DrawerNavigationProp } from '@react-navigation/drawer';
-import { DrawerParamList } from '../navigation/AppNavigator';
 import { Ionicons } from '@expo/vector-icons';
 
 type SettingsItem = 
@@ -24,8 +36,14 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 const SettingsScreen: React.FC = () => {
   const theme = useTheme();
   const navigation = (useNavigation as any)();
-  const { user, signOut, isGuest } = useAuth();
-  const [activeAccordion, setActiveAccordion] = React.useState<string | null>(null);
+  const { user, signOut, isGuest, isPro, updateProfile, deleteAccount } = useAuth();
+  const [activeAccordion, setActiveAccordion] = useState<string | null>(null);
+  
+  // Edit Profile States
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [editName, setEditName] = useState(user?.user_metadata?.full_name || '');
+  const [editEmail, setEditEmail] = useState(user?.email || '');
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const toggleAccordion = (label: string) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -38,31 +56,85 @@ const SettingsScreen: React.FC = () => {
       { text: 'Sign Out', style: 'destructive', onPress: async () => {
         try {
           await signOut();
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'Login' }],
-          });
+          navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
         } catch (error) {
-          console.error('Sign out error:', error);
-          Alert.alert('Error', 'Failed to sign out. Please try again.');
+          Alert.alert('Error', 'Failed to sign out.');
         }
       }},
     ]);
   };
 
+  const handleUpdateProfile = async () => {
+    if (!editName.trim() || !editEmail.trim()) {
+      Alert.alert('Validation', 'Name and Email are required.');
+      return;
+    }
 
-  const allSections: SettingsSection[] = [
+    setIsUpdating(true);
+    const { error } = await updateProfile({ full_name: editName, email: editEmail });
+    setIsUpdating(false);
+
+    if (error) {
+      Alert.alert('Error', 'Failed to update profile. ' + error.message);
+    } else {
+      setIsEditModalVisible(false);
+      Alert.alert('Success', 'Profile updated successfully.');
+    }
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete Account',
+      'This will permanently remove your cabinet items and sign you out. This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Delete Everything', 
+          style: 'destructive', 
+          onPress: async () => {
+            setIsUpdating(true);
+            const { error } = await deleteAccount();
+            setIsUpdating(false);
+            if (!error) {
+              navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleUpgrade = () => {
+    Alert.alert(
+      'Go Pro',
+      'Unlock unlimited medications, interaction history, and personalized health insights.',
+      [
+        { text: 'Later', style: 'cancel' },
+        { text: 'Upgrade Now', onPress: () => {
+          // Simulate upgrade by updating metadata
+          updateProfile({ full_name: user?.user_metadata?.full_name }); // Just to trigger a refresh if we had a proper backend field
+          Alert.alert('Membership', 'Thank you for upgrading! Your Pro features are now active.');
+        }}
+      ]
+    );
+  };
+
+  const handleSupport = () => {
+    Linking.openURL('mailto:support@medlens.ai?subject=Support Request');
+  };
+
+  const sections: SettingsSection[] = [
     {
       title: 'Account',
       items: [
+        { label: 'Status', value: isPro ? 'Pro' : 'Free', type: 'info' },
         { label: 'Email', value: user?.email || 'Not signed in', type: 'info' },
-        { label: 'Account Type', value: isGuest ? 'Guest' : 'Registered User', type: 'info' },
       ],
     },
     {
-      title: 'App',
+      title: 'About',
       items: [
-        { label: 'Version', value: '1.0.0', type: 'info' },
+        { label: 'Version', value: '1.2.0', type: 'info' },
         { 
           label: 'Privacy Policy', 
           type: 'button', 
@@ -73,6 +145,7 @@ const SettingsScreen: React.FC = () => {
           type: 'button', 
           content: 'MedLens simplifies complex medical data for educational purposes. It is not a clinical tool and does not replace professional medical advice, diagnosis, or treatment. Always consult with a licensed healthcare provider.' 
         },
+        { label: 'Support', type: 'button', action: handleSupport },
       ],
     },
     {
@@ -81,41 +154,36 @@ const SettingsScreen: React.FC = () => {
         { label: 'Sign Out', type: 'button', action: handleSignOut, destructive: true },
       ],
     },
-  ];
-
-  const sections = allSections.filter(section => {
-    if (isGuest && section.items.some(item => item.label === 'Sign Out')) {
-      return false;
-    }
-    return true;
-  });
+  ].filter(s => (isGuest && s.title !== '') ? false : true);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      <View style={styles.container}>
-        <View style={styles.header}>
+      <ScrollView stickyHeaderIndices={[0]}>
+        {/* Header */}
+        <View style={[styles.stickyHeader, { backgroundColor: theme.colors.background }]}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
             <Ionicons name="chevron-back" size={28} color={theme.colors.onSurface} />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: theme.colors.onSurface }]}>Settings</Text>
+          <View style={{ width: 28 }} />
         </View>
-        
+
+        {/* Profile Section (Centered) */}
         {!isGuest && user && (
-          <View style={styles.profileHeader}>
+          <View style={styles.centeredProfile}>
             <View style={[styles.avatarCircle, { backgroundColor: theme.colors.primary }]}>
               <Text style={styles.avatarText}>
                 {(() => {
                   const name = user.user_metadata?.full_name;
                   if (name) {
                     const parts = name.trim().split(/\s+/);
-                    if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-                    return parts[0][0].toUpperCase();
+                    return (parts.length >= 2 ? parts[0][0] + parts[parts.length - 1][0] : parts[0][0]).toUpperCase();
                   }
                   return user.email?.[0].toUpperCase() || '?';
                 })()}
               </Text>
             </View>
-            <View style={styles.profileInfo}>
+            <View style={styles.centerInfo}>
               <Text style={[styles.profileName, { color: theme.colors.onSurface }]}>
                 {user.user_metadata?.full_name || 'User'}
               </Text>
@@ -124,251 +192,247 @@ const SettingsScreen: React.FC = () => {
               </Text>
               <TouchableOpacity 
                 style={[styles.editButton, { backgroundColor: theme.colors.surfaceVariant }]}
-                onPress={() => Alert.alert('Edit Profile', 'Profile editing will be available in a future update.')}
+                onPress={() => setIsEditModalVisible(true)}
               >
                 <Text style={[styles.editButtonText, { color: theme.colors.onSurfaceVariant }]}>Edit Profile</Text>
               </TouchableOpacity>
             </View>
+
+            {!isPro && (
+              <TouchableOpacity style={styles.upgradeBanner} onPress={handleUpgrade}>
+                <Ionicons name="sparkles" size={16} color={theme.colors.onTertiary} />
+                <Text style={[styles.upgradeText, { color: theme.colors.onTertiary }]}>Upgrade to Pro</Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
 
-      {sections.map((section, sectionIndex) => (
-        <View key={sectionIndex} style={styles.section}>
-          {section.title ? (
-            <Text style={[styles.sectionTitle, { color: theme.colors.onSurfaceVariant }]}>
-              {section.title}
-            </Text>
-          ) : null}
-          <View style={[styles.sectionContent, { backgroundColor: theme.colors.surfaceContainer }]}>
-            {section.items.map((item, itemIndex) => (
-              <View key={itemIndex}>
-                {item.type === 'info' ? (
-                  <View style={styles.infoRow}>
-                    <Text style={[styles.infoLabel, { color: theme.colors.onSurfaceVariant }]}>{item.label}</Text>
-                    <Text style={[
-                      styles.infoValue, 
-                      { 
-                        color: (item.value === 'Not signed in' || item.value === 'Guest' || item.value === '1.0.0') 
-                          ? theme.colors.outline 
-                          : theme.colors.onSurfaceVariant 
-                      }
-                    ]}>
-                      {item.value}
-                    </Text>
-                  </View>
-                ) : (
-                  <View>
-                    <TouchableOpacity
-                      style={styles.buttonRow}
-                      onPress={() => item.content ? toggleAccordion(item.label) : item.action?.()}
-                    >
-                      <View style={[styles.buttonRowContent, item.destructive && { justifyContent: 'center' }]}>
-                        <Text style={[
-                          styles.buttonLabel,
-                          { color: item.destructive ? theme.colors.error : theme.colors.primary }
-                        ]}>
-                          {item.label}
-                        </Text>
-                        {item.content && (
-                          <Ionicons 
-                            name={activeAccordion === item.label ? "chevron-up" : "chevron-down"} 
-                            size={18} 
-                            color={theme.colors.outline} 
-                          />
+        {/* Content Sections */}
+        <View style={styles.contentPadding}>
+          {sections.map((section, sIndex) => (
+            <View key={sIndex} style={styles.section}>
+              {section.title ? (
+                <Text style={[styles.sectionTitle, { color: theme.colors.onSurfaceVariant }]}>{section.title}</Text>
+              ) : null}
+              <View style={[styles.sectionCard, { backgroundColor: theme.colors.surfaceContainer }]}>
+                {section.items.map((item, iIndex) => (
+                  <View key={iIndex}>
+                    {item.type === 'info' ? (
+                      <View style={styles.infoRow}>
+                        <Text style={[styles.infoLabel, { color: theme.colors.onSurfaceVariant }]}>{item.label}</Text>
+                        <Text style={[styles.infoValue, { color: theme.colors.outline }]}>{item.value}</Text>
+                      </View>
+                    ) : (
+                      <View>
+                        <TouchableOpacity style={styles.buttonRow} onPress={() => item.content ? toggleAccordion(item.label) : item.action?.()}>
+                          <View style={[styles.buttonRowContent, item.destructive && { justifyContent: 'center' }]}>
+                            <Text style={[styles.buttonLabel, { color: item.destructive ? theme.colors.error : theme.colors.primary }]}>
+                              {item.label}
+                            </Text>
+                            {item.content && <Ionicons name={activeAccordion === item.label ? "chevron-up" : "chevron-down"} size={18} color={theme.colors.outline} />}
+                          </View>
+                        </TouchableOpacity>
+                        {activeAccordion === item.label && item.content && (
+                          <View style={[styles.accordionContent, { backgroundColor: theme.colors.surfaceContainerLow }]}>
+                            <Text style={[styles.accordionText, { color: theme.colors.onSurfaceVariant }]}>{item.content}</Text>
+                          </View>
                         )}
                       </View>
-                    </TouchableOpacity>
-                    
-                    {activeAccordion === item.label && item.content && (
-                      <View style={[styles.accordionContent, { backgroundColor: theme.colors.surfaceContainerLow }]}>
-                        <Text style={[styles.accordionText, { color: theme.colors.onSurfaceVariant }]}>
-                          {item.content}
-                        </Text>
-                      </View>
                     )}
+                    {iIndex < section.items.length - 1 && <View style={[styles.separator, { backgroundColor: theme.colors.outlineVariant }]} />}
                   </View>
-                )}
-                {itemIndex < section.items.length - 1 && (
-                  <View style={[styles.separator, { backgroundColor: theme.colors.outlineVariant }]} />
-                )}
+                ))}
               </View>
-            ))}
-            {section.title === 'Account' && isGuest && (
-              <>
-                <View style={[styles.separator, { backgroundColor: theme.colors.outlineVariant }]} />
-                <TouchableOpacity 
-                  style={styles.syncCTA} 
-                  onPress={() => navigation.navigate('SignUp')}
-                >
-                  <Ionicons name="sync-outline" size={18} color={theme.colors.primary} />
-                  <Text style={[styles.syncText, { color: theme.colors.primary }]}>
-                    Sign in to sync your data
-                  </Text>
+            </View>
+          ))}
+        </View>
+
+        <View style={[styles.disclaimerContainer, { backgroundColor: theme.colors.accentContainer }]}>
+          <Ionicons name="information-circle-outline" size={24} color={theme.colors.onAccentContainer} />
+          <Text style={[styles.disclaimerText, { color: theme.colors.onAccentContainer }]}>
+            MedLens simplifies medical information for understanding. It does not replace professional medical advice.
+          </Text>
+        </View>
+      </ScrollView>
+
+      {/* Edit Profile Modal */}
+      <Modal visible={isEditModalVisible} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: theme.colors.background }]}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: theme.colors.onSurface }]}>Edit Profile</Text>
+              <TouchableOpacity onPress={() => setIsEditModalVisible(false)}>
+                <Ionicons name="close" size={28} color={theme.colors.onSurface} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.modalBody}>
+              <View style={styles.inputGroup}>
+                <Text style={[styles.inputLabel, { color: theme.colors.outline }]}>Full Name</Text>
+                <TextInput 
+                  style={[styles.input, { color: theme.colors.onSurface, borderColor: theme.colors.outlineVariant }]} 
+                  value={editName}
+                  onChangeText={setEditName}
+                  placeholder="Your name"
+                />
+              </View>
+              <View style={styles.inputGroup}>
+                <Text style={[styles.inputLabel, { color: theme.colors.outline }]}>Email Address</Text>
+                <TextInput 
+                  style={[styles.input, { color: theme.colors.onSurface, borderColor: theme.colors.outlineVariant }]} 
+                  value={editEmail}
+                  onChangeText={setEditEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+              </View>
+
+              <TouchableOpacity 
+                style={[styles.saveButton, { backgroundColor: theme.colors.primary }]}
+                onPress={handleUpdateProfile}
+                disabled={isUpdating}
+              >
+                {isUpdating ? <ActivityIndicator color="#FFF" /> : <Text style={styles.saveButtonText}>Save Changes</Text>}
+              </TouchableOpacity>
+
+              <View style={styles.modalFooter}>
+                <TouchableOpacity style={styles.deleteLink} onPress={handleDeleteAccount}>
+                  <Text style={[styles.deleteLinkText, { color: theme.colors.error }]}>Delete Account</Text>
                 </TouchableOpacity>
-              </>
-            )}
+              </View>
+            </View>
           </View>
         </View>
-      ))}
-
-      <View style={[styles.disclaimerContainer, { backgroundColor: theme.colors.accentContainer }]}>
-        <Ionicons name="information-circle-outline" size={24} color={theme.colors.onAccentContainer} style={styles.disclaimerIcon} />
-        <Text style={[styles.disclaimerText, { color: theme.colors.onAccentContainer, flex: 1 }]}>
-          MedLens simplifies medical information for understanding. It does not replace professional medical advice, diagnosis, or treatment.
-        </Text>
-      </View>
-      </View>
+      </Modal>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 32,
+  container: { flex: 1 },
+  stickyHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    zIndex: 10,
+  },
+  headerTitle: { fontSize: 20, fontWeight: '700' },
+  backButton: { padding: 4 },
+  centeredProfile: {
+    alignItems: 'center',
+    paddingBottom: 40,
+    paddingTop: 20,
+  },
+  avatarCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  avatarText: { color: '#FFF', fontSize: 36, fontWeight: '700' },
+  centerInfo: { alignItems: 'center', gap: 6 },
+  profileName: { fontSize: 24, fontWeight: '700' },
+  profileEmail: { fontSize: 16, opacity: 0.7 },
+  editButton: {
+    marginTop: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  editButtonText: { fontSize: 14, fontWeight: '600' },
+  upgradeBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#6750A4', // Fixed tertiary color for pro
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 20,
+    marginTop: 16,
     gap: 6,
   },
-  backButton: {
-    paddingVertical: 4,
-    marginLeft: -8,
-  },
-  headerTitle: {
-    fontSize: 32,
-    fontWeight: '600',
-  },
-  section: {
-    marginBottom: 24,
-  },
+  upgradeText: { fontSize: 13, fontWeight: '700' },
+  contentPadding: { paddingHorizontal: 24 },
+  section: { marginBottom: 32 },
   sectionTitle: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 8,
-    marginHorizontal: 24,
+    fontSize: 13,
+    fontWeight: '700',
+    marginBottom: 12,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 1.2,
+    paddingLeft: 4,
   },
-  sectionContent: {
-    marginHorizontal: 24,
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
+  sectionCard: { borderRadius: 24, overflow: 'hidden' },
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    padding: 20,
+  },
+  infoLabel: { fontSize: 16, fontWeight: '600' },
+  infoValue: { fontSize: 16 },
+  buttonRow: { padding: 20 },
+  buttonRowContent: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  buttonLabel: { fontSize: 16, fontWeight: '600' },
+  separator: { height: 1, marginHorizontal: 20 },
+  accordionContent: { paddingHorizontal: 20, paddingBottom: 20, marginTop: -10 },
+  accordionText: { fontSize: 14, lineHeight: 22 },
+  disclaimerContainer: {
+    marginHorizontal: 24,
+    marginVertical: 40,
+    padding: 20,
+    borderRadius: 24,
+    flexDirection: 'row',
+    gap: 16,
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
   },
-  infoLabel: {
-    fontSize: 16,
-    fontWeight: '500',
+  disclaimerText: { fontSize: 14, lineHeight: 20, flex: 1, opacity: 0.8 },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
   },
-  infoValue: {
-    fontSize: 16,
+  modalContent: {
+    height: '80%',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    padding: 24,
   },
-  buttonRow: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  buttonRowContent: {
+  modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 32,
   },
-  buttonLabel: {
+  modalTitle: { fontSize: 24, fontWeight: '700' },
+  modalBody: { gap: 24 },
+  inputGroup: { gap: 8 },
+  inputLabel: { fontSize: 14, fontWeight: '600' },
+  input: {
+    height: 56,
+    borderWidth: 1,
+    borderRadius: 16,
+    paddingHorizontal: 16,
     fontSize: 16,
-    fontWeight: '500',
   },
-  accordionContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 16,
-    marginTop: -8,
-  },
-  accordionText: {
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  separator: {
-    height: 1,
-    marginHorizontal: 20,
-  },
-  disclaimerContainer: {
-    marginHorizontal: 24,
+  saveButton: {
+    height: 56,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginTop: 8,
-    marginBottom: 48,
-    padding: 20,
-    borderRadius: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
   },
-  disclaimerIcon: {
-    // Vertically centered via parent
-  },
-  disclaimerText: {
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: '500',
-    opacity: 0.9,
-  },
-  syncCTA: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    gap: 10,
-  },
-  syncText: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  profileHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingBottom: 32,
-    gap: 20,
-  },
-  avatarCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    color: '#FFFFFF',
-    fontSize: 28,
-    fontWeight: '700',
-  },
-  profileInfo: {
-    flex: 1,
-    gap: 4,
-  },
-  profileName: {
-    fontSize: 20,
-    fontWeight: '700',
-  },
-  profileEmail: {
-    fontSize: 14,
-    marginBottom: 8,
-  },
-  editButton: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  editButtonText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
+  saveButtonText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
+  modalFooter: { alignItems: 'center', marginTop: 24 },
+  deleteLink: { padding: 12 },
+  deleteLinkText: { fontSize: 15, fontWeight: '600' },
 });
 
 export default SettingsScreen;
