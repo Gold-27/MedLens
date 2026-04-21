@@ -65,14 +65,14 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
       clearTimeout(debounceTimeout.current);
     }
 
-    if (query.trim().length >= 1 && fetchSuggestions) {
+    if (query.trim().length > 0 && fetchSuggestions) {
       debounceTimeout.current = setTimeout(async () => {
         try {
           const results = await fetchSuggestions(query);
           setSuggestions(results);
           setShowSuggestions(true);
         } catch (error) {
-          console.error('Failed to fetch suggestions:', error);
+          console.error('[InputBar] Suggestions fetch error:', error);
           setSuggestions([]);
         }
       }, 300);
@@ -210,15 +210,19 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
     if (!suggestion || !suggestion.name) return;
     
     const drugName = suggestion.name.trim();
-    setQuery(drugName);
+    
+    // 1. Instantly hide suggestions and clear debounce
     setShowSuggestions(false);
+    setSuggestions([]);
+    if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
+    
+    // 2. Fill input (visual feedback)
+    setQuery(drugName);
+    
+    // 3. Dismiss keyboard
     Keyboard.dismiss();
     
-    if (onSuggestionSelect) {
-      onSuggestionSelect(suggestion);
-    }
-    
-    // Trigger immediate search
+    // 4. Trigger search instantly in parent
     if (drugName && !loading) {
       onSubmit(drugName, eli12Enabled);
     }
