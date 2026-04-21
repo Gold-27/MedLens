@@ -190,34 +190,36 @@ const DrawerNavigator: React.FC = () => {
 
 const AppNavigator = () => {
   return (
-    <NavigationContainer>
-      <Stack.Navigator initialRouteName="Splash" screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Splash" component={SplashScreen} />
-        <Stack.Screen name="Onboarding" component={OnboardingScreen} />
-        <Stack.Screen 
-          name="SignUp" 
-          component={SignUpScreen} 
-          options={{ gestureEnabled: false }}
-        />
-        <Stack.Screen 
-          name="Login" 
-          component={LoginScreen} 
-          options={{ gestureEnabled: false, headerBackVisible: false }} 
-        />
-        <Stack.Screen name="Home" component={DrawerNavigator} />
-        <Stack.Screen name="Cabinet" component={CabinetScreen} />
-        <Stack.Screen 
-          name="Settings" 
-          component={SettingsScreen} 
-          options={{ gestureEnabled: false }}
-        />
-        <Stack.Screen
-          name="Interaction"
-          component={InteractionScreen}
-          options={{ presentation: 'modal', gestureEnabled: false }}
-        />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <CabinetProvider>
+      <NavigationContainer>
+        <Stack.Navigator initialRouteName="Splash" screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="Splash" component={SplashScreen} />
+          <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+          <Stack.Screen 
+            name="SignUp" 
+            component={SignUpScreen} 
+            options={{ gestureEnabled: false }}
+          />
+          <Stack.Screen 
+            name="Login" 
+            component={LoginScreen} 
+            options={{ gestureEnabled: false, headerBackVisible: false }} 
+          />
+          <Stack.Screen name="Home" component={DrawerNavigator} />
+          <Stack.Screen name="Cabinet" component={CabinetScreen} />
+          <Stack.Screen 
+            name="Settings" 
+            component={SettingsScreen} 
+            options={{ gestureEnabled: false }}
+          />
+          <Stack.Screen
+            name="Interaction"
+            component={InteractionScreen}
+            options={{ presentation: 'modal', gestureEnabled: false }}
+          />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </CabinetProvider>
   );
 };
 
