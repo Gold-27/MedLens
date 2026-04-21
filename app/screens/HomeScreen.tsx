@@ -42,83 +42,78 @@ const HomeScreen: React.FC = () => {
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
 
+  const prefetchELI12 = useCallback(async (data: any, summary: any) => {
+    if (!data || !summary) return;
+    try {
+      const response = await api.getELI12(data, summary);
+      if (response.eli12.content) {
+        setEli12Result(JSON.parse(response.eli12.content));
+      }
+    } catch (error) {
+      console.error('Background ELI12 prefetch failed:', error);
+    }
+  }, []);
+
   const handleToggleELI12 = useCallback(async (enabled: boolean) => {
     setIsELI12(enabled);
-    // Persist preference locally
     LocalStorageService.updateSettings({ eli12Enabled: enabled });
     
     if (!baseResult) return;
     
-    // If we're enabling and don't have the result yet, fetch it
+    // If we're enabling and don't have the result yet, it might be pre-fetching
+    // or we need to start a foreground fetch
     if (enabled && !eli12Result) {
       setState('loading');
-      try {
-        if (!baseResult.data) throw new Error('No drug data available');
-        const response = await api.getELI12(baseResult.data, baseResult.summary);
-        
-        if (response.eli12.content) {
-          try {
-            const parsedEli = JSON.parse(response.eli12.content);
-            setEli12Result(parsedEli);
-          } catch (e) {
-            console.error('Failed to parse ELI12 content:', e);
-          }
-        }
-      } catch (error) {
-        console.error('ELI12 fetch failed:', error);
-        // On error, toggle back off so user isn't stuck in loading
-        setIsELI12(false);
-      } finally {
-        setState('success');
-      }
+      await prefetchELI12(baseResult.data, baseResult.summary);
+      setState('success');
     }
-  }, [baseResult, eli12Result]);
-
+  }, [baseResult, eli12Result, prefetchELI12]);
 
   const handleSearch = useCallback(async (searchQuery: string) => {
     if (!searchQuery.trim()) return;
-    setQuery(searchQuery);
+    const cleanQuery = searchQuery.trim();
+    setQuery(cleanQuery);
     setState('loading');
     
-    // New requirements: Reset ELI12 states on every new search
-    setIsELI12(false);
+    // Reset ELI12 states for new search
     setEli12Result(null);
 
     try {
-      // 1. Check Local Cache First (Optimization)
-      const cached = await LocalStorageService.getCachedResult(searchQuery.trim());
+      // 1. Check Local Cache First
+      const cached = await LocalStorageService.getCachedResult(cleanQuery);
       if (cached) {
         setBaseResult(cached);
         setState('success');
-
-        // Update recent searches in background
-        const updated = await LocalStorageService.addRecentSearch(searchQuery.trim());
+        
+        // Start pre-fetching ELI12 in background immediately
+        prefetchELI12(cached.data, cached.summary);
+        
+        const updated = await LocalStorageService.addRecentSearch(cleanQuery);
         setRecentSearches(updated);
         return;
       }
 
-      // 2. Fallback to API/DB
-      const response = await api.searchMedication(searchQuery.trim(), false); // Backend always returns Layer 1
+      // 2. Fetch Layer 1
+      const response = await api.searchMedication(cleanQuery, false);
       setBaseResult(response);
+      setState('success'); // Show regular result ASAP
+
+      // 3. Proactive Background Pre-fetch
+      // We don't 'await' this so the regular result stays visible while Layer 2 loads
+      prefetchELI12(response.data, response.summary);
       
-      // 3. Save to local storage for future use
+      // 4. Persistence
       await Promise.all([
-        LocalStorageService.setCachedResult(searchQuery.trim(), response),
-        LocalStorageService.addRecentSearch(searchQuery.trim()).then(updated => setRecentSearches(updated))
+        LocalStorageService.setCachedResult(cleanQuery, response),
+        LocalStorageService.addRecentSearch(cleanQuery).then(updated => setRecentSearches(updated))
       ]);
-      
-      setState('success');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
-      if (message.includes('not found') || message.includes('404')) {
-        setState('notFound');
-      } else {
-        setState('error');
-      }
+      setState(message.includes('not found') || message.includes('404') ? 'notFound' : 'error');
     } finally {
       inputBarRef.current?.clear();
     }
-  }, []);
+  }, [prefetchELI12]);
 
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
