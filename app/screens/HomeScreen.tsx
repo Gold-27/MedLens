@@ -156,7 +156,8 @@ const HomeScreen: React.FC = () => {
       if (error.name === 'AbortError') return;
       
       // Handle known 404 (Medication not found) cases without triggering error screens
-      if (error.status === 404) {
+      const isNotFound = error.status === 404 || error.message?.includes('404');
+      if (isNotFound) {
         console.log(`[Search] Medication not found: ${cleanQuery}`);
         setState('notFound');
         return;

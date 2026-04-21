@@ -76,10 +76,6 @@ async function fetchWithRetry(url: string, options: RequestInit, retries = MAX_R
     });
     clearTimeout(timeoutId);
 
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-
     return response;
   } catch (error) {
     clearTimeout(timeoutId);
@@ -122,9 +118,16 @@ async function apiRequest<T>(endpoint: string, options: (RequestInit & { timeout
     return data;
   } catch (error: any) {
     if (error.status) throw error;
-    if (error.name === 'AbortError') throw error; // Preserve AbortError for consumers
+    if (error.name === 'AbortError') throw error;
+    
+    // Extract status code from message if possible (e.g. "HTTP 404")
     const message = error instanceof Error ? error.message : 'Unknown error';
-    throw new Error(`API request failed: ${message}`);
+    const statusMatch = message.match(/HTTP (\d+)/);
+    const apiError = new Error(`API request failed: ${message}`);
+    if (statusMatch) {
+      (apiError as any).status = parseInt(statusMatch[1], 10);
+    }
+    throw apiError;
   }
 }
 

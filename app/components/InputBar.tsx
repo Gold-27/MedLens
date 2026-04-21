@@ -134,7 +134,7 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
       clearTimeout(debounceTimeout.current);
     }
 
-    if (!trimmed || !fetchSuggestions) {
+    if (!trimmed || !fetchSuggestions || loading) {
       setSuggestions([]);
       setShowSuggestions(false);
       setIsSuggestionsLoading(false);
@@ -285,18 +285,19 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
     
     const drugName = suggestion.name.trim();
     
-    // 1. Instantly hide suggestions and clear debounce
+    // 1. Instantly hide suggestions and clear state
     setShowSuggestions(false);
     setSuggestions([]);
+    setIsSuggestionsLoading(false);
     if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
     
-    // 2. Fill input (visual feedback)
+    // 2. Sync input value
     setQuery(drugName);
     
     // 3. Dismiss keyboard
     Keyboard.dismiss();
     
-    // 4. Trigger search instantly in parent
+    // 4. Trigger search instantly in parent (behaving like 'send')
     if (drugName && !loading) {
       onSubmit(drugName, eli12Enabled);
     }
