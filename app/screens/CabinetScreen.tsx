@@ -5,18 +5,10 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as api from '../services/api';
+import { CabinetItem } from '../services/api';
 import { LocalStorageService } from '../services/storage';
 import EmptyState from '../components/EmptyState';
 import SummaryCard from '../components/SummaryCard';
-
-interface CabinetItem {
-  id: string;
-  user_id: string;
-  drug_name: string;
-  drug_key: string;
-  source: string;
-  created_at: string;
-}
 
 const DRUG_DESCRIPTIONS: Record<string, string> = {
   'advil': 'For pain and fever',
@@ -102,6 +94,7 @@ const CabinetScreen: React.FC = () => {
 
   const handleViewDrug = async (itemId: string, drugName: string) => {
     setViewingItemId(itemId);
+    setSelectedDrugSummary(null); // Clear previous summary immediately to avoid mapping issues
     try {
       // 1. Check Cache
       const cached = await LocalStorageService.getCachedResult(drugName);
@@ -291,7 +284,10 @@ const CabinetScreen: React.FC = () => {
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: theme.colors.onSurface }]}>Medication Summary</Text>
               <TouchableOpacity
-                onPress={() => setIsModalVisible(false)}
+                onPress={() => {
+                  setIsModalVisible(false);
+                  setSelectedDrugSummary(null); // Clean up state on dismiss
+                }}
                 style={styles.closeButton}
               >
                 <Ionicons name="close" size={28} color={theme.colors.onSurface} />
@@ -300,7 +296,7 @@ const CabinetScreen: React.FC = () => {
 
             <FlatList
               data={[selectedDrugSummary]}
-              keyExtractor={() => 'summary'}
+              keyExtractor={(item) => item ? `${item.drug_name}-${item.source}` : 'summary-loading'}
               renderItem={() => selectedDrugSummary ? (
                 <View style={styles.cardWrapper}>
                   <SummaryCard
@@ -315,7 +311,12 @@ const CabinetScreen: React.FC = () => {
                     isSaved={true}
                   />
                 </View>
-              ) : null}
+              ) : (
+                <View style={styles.modalLoading}>
+                  <ActivityIndicator size="large" color={theme.colors.primary} />
+                  <Text style={[styles.loadingText, { color: theme.colors.outline }]}>Preparing medication summary...</Text>
+                </View>
+              )}
               contentContainerStyle={styles.modalScrollContent}
             />
           </View>
@@ -470,6 +471,17 @@ const styles = StyleSheet.create({
   },
   cardWrapper: {
     paddingTop: 8,
+  },
+  modalLoading: {
+    flex: 1,
+    paddingTop: 100,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
 
