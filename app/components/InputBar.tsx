@@ -4,8 +4,7 @@ import { useTheme } from '../theme/ThemeProvider';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Vibration } from 'react-native';
 import { Audio } from 'expo-av';
-import * as FileSystem from 'expo-file-system';
-import { File } from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { transcribeAudio } from '../services/api';
 
 interface Suggestion {
@@ -153,10 +152,11 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
       recording.current = null;
 
       if (uri) {
-        // Convert to base64 using the new File API (safer for Expo 54+)
+        // Convert to base64 using legacy API to ensure compatibility
         try {
-          const file = new File(uri);
-          const base64 = await file.readAsBase64Async();
+          const base64 = await FileSystem.readAsStringAsync(uri, {
+            encoding: 'base64',
+          });
 
           // Transcribe via backend
           const results = await transcribeAudio(base64);
