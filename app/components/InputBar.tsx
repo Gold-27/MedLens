@@ -2,8 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, TextInput, TouchableOpacity, StyleSheet, FlatList, Platform, Animated, Keyboard } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import Voice, { SpeechResultsEvent, SpeechErrorEvent } from '@react-native-voice/voice';
 import { Vibration } from 'react-native';
+import { Audio } from 'expo-av';
+import * as FileSystem from 'expo-file-system';
+import { File } from 'expo-file-system';
+import { transcribeAudio } from '../services/api';
 
 interface Suggestion {
   name: string;
@@ -45,6 +48,7 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
   const micScale = useRef(new Animated.Value(1)).current;
   const pulseAnimation = useRef<Animated.CompositeAnimation | null>(null);
   const inputRef = useRef<TextInput>(null);
+  const recording = useRef<Audio.Recording | null>(null);
 
   React.useImperativeHandle(ref, () => ({
     clear: () => {
@@ -85,22 +89,13 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
   }, [query, fetchSuggestions]);
 
   useEffect(() => {
-    // Voice event listeners
-    Voice.onSpeechStart = () => setIsListening(true);
-    Voice.onSpeechEnd = () => setIsListening(false);
-    Voice.onSpeechError = (e: SpeechErrorEvent) => {
-      console.error('Voice Error:', e);
-      setIsListening(false);
-    };
-    Voice.onSpeechResults = (e: SpeechResultsEvent) => {
-      if (e.value && e.value.length > 0) {
-        const spokenText = e.value[0];
-        setQuery(spokenText);
-      }
-    };
-
+    // Request permissions on mount
+    Audio.requestPermissionsAsync();
+    
     return () => {
-      Voice.destroy().then(Voice.removeAllListeners);
+      if (recording.current) {
+        recording.current.stopAndUnloadAsync();
+      }
     };
   }, []);
 
@@ -130,23 +125,58 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
     }
   }, [isListening]);
 
-  const toggleListening = async () => {
+  const startRecording = async () => {
+    try {
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+
+      const { recording: newRecording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+      recording.current = newRecording;
+      setIsListening(true);
+      Vibration.vibrate(50);
+    } catch (err) {
+      console.error('Failed to start recording', err);
+    }
+  };
+
+  const stopRecording = async () => {
+    if (!recording.current) return;
+
+    try {
+      setIsListening(false);
+      await recording.current.stopAndUnloadAsync();
+      const uri = recording.current.getURI();
+      recording.current = null;
+
+      if (uri) {
+        // Convert to base64 using the new File API (safer for Expo 54+)
+        try {
+          const file = new File(uri);
+          const base64 = await file.readAsBase64Async();
+
+          // Transcribe via backend
+          const results = await transcribeAudio(base64);
+          if (results.text && results.text !== 'No medication detected') {
+            setQuery(results.text);
+          }
+        } catch (error) {
+          console.error('Transcription error:', error);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to stop recording', err);
+    }
+  };
+
+  const toggleListening = () => {
     if (isListening) {
-      try {
-        await Voice.stop();
-        setIsListening(false);
-      } catch (e) {
-        console.error(e);
-      }
+      stopRecording();
     } else {
-      try {
-        setQuery('');
-        await Voice.start('en-US');
-        setIsListening(true);
-        Vibration.vibrate(50); // Feedback for starting
-      } catch (e) {
-        console.error(e);
-      }
+      startRecording();
     }
   };
 

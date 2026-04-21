@@ -205,3 +205,19 @@ export const autocomplete = async (req: Request, res: Response) => {
     return res.json({ query: q, suggestions: [] });
   }
 };
+
+export const transcribeAudio = async (req: Request, res: Response) => {
+  const { audio, mimeType } = req.body;
+
+  if (!audio) {
+    return res.status(400).json({ error: 'Audio data is required' });
+  }
+
+  try {
+    const text = await geminiService.transcribeAudio(audio, mimeType);
+    res.json({ text });
+  } catch (error: any) {
+    console.error('Transcription API Error:', error.message);
+    res.status(500).json({ error: 'Audio transcription failed' });
+  }
+};

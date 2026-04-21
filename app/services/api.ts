@@ -220,3 +220,10 @@ export async function deleteCabinetItem(drugKey: string, token: string): Promise
     },
   });
 }
+
+export async function transcribeAudio(audioBase64: string): Promise<{ text: string }> {
+  return apiRequest<{ text: string }>(Config.ENDPOINTS.SEARCH + '/transcribe', {
+    method: 'POST',
+    body: JSON.stringify({ audio: audioBase64, mimeType: 'audio/m4a' }),
+  });
+}

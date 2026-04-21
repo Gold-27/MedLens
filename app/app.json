@@ -29,14 +29,7 @@
     },
     "plugins": [
       "expo-font",
-      "expo-asset",
-      [
-        "@react-native-voice/voice",
-        {
-          "microphonePermission": "Allow MedLens to access the microphone for voice search.",
-          "speechRecognitionPermission": "Allow MedLens to use speech recognition to find medications."
-        }
-      ]
+      "expo-asset"
     ]
   }
 }

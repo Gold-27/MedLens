@@ -116,6 +116,44 @@ export class GeminiService {
       throw new Error(`ELI12 simplify failed: ${error.message}`);
     }
   }
+
+  async transcribeAudio(base64Audio: string, mimeType: string = 'audio/m4a'): Promise<string> {
+    if (!this.apiKey) {
+      throw new Error('Gemini API key is not configured');
+    }
+
+    try {
+      const response = await axios.post(
+        `${this.baseUrl}?key=${this.apiKey}`,
+        {
+          contents: [
+            {
+              parts: [
+                { text: "Listen to this audio and provide ONLY the name of the medication mentioned. If no medication is mentioned, say 'No medication detected'." },
+                {
+                  inlineData: {
+                    mimeType: mimeType,
+                    data: base64Audio
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      const text = response.data.candidates[0].content.parts[0].text;
+      return text.trim().replace(/\.$/, ''); // Clean up trailing dots
+    } catch (error: any) {
+      console.error('Gemini Transcription error:', error.response?.data || error.message);
+      throw new Error(`Transcription failed: ${error.message}`);
+    }
+  }
 }
 
 export default new GeminiService();

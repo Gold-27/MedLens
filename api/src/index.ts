@@ -9,7 +9,7 @@ dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 import express from 'express';
 import cors from 'cors';
-import { searchMedication, generateELI12, autocomplete } from './controllers/search.controller';
+import { searchMedication, generateELI12, autocomplete, transcribeAudio } from './controllers/search.controller';
 import { getCabinetItems, saveCabinetItem, deleteCabinetItem } from './controllers/cabinet.controller';
 import { requireAuth } from './middleware/auth.middleware';
 import OpenFDAService from './services/openfda.service';
@@ -39,6 +39,7 @@ app.get('/health', (req, res) => {
 app.post('/api/search', searchMedication);
 app.get('/api/autocomplete', autocomplete);
 app.post('/api/eli12', generateELI12);
+app.post('/api/search/transcribe', transcribeAudio);
 
 // ── Cabinet Routes (Auth Required) ───────────────────────────────────────────
 app.get('/api/cabinet/items', requireAuth, getCabinetItems);
