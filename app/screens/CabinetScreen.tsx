@@ -47,6 +47,7 @@ const CabinetScreen: React.FC = () => {
   const navigation = useNavigation() as any;
   const [items, setItems] = useState<CabinetItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [interactionCount, setInteractionCount] = useState(0);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -54,7 +55,7 @@ const CabinetScreen: React.FC = () => {
   const [selectedDrugSummary, setSelectedDrugSummary] = useState<api.SearchResponse | null>(null);
 
   const fetchCabinetData = useCallback(async () => {
-    if (!user) return;
+    if (!user || isDeleting) return;
     try {
       const token = await getToken();
       if (!token) return;
@@ -130,17 +131,28 @@ const CabinetScreen: React.FC = () => {
           text: 'Remove', 
           style: 'destructive',
           onPress: async () => {
+            setIsDeleting(true);
             try {
               const token = await getToken();
-              if (!token) return;
+              if (!token) {
+                setIsDeleting(false);
+                return;
+              }
+              
+              // 1. Update Backend
               await api.deleteCabinetItem(drugKey, token);
-              setItems(prev => prev.filter(i => i.drug_key !== drugKey));
-              // Also update cached cabinet
-              const updated = items.filter(i => i.drug_key !== drugKey);
-              await LocalStorageService.setCachedCabinet(updated);
+              
+              // 2. Synchronize State and Cache using the LATEST data
+              const updatedItems = items.filter(i => i.drug_key !== drugKey);
+              setItems(updatedItems);
+              await LocalStorageService.setCachedCabinet(updatedItems);
+              
+              console.log(`[Cabinet] Successfully deleted ${drugKey} and updated cache.`);
             } catch (error) {
-              console.error('Failed to delete drug:', error);
+              console.error('[Cabinet] Failed to delete drug:', error);
               Alert.alert('Error', 'Failed to remove medication. Please try again.');
+            } finally {
+              setIsDeleting(false);
             }
           }
         }
