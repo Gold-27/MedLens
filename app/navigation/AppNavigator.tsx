@@ -173,6 +173,7 @@ const DrawerNavigator: React.FC = () => {
       screenOptions={{
         headerShown: false,
         drawerStyle: { backgroundColor: theme.colors.background, width: 300 },
+        swipeEnabled: false,
       }}
     >
       <Drawer.Screen

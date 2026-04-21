@@ -366,6 +366,12 @@ const HomeScreen: React.FC = () => {
               isEli12={isELI12}
               onSave={handleSave}
               onExport={handleExport}
+              onClose={() => {
+                setState('empty');
+                setBaseResult(null);
+                setEli12Result(null);
+                setQuery('');
+              }}
               isSaved={savedDrugs.has(baseResult.drug_name.toLowerCase())}
               requiresAuth={isGuest}
             />

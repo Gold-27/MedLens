@@ -21,6 +21,7 @@ export interface SummaryCardProps {
   isEli12?: boolean;
   isSaved?: boolean;
   requiresAuth?: boolean;
+  onClose?: () => void;
 }
 
 const SummaryCard: React.FC<SummaryCardProps> = ({
@@ -32,6 +33,7 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
   isEli12 = false,
   isSaved = false,
   requiresAuth = false,
+  onClose,
 }) => {
   const theme = useTheme();
   const styles = makeStyles(theme);
@@ -124,6 +126,16 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
               </View>
             </View>
           </View>
+          
+          {onClose && (
+            <TouchableOpacity 
+              style={styles.closeButton} 
+              onPress={onClose}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="close-circle" size={26} color={theme.colors.outlineVariant} />
+            </TouchableOpacity>
+          )}
         </View>
 
         {eli12Enabled && (
@@ -401,6 +413,10 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
     lineHeight: 18,
     fontWeight: '600',
     flex: 1,
+  },
+  closeButton: {
+    padding: 2,
+    marginLeft: 8,
   },
 });
 
