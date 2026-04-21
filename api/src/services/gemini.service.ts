@@ -129,7 +129,7 @@ export class GeminiService {
           contents: [
             {
               parts: [
-                { text: "Listen to this audio and provide ONLY the name of the medication mentioned. If no medication is mentioned, say 'No medication detected'." },
+                { text: "Transcribe the audio accurately. If it's a medication name, ensure the spelling is correct based on medical knowledge. If no speech is detected, say 'No medication detected'." },
                 {
                   inlineData: {
                     mimeType: mimeType,

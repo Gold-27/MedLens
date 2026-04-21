@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, TextInput, TouchableOpacity, StyleSheet, FlatList, Platform, Animated, Keyboard } from 'react-native';
+import { View, TextInput, TouchableOpacity, StyleSheet, FlatList, Platform, Animated, Keyboard, ActivityIndicator, Alert } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Vibration } from 'react-native';
@@ -41,6 +41,7 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
   
   const debounceTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputShadow = useRef(new Animated.Value(0)).current;
@@ -126,19 +127,30 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
 
   const startRecording = async () => {
     try {
+      const { status } = await Audio.requestPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          "Permission Required",
+          "MedLens needs microphone access to use voice search. Please enable it in your settings.",
+          [{ text: "OK" }]
+        );
+        return;
+      }
+
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
       });
 
       const { recording: newRecording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
+        Audio.RecordingOptionsPresets.LOW_QUALITY
       );
       recording.current = newRecording;
       setIsListening(true);
       Vibration.vibrate(50);
     } catch (err) {
       console.error('Failed to start recording', err);
+      Alert.alert("Voice Error", "Could not access microphone.");
     }
   };
 
@@ -147,6 +159,8 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
 
     try {
       setIsListening(false);
+      setIsTranscribing(true);
+      
       await recording.current.stopAndUnloadAsync();
       const uri = recording.current.getURI();
       recording.current = null;
@@ -160,8 +174,9 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
 
           // Transcribe via backend
           const results = await transcribeAudio(base64);
-          if (results.text && results.text !== 'No medication detected') {
+          if (results.text && results.text !== 'No medication detected' && results.text.length > 1) {
             setQuery(results.text);
+            Vibration.vibrate(100); // Success feedback
           }
         } catch (error) {
           console.error('Transcription error:', error);
@@ -169,10 +184,14 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
       }
     } catch (err) {
       console.error('Failed to stop recording', err);
+    } finally {
+      setIsTranscribing(false);
     }
   };
 
   const toggleListening = () => {
+    if (isTranscribing) return;
+    
     if (isListening) {
       stopRecording();
     } else {
@@ -274,18 +293,25 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
             returnKeyType="search"
             autoFocus={autoFocus}
           />
-          <TouchableOpacity 
-            style={styles.micButton} 
-            onPress={query.trim() ? handleSubmit : toggleListening}
-          >
-            <Animated.View style={{ transform: [{ scale: micScale }] }}>
-              <Ionicons 
-                name={query.trim() ? "send" : (isListening ? "mic" : "mic-outline")} 
-                size={22} 
-                color={isListening ? theme.colors.primary : theme.colors.onSurfaceVariant} 
-              />
-            </Animated.View>
-          </TouchableOpacity>
+          <View style={styles.actionButtons}>
+            <TouchableOpacity 
+              style={[styles.micButton, isListening && { backgroundColor: theme.colors.primaryContainer + '40', borderRadius: 20 }]} 
+              onPress={query.trim().length > 0 ? handleSubmit : toggleListening}
+              disabled={loading || isTranscribing}
+            >
+              <Animated.View style={{ transform: [{ scale: micScale }] }}>
+                {isTranscribing ? (
+                  <ActivityIndicator size="small" color={theme.colors.primary} />
+                ) : (
+                  <Ionicons 
+                    name={query.trim().length > 0 ? "send" : (isListening ? "mic" : "mic-outline")}
+                    size={22} 
+                    color={(isListening || query.trim().length > 0) ? theme.colors.primary : theme.colors.onSurfaceVariant} 
+                  />
+                )}
+              </Animated.View>
+            </TouchableOpacity>
+          </View>
         </Animated.View>
 
         <TouchableOpacity 
@@ -362,8 +388,20 @@ const styles = StyleSheet.create({
     height: '100%',
     paddingVertical: 0,
   },
+  actionButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   micButton: {
-    padding: 4,
+    padding: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sendButton: {
+    padding: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   eliButton: {
     flexDirection: 'row',

@@ -30,7 +30,7 @@ async function startBackend() {
   const apiProcess = spawn('npm', ['run', 'dev'], { 
     cwd: API_DIR, 
     shell: true,
-    stdio: 'ignore',
+    stdio: 'inherit', // See logs in the terminal
     detached: true
   });
   apiProcess.unref();
