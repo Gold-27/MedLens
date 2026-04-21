@@ -412,7 +412,7 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
   },
   footer: {
     marginTop: 'auto',
-    paddingTop: 40,
+    paddingTop: 24,
     alignItems: 'center',
   },
   footerText: {
