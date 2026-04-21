@@ -14,12 +14,34 @@ function cleanup() {
   console.log("🧹 Cleaning up previous processes...");
   try {
     if (process.platform === 'win32') {
+      // Kill cloudflared
       execSync('taskkill /F /IM cloudflared.exe /T 2>nul || exit 0', { shell: true });
-      // Kill node processes running the api or expo
-      execSync('wmic process where "commandline like \'%api/src/index.ts%\' or commandline like \'%expo start%\'" delete 2>nul || exit 0', { shell: true });
+      
+      // Kill processes on ports 3001 and 8081
+      const ports = [3001, 8081];
+      ports.forEach(port => {
+        try {
+          const stdout = execSync(`netstat -ano | findstr :${port}`).toString();
+          const lines = stdout.split('\n');
+          lines.forEach(line => {
+            const parts = line.trim().split(/\s+/);
+            if (parts.length > 4 && parts[1].endsWith(`:${port}`)) {
+              const pid = parts[parts.length - 1];
+              if (pid && pid !== '0') {
+                console.log(`  - Killing process ${pid} on port ${port}...`);
+                execSync(`taskkill /F /PID ${pid} /T 2>nul || exit 0`, { shell: true });
+              }
+            }
+          });
+        } catch (e) {
+          // No process on this port
+        }
+      });
     } else {
       execSync('pkill -f cloudflared || true');
       execSync('pkill -f "expo start" || true');
+      execSync('lsof -i :3001 -t | xargs kill -9 2>/dev/null || true');
+      execSync('lsof -i :8081 -t | xargs kill -9 2>/dev/null || true');
     }
   } catch (e) {}
 }
