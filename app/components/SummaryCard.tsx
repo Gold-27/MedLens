@@ -37,6 +37,7 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
   isSaved,
   requiresAuth = false,
   onClose,
+  isExporting = false,
 }) => {
   const theme = useTheme();
   const styles = makeStyles(theme);
@@ -137,7 +138,7 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
             </View>
           </View>
           
-          {onClose && (
+          {onClose && !isExporting && (
             <TouchableOpacity 
               style={styles.closeButton} 
               onPress={onClose}
@@ -163,13 +164,13 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
       {/* Accordion Sections */}
       <View style={styles.accordionContainer}>
         {sectionConfig.map((section) => {
-          const isOpen = activeSection === section.id;
+          const isOpen = isExporting || activeSection === section.id;
           return (
             <View key={section.id} style={styles.sectionWrapper}>
               <TouchableOpacity 
                 style={styles.sectionHeader}
-                onPress={() => toggleSection(section.id)}
-                activeOpacity={0.7}
+                onPress={() => !isExporting && toggleSection(section.id)}
+                activeOpacity={isExporting ? 1 : 0.7}
               >
                 <View style={styles.sectionHeaderLeft}>
                   <View style={[styles.sectionIconBg, { backgroundColor: section.color }]}>
@@ -177,11 +178,13 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
                   </View>
                   <Text style={[styles.sectionTitle, { color: section.iconColor }]}>{section.title}</Text>
                 </View>
-                <Ionicons 
-                  name={isOpen ? "chevron-up" : "chevron-down"} 
-                  size={20} 
-                  color={section.iconColor} 
-                />
+                {!isExporting && (
+                  <Ionicons 
+                    name={isOpen ? "chevron-up" : "chevron-down"} 
+                    size={20} 
+                    color={section.iconColor} 
+                  />
+                )}
               </TouchableOpacity>
 
               {isOpen ? (
@@ -207,26 +210,28 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
         })}
       </View>
 
-      {/* Action Buttons */}
-      <View style={styles.actionsRow}>
-        <TouchableOpacity
-          style={[styles.actionButton, styles.saveButton, { backgroundColor: theme.colors.primary }]}
-          onPress={onSave}
-        >
-          <Ionicons name={isInCabinet ? "archive" : "archive-outline"} size={18} color={theme.colors.onPrimary} />
-          <Text style={styles.actionButtonText}>
-            {isInCabinet ? 'In cabinet' : 'Save to cabinet'}
-          </Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity
-          style={[styles.actionButton, styles.exportButton, { borderColor: theme.colors.outlineVariant, borderWidth: 1 }]}
-          onPress={onExport}
-        >
-          <Ionicons name="share-outline" size={18} color={theme.colors.onSurface} />
-          <Text style={[styles.actionButtonText, { color: theme.colors.onSurface }]}>Export summary</Text>
-        </TouchableOpacity>
-      </View>
+      {/* Action Buttons - Hidden during export */}
+      {!isExporting && (
+        <View style={styles.actionsRow}>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.saveButton, { backgroundColor: theme.colors.primary }]}
+            onPress={onSave}
+          >
+            <Ionicons name={isInCabinet ? "archive" : "archive-outline"} size={18} color={theme.colors.onPrimary} />
+            <Text style={styles.actionButtonText}>
+              {isInCabinet ? 'In cabinet' : 'Save to cabinet'}
+            </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[styles.actionButton, styles.exportButton, { borderColor: theme.colors.outlineVariant, borderWidth: 1 }]}
+            onPress={onExport}
+          >
+            <Ionicons name="share-outline" size={18} color={theme.colors.onSurface} />
+            <Text style={[styles.actionButtonText, { color: theme.colors.onSurface }]}>Export summary</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Disclaimer */}
       <View style={[styles.footerDisclaimer, { backgroundColor: theme.colors.accentContainer }]}>
