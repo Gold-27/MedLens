@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Share, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
+import * as Sharing from 'expo-sharing';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { DrawerNavigationProp } from '@react-navigation/drawer';
@@ -16,6 +17,7 @@ import EmptyState from '../components/EmptyState';
 import AuthModal from '../components/AuthModal';
 import Disclaimer from '../components/Disclaimer';
 import TrustBadges from '../components/TrustBadges';
+import ExportCard, { ExportCardRef } from '../components/ExportCard';
 import * as api from '../services/api';
 import { LocalStorageService } from '../services/storage';
 import RecentSearches from '../components/RecentSearches';
@@ -42,6 +44,7 @@ const HomeScreen: React.FC = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+  const exportCardRef = useRef<ExportCardRef>(null);
   
   // Performance and Cache Refs
   const sessionCache = useRef<Map<string, api.SearchResponse>>(new Map());
@@ -265,16 +268,16 @@ const HomeScreen: React.FC = () => {
       return; 
     }
     const summary = isELI12 && eli12Result ? eli12Result : baseResult.summary;
-    const shareContent = `MedQuire Summary: ${baseResult.drug_name}\n\n` +
-      `WHAT IT DOES:\n${summary.what_it_does}\n\n` +
-      `HOW TO TAKE IT:\n${summary.how_to_take}\n\n` +
-      `WARNINGS:\n${summary.warnings}\n\n` +
-      `POSSIBLE SIDE EFFECTS:\n${summary.side_effects}\n\n` +
-      `Source: OpenFDA\n` +
-      `MedQuire simplifies medical information for understanding. It does not replace professional medical advice.`;
     
     try { 
-      await Share.share({ title: `Medication Summary: ${baseResult.drug_name}`, message: shareContent }); 
+      if (!exportCardRef.current) throw new Error('Export reference missing');
+      
+      const uri = await exportCardRef.current.capture();
+      await Sharing.shareAsync(uri, { 
+        mimeType: 'image/jpeg', 
+        dialogTitle: `Medication Summary: ${baseResult.drug_name}`,
+        UTI: 'public.jpeg'
+      });
       
       // Reset state after export
       setState('empty');
@@ -282,7 +285,10 @@ const HomeScreen: React.FC = () => {
       setEli12Result(null);
       setQuery('');
     }
-    catch (error) { console.error('Share failed:', error); }
+    catch (error: any) { 
+      console.error('Visual export failed:', error); 
+      Alert.alert('Export Failed', 'We could not generate the visual summary. Please try again.');
+    }
   }, [baseResult, isELI12, eli12Result, isGuest]);
 
   const handleAuthSuccess = useCallback(() => {
@@ -445,7 +451,22 @@ const HomeScreen: React.FC = () => {
             onToggleEli12={handleToggleELI12}
           />
         </View>
-      </SafeAreaView>
+        {/* Export Capture Component (Off-screen) */}
+      {baseResult && (
+        <ExportCard
+          ref={exportCardRef}
+          drugName={baseResult.drug_name}
+          source={baseResult.source}
+          isEli12={isELI12}
+          sections={{
+            whatItDoes: (isELI12 && eli12Result) ? eli12Result.what_it_does : baseResult.summary.what_it_does,
+            howToTake: (isELI12 && eli12Result) ? eli12Result.how_to_take : baseResult.summary.how_to_take,
+            warnings: (isELI12 && eli12Result) ? eli12Result.warnings : baseResult.summary.warnings,
+            sideEffects: (isELI12 && eli12Result) ? eli12Result.side_effects : baseResult.summary.side_effects,
+          }}
+        />
+      )}
+    </SafeAreaView>
 
       <AuthModal
         visible={showAuthModal}

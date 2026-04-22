@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, Modal, Share } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, Modal } from 'react-native';
+import * as Sharing from 'expo-sharing';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme, ThemeContextType } from '../theme/ThemeProvider';
 import { useAuth } from '../context/AuthContext';
@@ -10,6 +11,7 @@ import { CabinetItem } from '../services/api';
 import { LocalStorageService } from '../services/storage';
 import EmptyState from '../components/EmptyState';
 import SummaryCard from '../components/SummaryCard';
+import ExportCard, { ExportCardRef } from '../components/ExportCard';
 import { useCabinet } from '../context/CabinetContext';
 
 const DRUG_DESCRIPTIONS: Record<string, string> = {
@@ -55,6 +57,7 @@ const CabinetScreen: React.FC = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [viewingItem, setViewingItem] = useState<CabinetItem | null>(null);
   const [selectedDrugSummary, setSelectedDrugSummary] = useState<api.SearchResponse | null>(null);
+  const exportCardRef = React.useRef<ExportCardRef>(null);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -114,19 +117,20 @@ const CabinetScreen: React.FC = () => {
   const handleExport = useCallback(async () => {
     if (!selectedDrugSummary) return;
     
-    const summary = selectedDrugSummary.summary;
-    const shareContent = `MedQuire Summary: ${selectedDrugSummary.drug_name}\n\n` +
-      `WHAT IT DOES:\n${summary.what_it_does}\n\n` +
-      `HOW TO TAKE IT:\n${summary.how_to_take}\n\n` +
-      `WARNINGS:\n${summary.warnings}\n\n` +
-      `POSSIBLE SIDE EFFECTS:\n${summary.side_effects}\n\n` +
-      `Source: OpenFDA\n` +
-      `MedQuire simplifies medical information for understanding. It does not replace professional medical advice.`;
-    
     try { 
-      await Share.share({ title: `Medication Summary: ${selectedDrugSummary.drug_name}`, message: shareContent }); 
+      if (!exportCardRef.current) throw new Error('Export reference missing');
+      
+      const uri = await exportCardRef.current.capture();
+      await Sharing.shareAsync(uri, { 
+        mimeType: 'image/jpeg', 
+        dialogTitle: `Medication Summary: ${selectedDrugSummary.drug_name}`,
+        UTI: 'public.jpeg'
+      });
     }
-    catch (error) { console.error('Share failed:', error); }
+    catch (error: any) { 
+      console.error('Visual export failed:', error); 
+      Alert.alert('Export Failed', 'We could not generate the visual summary. Please try again.');
+    }
   }, [selectedDrugSummary]);
 
   const handleDeleteDrug = async (item: CabinetItem) => {
@@ -331,6 +335,22 @@ const CabinetScreen: React.FC = () => {
           </View>
         </View>
       </Modal>
+
+      {/* Export Capture Component (Off-screen) */}
+      {selectedDrugSummary && (
+        <ExportCard
+          ref={exportCardRef}
+          drugName={selectedDrugSummary.drug_name}
+          source={selectedDrugSummary.source}
+          isEli12={false} // Cabinet items currently show base summary
+          sections={{
+            whatItDoes: selectedDrugSummary.summary.what_it_does,
+            howToTake: selectedDrugSummary.summary.how_to_take,
+            warnings: selectedDrugSummary.summary.warnings,
+            sideEffects: selectedDrugSummary.summary.side_effects,
+          }}
+        />
+      )}
     </SafeAreaView>
   );
 };
