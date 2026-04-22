@@ -7,17 +7,19 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme, ThemeContextType } from '../theme/ThemeProvider';
 import { LocalStorageService } from '../services/storage';
 import { useNavigation } from '@react-navigation/native';
-import SplashScreen from '../screens/SplashScreen';
-import OnboardingScreen from '../screens/OnboardingScreen';
-import HomeScreen from '../screens/HomeScreen';
-import CabinetScreen from '../screens/CabinetScreen';
-import InteractionScreen from '../screens/InteractionScreen';
-import SettingsScreen from '../screens/SettingsScreen';
-import SignUpScreen from '../screens/SignUpScreen';
-import LoginScreen from '../screens/LoginScreen';
-import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
-import VerifyOtpScreen from '../screens/VerifyOtpScreen';
-import ResetPasswordScreen from '../screens/ResetPasswordScreen';
+import {
+  SplashScreen,
+  OnboardingScreen,
+  HomeScreen,
+  CabinetScreen,
+  InteractionScreen,
+  SettingsScreen,
+  SignUpScreen,
+  LoginScreen,
+  ForgotPasswordScreen,
+  VerifyOtpScreen,
+  ResetPasswordScreen,
+} from '../screens';
 import { useAuth } from '../context/AuthContext';
 import { CabinetProvider } from '../context/CabinetContext';
 
