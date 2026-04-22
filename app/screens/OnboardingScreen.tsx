@@ -158,10 +158,6 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
 
   const handleSkip = () => handleFinish();
 
-  const handleLogin = async () => {
-    navigation.navigate('Login');
-  };
-
   const handleFinish = async () => {
     try { 
       await continueAsGuest();
@@ -262,18 +258,6 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
           </TouchableOpacity>
         )}
       </View>
-
-      <View style={styles.footer}>
-        <Text style={[styles.loginText, { color: theme.colors.onSurfaceVariant }]}>
-          Already have an account?{' '}
-          <Text 
-            style={{ color: theme.colors.primary, fontWeight: '700' }} 
-            onPress={handleLogin}
-          >
-            Log In
-          </Text>
-        </Text>
-      </View>
     </View>
   );
 };
@@ -316,15 +300,17 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 28,
-    fontWeight: '600',
+    fontWeight: '700',
     textAlign: 'left',
     marginBottom: 16,
     lineHeight: 36,
+    fontFamily: 'Outfit',
   },
   description: {
     fontSize: 18,
     textAlign: 'left',
     lineHeight: 26,
+    fontFamily: 'Outfit',
   },
   bottomSection: {
     paddingHorizontal: 30,
@@ -381,14 +367,6 @@ const styles = StyleSheet.create({
   loginLinkText: {
     fontSize: 14,
     fontWeight: '500',
-  },
-  footer: {
-    marginTop: 20,
-    alignItems: 'center',
-  },
-  loginText: {
-    fontSize: 15,
-    fontFamily: 'Outfit',
   },
 });
 
