@@ -63,20 +63,20 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
         
         // Check for persistent onboarding completion flag
         const hasCompletedOnboarding = await LocalStorageService.getOnboardingCompleted();
-        console.log(`[Splash] Onboarding record: ${hasCompletedOnboarding}`);
+        console.log(`[Splash] Onboarding completed flag: ${hasCompletedOnboarding}`);
 
         // Routing Rules:
         // 1. Authenticated session exists -> Home
         // 2. No session BUT onboarding completed -> Login
         // 3. Otherwise -> Onboarding
         if (session?.user?.id) {
-          console.log('[Splash] Authenticated session detected -> Home');
+          console.log('[Splash] Decision: Authenticated -> navigating to Home');
           navigate('Home');
         } else if (hasCompletedOnboarding) {
-          console.log('[Splash] Returning user detected (onboarding complete) -> Login');
+          console.log('[Splash] Decision: Returning user -> navigating to Login');
           navigate('Login');
         } else {
-          console.log('[Splash] New user detected -> Onboarding');
+          console.log('[Splash] Decision: New user -> navigating to Onboarding');
           navigate('Onboarding');
         }
       } catch (error) {

@@ -242,6 +242,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 return { error: sessionError };
               }
               console.log('Session established successfully!');
+              await LocalStorageService.setOnboardingCompleted();
             }
           }
         } else if (res.type === 'cancel' || res.type === 'dismiss') {

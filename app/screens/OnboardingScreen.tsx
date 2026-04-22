@@ -262,6 +262,18 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
           </TouchableOpacity>
         )}
       </View>
+
+      <View style={styles.footer}>
+        <Text style={[styles.loginText, { color: theme.colors.onSurfaceVariant }]}>
+          Already have an account?{' '}
+          <Text 
+            style={{ color: theme.colors.primary, fontWeight: '700' }} 
+            onPress={handleLogin}
+          >
+            Log In
+          </Text>
+        </Text>
+      </View>
     </View>
   );
 };
@@ -369,6 +381,14 @@ const styles = StyleSheet.create({
   loginLinkText: {
     fontSize: 14,
     fontWeight: '500',
+  },
+  footer: {
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  loginText: {
+    fontSize: 15,
+    fontFamily: 'Outfit',
   },
 });
 
