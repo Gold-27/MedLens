@@ -7,6 +7,7 @@ import { useAuth } from './AuthContext';
 interface CabinetContextType {
   items: CabinetItem[];
   savedDrugNames: Set<string>;
+  savedDrugKeys: Set<string>;
   loading: boolean;
   refreshCabinet: () => Promise<void>;
   addItem: (drugName: string, drugKey: string) => Promise<void>;
@@ -23,6 +24,10 @@ export const CabinetProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Derived state for O(1) lookups during search
   const savedDrugNames = useMemo(() => 
     new Set(items.map(item => item.drug_name.toLowerCase())),
+  [items]);
+
+  const savedDrugKeys = useMemo(() => 
+    new Set(items.map(item => item.drug_key.toLowerCase())),
   [items]);
 
   const refreshCabinet = useCallback(async () => {
@@ -44,8 +49,10 @@ export const CabinetProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const token = await getToken();
       if (token) {
         const response = await api.getCabinetItems(token);
-        setItems(response.items);
-        await LocalStorageService.setCachedCabinet(response.items);
+        // Ensure unique items by ID to prevent duplicate key errors in UI
+        const uniqueItems = Array.from(new Map(response.items.map(item => [item.id, item])).values());
+        setItems(uniqueItems);
+        await LocalStorageService.setCachedCabinet(uniqueItems);
       }
     } catch (error) {
       console.error('[CabinetContext] Refresh failed:', error);
@@ -68,8 +75,9 @@ export const CabinetProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
       const response = await api.saveCabinetItem(drugName, drugKey, token);
       if (response.success) {
-        // Update state and cache immediately
+        // Update state and cache immediately, ensuring no duplicate items are added
         setItems(prev => {
+          if (prev.some(item => item.id === response.item.id)) return prev;
           const updated = [response.item, ...prev];
           LocalStorageService.setCachedCabinet(updated);
           return updated;
@@ -113,6 +121,7 @@ export const CabinetProvider: React.FC<{ children: React.ReactNode }> = ({ child
     <CabinetContext.Provider value={{ 
       items, 
       savedDrugNames, 
+      savedDrugKeys,
       loading, 
       refreshCabinet, 
       addItem, 

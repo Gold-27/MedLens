@@ -287,6 +287,7 @@ const CabinetScreen: React.FC = () => {
                 <View style={styles.cardWrapper}>
                   <SummaryCard
                     drugName={selectedDrugSummary.drug_name}
+                    drugKey={items.find(i => i.id === viewingItemId)?.drug_key || selectedDrugSummary.drug_name.toLowerCase().replace(/\s+/g, '-')}
                     source={selectedDrugSummary.source}
                     sections={{
                       whatItDoes: selectedDrugSummary.summary.what_it_does,

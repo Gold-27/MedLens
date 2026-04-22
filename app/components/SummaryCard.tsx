@@ -10,6 +10,7 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 
 export interface SummaryCardProps {
   drugName: string;
+  drugKey?: string;
   source?: string;
   sections: {
     whatItDoes?: string | null;
@@ -26,6 +27,7 @@ export interface SummaryCardProps {
 
 const SummaryCard: React.FC<SummaryCardProps> = ({
   drugName,
+  drugKey,
   source = 'FDA (OpenFDA)',
   sections,
   onSave,
@@ -36,10 +38,12 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
 }) => {
   const theme = useTheme();
   const styles = makeStyles(theme);
-  const { savedDrugNames } = useCabinet();
+  const { savedDrugNames, savedDrugKeys } = useCabinet();
   
   // Real-time check against global cabinet state
-  const isInCabinet = savedDrugNames.has(drugName.toLowerCase());
+  // Check by key first (precise), then by name (fuzzy fallback)
+  const isInCabinet = (drugKey && savedDrugKeys.has(drugKey.toLowerCase())) || 
+                     savedDrugNames.has(drugName.toLowerCase());
 
   const [eli12Enabled, setEli12Enabled] = useState(isEli12);
   const [activeSection, setActiveSection] = useState<string | null>(null);

@@ -328,6 +328,7 @@ const HomeScreen: React.FC = () => {
           <View style={styles.resultContainer}>
             <SummaryCard
               drugName={baseResult.drug_name}
+              drugKey={baseResult.drug_name.toLowerCase().replace(/\s+/g, '-')}
               source={baseResult.source}
               sections={{
                 whatItDoes: currentSummary.what_it_does || null,
