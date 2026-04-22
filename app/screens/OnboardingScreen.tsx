@@ -12,23 +12,24 @@ import {
   ActivityIndicator,
   ImageSourcePropType,
 } from 'react-native';
+import { SvgXml } from 'react-native-svg';
 import { Asset } from 'expo-asset';
 import { useTheme } from '../theme/ThemeProvider';
 import { useAuth } from '../context/AuthContext';
+import { ONBOARDING2_SVG } from '../assets/illustrations/onboarding2';
+import { ONBOARDING3_SVG } from '../assets/illustrations/onboarding3';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// All three images required at module level — bundler resolves them at build time
+// Images required at module level — bundler resolves them at build time
 const IMG1 = require('../assets/img_onboard1.png');
-const IMG2 = require('../assets/img_onboard2.png');
-const IMG3 = require('../assets/img_onboard3.png');
 
 interface Slide {
   id: string;
   title: string;
   description: string;
-  image: ImageSourcePropType;
+  image: ImageSourcePropType | string;
 }
 
 const slides: Slide[] = [
@@ -40,15 +41,15 @@ const slides: Slide[] = [
   },
   {
     id: '2',
-    title: 'Search. Read. Understand with Clarity',
+    title: 'Search, Read, Understand with Clarity',
     description: 'Type a medication name and receive a simple summary in seconds, no medical jargon.',
-    image: IMG2,
+    image: ONBOARDING2_SVG,
   },
   {
     id: '3',
     title: 'Clear, safe, and easy to use for everyone',
     description: 'MedQuire simplifies medical information for understanding. It does not replace professional medical advice.',
-    image: IMG3,
+    image: ONBOARDING3_SVG,
   },
 ];
 
@@ -91,12 +92,24 @@ const SlideView = ({ item, theme }: { item: Slide; theme: any }) => {
 
   return (
     <Animated.View style={[styles.slide, { width, opacity }]}>
-      <Animated.Image
-        source={item.image}
-        style={[styles.image, { transform: [{ scale }] }]}
-        resizeMode="contain"
-        fadeDuration={0}
-      />
+      {item.image ? (
+        typeof item.image === 'string' ? (
+          <Animated.View style={[styles.image, { transform: [{ scale }], justifyContent: 'center', alignItems: 'center' }]}>
+            <SvgXml xml={item.image} width="100%" height="100%" />
+          </Animated.View>
+        ) : (
+          <Animated.Image
+            source={item.image}
+            style={[styles.image, { transform: [{ scale }] }]}
+            resizeMode="contain"
+            fadeDuration={0}
+          />
+        )
+      ) : (
+        <View style={[styles.image, { justifyContent: 'center', alignItems: 'center' }]}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+        </View>
+      )}
       <View style={styles.textContainer}>
         <Text style={[styles.title, { color: theme.colors.inverseSurface }]}>
           {item.title}
@@ -121,7 +134,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
   useEffect(() => {
     let cancelled = false;
 
-    Asset.loadAsync([IMG1, IMG2, IMG3])
+    Asset.loadAsync([IMG1])
       .catch(() => {/* already bundled locally — safe to ignore */})
       .finally(() => {
         if (!cancelled) setReady(true);
