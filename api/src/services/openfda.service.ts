@@ -29,13 +29,15 @@ export class OpenFDAService {
 
       const result = response.data.results[0];
       
+      const sanitize = (text?: string) => text ? text.replace(/\s+/g, ' ').trim() : undefined;
+
       return {
         drug_name: result.openfda?.brand_name?.[0] || result.openfda?.generic_name?.[0] || query,
-        indications: result.indications_and_usage?.[0] || result.purpose?.[0] || result.indications?.[0] || result.description?.[0] || result.usage?.[0],
-        dosage: result.dosage_and_administration?.[0] || result.how_to_use?.[0] || result.instructions_for_use?.[0] || result.dosage?.[0],
-        warnings: result.warnings?.[0] || result.boxed_warning?.[0] || result.precautions?.[0] || result.do_not_use?.[0] || result.warnings_and_precautions?.[0] || result.stop_use?.[0],
-        side_effects: result.adverse_reactions?.[0] || result.side_effects?.[0] || result.adverse_reactions_table?.[0],
-        drug_interactions: result.drug_interactions?.[0] || result.interactions?.[0]
+        indications: sanitize(result.indications_and_usage?.[0] || result.purpose?.[0] || result.indications?.[0] || result.description?.[0] || result.usage?.[0]),
+        dosage: sanitize(result.dosage_and_administration?.[0] || result.how_to_use?.[0] || result.instructions_for_use?.[0] || result.dosage?.[0]),
+        warnings: sanitize(result.warnings?.[0] || result.boxed_warning?.[0] || result.precautions?.[0] || result.do_not_use?.[0] || result.warnings_and_precautions?.[0] || result.stop_use?.[0]),
+        side_effects: sanitize(result.adverse_reactions?.[0] || result.side_effects?.[0] || result.adverse_reactions_table?.[0]),
+        drug_interactions: sanitize(result.drug_interactions?.[0] || result.interactions?.[0])
       };
     } catch (error: any) {
       console.error('OpenFDA API error:', error.message);

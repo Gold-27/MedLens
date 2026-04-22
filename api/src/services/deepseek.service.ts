@@ -15,6 +15,14 @@ export class DeepSeekService {
     return process.env.DEEPSEEK_API_KEY;
   }
 
+  private trimInput(text: string | undefined, maxLength: number = 4000): string {
+    if (!text) return 'N/A';
+    // Remove excessive whitespace and control characters
+    const clean = text.replace(/\s+/g, ' ').trim();
+    if (clean.length <= maxLength) return clean;
+    return clean.substring(0, maxLength) + '... [Information truncated for brevity]';
+  }
+
   async generateSummary(data: NormalizedDrugData): Promise<AISummary> {
     if (!this.apiKey) {
       throw new Error('DeepSeek API key is not configured');
@@ -38,10 +46,10 @@ export class DeepSeekService {
     const userPrompt = `
       Medication: ${data.drug_name}
       
-      Indications (What it does): ${data.indications || 'Extract information from dosage or warnings if needed'}
-      Dosage (How to take): ${data.dosage || 'N/A'}
-      Warnings: ${data.warnings || 'N/A'}
-      Side Effects: ${data.side_effects || 'N/A'}
+      Indications (What it does): ${this.trimInput(data.indications)}
+      Dosage (How to take): ${this.trimInput(data.dosage)}
+      Warnings: ${this.trimInput(data.warnings)}
+      Side Effects: ${this.trimInput(data.side_effects)}
       
       Generate the simplified medical summary.
     `;
@@ -62,7 +70,7 @@ export class DeepSeekService {
             'Authorization': `Bearer ${this.apiKey}`,
             'Content-Type': 'application/json'
           },
-          timeout: 15000
+          timeout: 25000
         }
       );
 
