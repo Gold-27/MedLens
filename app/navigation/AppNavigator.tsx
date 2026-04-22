@@ -43,6 +43,10 @@ const Drawer = (createDrawerNavigator as any)();
 // Global cache to avoid flicker when drawer opens
 let drawerHistoryCache: string[] | null = null;
 
+const clearDrawerHistoryCache = () => {
+  drawerHistoryCache = null;
+};
+
 const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
   const theme = useTheme();
   const navigation = useNavigation();
@@ -53,7 +57,7 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
 
   const loadHistory = React.useCallback(async () => {
     try {
-      const searches = await LocalStorageService.getRecentSearches();
+      const searches = await LocalStorageService.getRecentSearches(user?.id);
       setHistory(searches);
       drawerHistoryCache = searches;
     } catch (error) {
@@ -89,8 +93,9 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
   };
 
   const clearHistory = async () => {
-    await LocalStorageService.clearRecentSearches();
+    await LocalStorageService.clearRecentSearches(user?.id);
     setHistory([]);
+    drawerHistoryCache = [];
   };
 
   const handleLogout = () => {
@@ -102,6 +107,7 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
         onPress: async () => {
           try {
             await signOut();
+            clearDrawerHistoryCache();
             props.navigation.closeDrawer();
             (navigation as any).reset({
               index: 0,
