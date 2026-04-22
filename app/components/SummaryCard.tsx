@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch, LayoutAnimation, Platform, UIManager } from 'react-native';
 import { useTheme, ThemeContextType } from '../theme/ThemeProvider';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useCabinet } from '../context/CabinetContext';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -19,7 +20,6 @@ export interface SummaryCardProps {
   onSave?: () => void;
   onExport?: () => void;
   isEli12?: boolean;
-  isSaved?: boolean;
   requiresAuth?: boolean;
   onClose?: () => void;
 }
@@ -31,12 +31,16 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
   onSave,
   onExport,
   isEli12 = false,
-  isSaved = false,
   requiresAuth = false,
   onClose,
 }) => {
   const theme = useTheme();
   const styles = makeStyles(theme);
+  const { savedDrugNames } = useCabinet();
+  
+  // Real-time check against global cabinet state
+  const isInCabinet = savedDrugNames.has(drugName.toLowerCase());
+
   const [eli12Enabled, setEli12Enabled] = useState(isEli12);
   const [activeSection, setActiveSection] = useState<string | null>(null);
 
@@ -203,9 +207,9 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
           style={[styles.actionButton, styles.saveButton, { backgroundColor: theme.colors.primary }]}
           onPress={onSave}
         >
-          <Ionicons name={isSaved ? "archive" : "archive-outline"} size={18} color={theme.colors.onPrimary} />
+          <Ionicons name={isInCabinet ? "archive" : "archive-outline"} size={18} color={theme.colors.onPrimary} />
           <Text style={styles.actionButtonText}>
-            {isSaved ? 'In cabinet' : 'Save to cabinet'}
+            {isInCabinet ? 'In cabinet' : 'Save to cabinet'}
           </Text>
         </TouchableOpacity>
         

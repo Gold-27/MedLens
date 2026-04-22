@@ -250,11 +250,8 @@ const HomeScreen: React.FC = () => {
       }
     })();
 
-    // 4. Reset search state immediately to let user continue
-    setState('empty');
-    setBaseResult(null);
-    setEli12Result(null);
-    setQuery('');
+    // 4. Do NOT reset search state immediately, let the user see the "In Cabinet" state
+    // We only reset if specifically requested or on new search
   }, [baseResult, isGuest, getToken]);
 
   const handleExport = useCallback(async () => {
@@ -347,7 +344,6 @@ const HomeScreen: React.FC = () => {
                 setEli12Result(null);
                 setQuery('');
               }}
-              isSaved={savedDrugNames.has(baseResult.drug_name.toLowerCase())}
               requiresAuth={isGuest}
             />
           </View>
