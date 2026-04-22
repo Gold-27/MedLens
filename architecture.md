@@ -1,10 +1,10 @@
-# MedLens System Architecture Specification
+# MedQuire System Architecture Specification
 
 ---
 
 ## 0. Purpose
 
-This document defines the architecture of MedLens.
+This document defines the architecture of MedQuire.
 
 It ensures:
 - reliable data flow  
@@ -30,7 +30,7 @@ All system design MUST start from structured data contracts.
 
 ### 1.2 Controlled Data Flow
 
-MedLens follows a structured pipeline:
+MedQuire follows a structured pipeline:
 
 User Input  
 → Backend Validation  
@@ -402,7 +402,7 @@ AI MUST:
 
 Always show:
 
-MedLens simplifies medical information.  
+MedQuire simplifies medical information.  
 It does not replace professional medical advice.  
 
 ---
@@ -451,7 +451,7 @@ System MUST:
 
 ## Final Architecture Summary
 
-MedLens is:
+MedQuire is:
 
 - schema-first → predictable  
 - resilient → handles failures  

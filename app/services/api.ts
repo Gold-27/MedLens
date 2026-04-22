@@ -96,7 +96,7 @@ async function apiRequest<T>(endpoint: string, options: (RequestInit & { timeout
   const headers = {
     'Content-Type': 'application/json',
     'Bypass-Tunnel-Reminder': 'true',
-    'User-Agent': 'MedLens-App',
+    'User-Agent': 'MedQuire-App',
     ...options.headers,
   };
 

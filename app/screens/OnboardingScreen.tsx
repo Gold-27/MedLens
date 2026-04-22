@@ -47,7 +47,7 @@ const slides: Slide[] = [
   {
     id: '3',
     title: 'Clear, safe, and easy to use for everyone',
-    description: 'MedLens simplifies medical information for understanding. It does not replace professional medical advice.',
+    description: 'MedQuire simplifies medical information for understanding. It does not replace professional medical advice.',
     image: IMG3,
   },
 ];

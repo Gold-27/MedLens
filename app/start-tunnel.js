@@ -7,7 +7,7 @@ const APP_DIR = __dirname;
 const API_DIR = path.join(APP_DIR, '../api');
 const ENV_PATH = path.join(APP_DIR, '.env');
 
-console.log("🚀 Initializing MedLens Tunnel Manager (Windows/Cross-Platform)...");
+console.log("🚀 Initializing MedQuire Tunnel Manager (Windows/Cross-Platform)...");
 
 // --- Helper: Kill Processes ---
 function cleanup() {

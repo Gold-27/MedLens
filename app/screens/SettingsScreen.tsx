@@ -120,7 +120,7 @@ const SettingsScreen: React.FC = () => {
   };
 
   const handleSupport = () => {
-    Linking.openURL('mailto:support@medlens.ai?subject=Support Request');
+    Linking.openURL('mailto:support@medquire.ai?subject=Support Request');
   };
 
   const sections: SettingsSection[] = ([
@@ -143,7 +143,7 @@ const SettingsScreen: React.FC = () => {
         { 
           label: 'Disclaimer', 
           type: 'button', 
-          content: 'MedLens simplifies complex medical data for educational purposes. It is not a clinical tool and does not replace professional medical advice, diagnosis, or treatment. Always consult with a licensed healthcare provider.' 
+          content: 'MedQuire simplifies complex medical data for educational purposes. It is not a clinical tool and does not replace professional medical advice, diagnosis, or treatment. Always consult with a licensed healthcare provider.' 
         },
         { label: 'Support', type: 'button', action: handleSupport },
       ],
@@ -249,7 +249,7 @@ const SettingsScreen: React.FC = () => {
         <View style={[styles.disclaimerContainer, { backgroundColor: theme.colors.accentContainer }]}>
           <Ionicons name="information-circle-outline" size={24} color={theme.colors.onAccentContainer} />
           <Text style={[styles.disclaimerText, { color: theme.colors.onAccentContainer }]}>
-            MedLens simplifies medical information for understanding. It does not replace professional medical advice.
+            MedQuire simplifies medical information for understanding. It does not replace professional medical advice.
           </Text>
         </View>
       </ScrollView>

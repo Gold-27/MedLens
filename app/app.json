@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "MedLens",
-    "slug": "medlens",
-    "scheme": "medlens",
+    "name": "MedQuire",
+    "slug": "medquire",
+    "scheme": "medquire",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -14,7 +14,8 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.medquire.app"
     },
     "android": {
       "adaptiveIcon": {
@@ -22,7 +23,8 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.medquire.app"
     },
     "web": {
       "favicon": "./assets/favicon.png"

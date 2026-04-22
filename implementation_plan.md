@@ -1,8 +1,8 @@
-# MedLens — Full Application Implementation Plan
+# MedQuire — Full Application Implementation Plan
 
 ## Overview
 
-Build the complete MedLens mobile application: a ChatGPT-style health literacy tool that translates complex medication information into plain language. The system comprises a **React Native (Expo)** frontend and a **Node.js/Express** backend.
+Build the complete MedQuire mobile application: a ChatGPT-style health literacy tool that translates complex medication information into plain language. The system comprises a **React Native (Expo)** frontend and a **Node.js/Express** backend.
 
 All decisions below are grounded in the system markdown files and design-tokens.css.
 
@@ -38,7 +38,7 @@ All styling in React Native uses a `tokens.js` file that maps CSS variables to J
 ## Project Structure
 
 ```
-MedLens/
+MedQuire/
 ├── app/                          # React Native (Expo) frontend
 │   ├── assets/
 │   │   └── logo.png
@@ -185,7 +185,7 @@ Includes: request cancellation (AbortController), retry logic (max 2), timeout 8
 
 #### [NEW] `app/src/screens/SplashScreen.js`
 - Full-screen teal background (`primary` color token)
-- MedLens logo centered with animated pulse/scale in
+- MedQuire logo centered with animated pulse/scale in
 - Auto-navigates after 1.5s
 - Checks AsyncStorage for `hasSeenOnboarding` → routes to Onboarding or Home
 

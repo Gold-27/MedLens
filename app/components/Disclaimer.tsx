@@ -12,7 +12,7 @@ const Disclaimer: React.FC<DisclaimerProps> = ({ compact = false }) => {
   return (
     <View style={[styles.container, compact && styles.compact]}>
       <Text style={[styles.text, { color: theme.colors.onSurfaceVariant }]}>
-        MedLens simplifies medical information for understanding. It does not replace professional medical advice.
+        MedQuire simplifies medical information for understanding. It does not replace professional medical advice.
       </Text>
       {!compact && (
         <View style={[styles.divider, { backgroundColor: theme.colors.outlineVariant }]} />

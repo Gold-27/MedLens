@@ -1,12 +1,12 @@
 do the following task in the onboarding 2 
 - add more text context to the headline that says Search.Read.Undertand now i want you to add this bwside the understand remove the dot "Undertsand with Clarity. 
-this is for better  text visual balance with the onboarding 1# MedLens — Agent Specification 
+this is for better  text visual balance with the onboarding 1# MedQuire — Agent Specification 
 
 ---
 
 ## 0. Purpose
 
-This document defines the exact system behavior for MedLens.
+This document defines the exact system behavior for MedQuire.
 
 The system MUST:
 - behave deterministically where possible
@@ -19,7 +19,7 @@ The system MUST:
 
 ## 1. Project Overview
 
-MedLens is a mobile application (iOS and Android) that translates complex medication information into clear, plain, everyday language.
+MedQuire is a mobile application (iOS and Android) that translates complex medication information into clear, plain, everyday language.
 
 It solves the problem of low health literacy by helping users understand prescriptions, dosage instructions, warnings, and side effects without medical jargon.
 
@@ -44,13 +44,13 @@ The experience is designed to emulate a ChatGPT-style interface:
 
 ## Compliance & Trust Principles (CRITICAL)
 
-MedLens operates in a health-related domain and MUST follow strict compliance, safety, and trust guidelines.
+MedQuire operates in a health-related domain and MUST follow strict compliance, safety, and trust guidelines.
 
 ---
 
 ### 1. Product Classification
 
-MedLens is a:
+MedQuire is a:
 
 - health literacy tool  
 - informational assistant  
@@ -67,7 +67,7 @@ It is NOT:
 
 The system MUST always display:
 
-"MedLens simplifies medical information for understanding. It does not replace professional medical advice."
+"MedQuire simplifies medical information for understanding. It does not replace professional medical advice."
 
 Rules:
 
@@ -395,7 +395,7 @@ Display:
 ---
 
 ### Disclaimer
-MedLens simplifies medical information for understanding.  
+MedQuire simplifies medical information for understanding.  
 It does not replace professional medical advice.
 
 ---
@@ -472,7 +472,7 @@ FORBIDDEN:
 
 ## Final Instruction
 
-Build MedLens as:
+Build MedQuire as:
 - a fast, safe, chat-style system  
 - focused on clarity and trust  
 

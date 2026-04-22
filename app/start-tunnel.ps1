@@ -46,7 +46,7 @@ function Stop-ProcessOnPort {
 }
 
 # 1. HARD RESET & NETWORK HARDENING
-Write-Host "--- MedLens Tunnel System (Expo Go Optimized) ---" -ForegroundColor Magenta
+Write-Host "--- MedQuire Tunnel System (Expo Go Optimized) ---" -ForegroundColor Magenta
 Write-Host "Hardening network settings and cleaning ports..." -ForegroundColor Cyan
 
 # Fix for Node 18+ / Node 24 experimental network issues

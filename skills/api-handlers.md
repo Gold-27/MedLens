@@ -1,10 +1,10 @@
-# MedLens API Handling Specification (Production-Grade)
+# MedQuire API Handling Specification (Production-Grade)
 
 ---
 
 ## 0. Purpose
 
-This document defines how API interactions work in MedLens.
+This document defines how API interactions work in MedQuire.
 
 It ensures:
 

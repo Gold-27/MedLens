@@ -1,6 +1,6 @@
 # Loading States Rules
 
-Defines loading behavior across MedLens.
+Defines loading behavior across MedQuire.
 
 ---
 

@@ -1,10 +1,10 @@
-# MedLens Skills Specification 
+# MedQuire Skills Specification 
 
 ---
 
 ## 0. Purpose
 
-This document defines UI behavior, naming conventions, interaction rules, validation logic, and safety constraints for MedLens.
+This document defines UI behavior, naming conventions, interaction rules, validation logic, and safety constraints for MedQuire.
 
 All generated UI and logic MUST:
 - align with agent.md
@@ -56,7 +56,7 @@ Examples:
 
 ## Core Interaction Model
 
-MedLens uses a **chat-style, single-flow interaction model**:
+MedQuire uses a **chat-style, single-flow interaction model**:
 
 - Primary interaction occurs on Home screen  
 - Results render inline (like chat messages)  
@@ -398,7 +398,7 @@ The UI MUST:
 
 ## Final Instruction
 
-Design MedLens UI as:
+Design MedQuire UI as:
 
 - a clean, chat-style interface  
 - optimized for readability  

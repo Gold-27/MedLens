@@ -1,10 +1,10 @@
-# MedLens Layout Specification (Production-Grade)
+# MedQuire Layout Specification (Production-Grade)
 
 ---
 
 ## 0. Purpose
 
-This document defines layout structure and behavior across the MedLens mobile application.
+This document defines layout structure and behavior across the MedQuire mobile application.
 
 The layout is designed to:
 
@@ -21,7 +21,7 @@ The layout is designed to:
 
 ### 1.1 ChatGPT-Style Single-Screen Experience
 
-MedLens uses a **primary single-screen model (Home)**:
+MedQuire uses a **primary single-screen model (Home)**:
 
 - input → response happens inline  
 - no navigation for results  
@@ -276,7 +276,7 @@ Must be:
 
 Text:
 
-MedLens simplifies medical information.  
+MedQuire simplifies medical information.  
 It does not replace professional medical advice.
 
 ---
@@ -473,7 +473,7 @@ Layout MUST:
 
 ## Final Layout Summary
 
-MedLens layout is:
+MedQuire layout is:
 
 - conversational → ChatGPT-style interaction  
 - resilient → handles all states  

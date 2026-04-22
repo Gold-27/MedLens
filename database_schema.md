@@ -1,9 +1,9 @@
-# MedLens Database Schema Specification
+# MedQuire Database Schema Specification
 ---
 
 ## 0. Purpose
 
-This document defines the database structure for MedLens.
+This document defines the database structure for MedQuire.
 
 The database is managed using Supabase (PostgreSQL).
 
@@ -71,7 +71,7 @@ The database is NOT a medical source.
 
 ---
 
-MedLens consists of two core entities:
+MedQuire consists of two core entities:
 
 ---
 
@@ -405,7 +405,7 @@ System MUST:
 
 ## Final Database Summary
 
-The MedLens database is:
+The MedQuire database is:
 
 - minimal → only essential data  
 - safe → no sensitive medical storage  

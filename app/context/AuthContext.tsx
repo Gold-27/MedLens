@@ -173,7 +173,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       console.log('Starting Google Auth...');
       const redirectUrl = AuthSession.makeRedirectUri({
-        scheme: 'medlens',
+        scheme: 'medquire',
       });
       console.log('AuthSession Redirect URL:', redirectUrl);
 
@@ -281,7 +281,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const resetPassword = async (email: string) => {
     try {
       const redirectUrl = AuthSession.makeRedirectUri({
-        scheme: 'medlens',
+        scheme: 'medquire',
         path: 'reset-password'
       });
       

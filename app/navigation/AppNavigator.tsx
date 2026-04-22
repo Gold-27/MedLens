@@ -121,7 +121,7 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
         <View style={[styles.logoContainer, { backgroundColor: theme.colors.primary }]}>
           <Ionicons name="medical" size={32} color={theme.colors.onPrimary} />
         </View>
-        <Text style={[styles.appName, { color: theme.colors.onSurface }]}>MedLens</Text>
+        <Text style={[styles.appName, { color: theme.colors.onSurface }]}>MedQuire</Text>
       </View>
 
       <View style={styles.historySection}>

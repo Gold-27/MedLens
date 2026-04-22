@@ -1,6 +1,6 @@
 # Accessibility Rules
 
-Defines accessibility standards for MedLens.
+Defines accessibility standards for MedQuire.
 
 ---
 

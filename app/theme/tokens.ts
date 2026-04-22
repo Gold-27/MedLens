@@ -1,4 +1,4 @@
-// Design Tokens for MedLens
+// Design Tokens for MedQuire
 // Generated from design-tokens.css
 
 // Color Tokens

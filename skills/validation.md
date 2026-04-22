@@ -1,6 +1,6 @@
 # Validation Rules
 
-Defines how input validation works in MedLens.
+Defines how input validation works in MedQuire.
 
 Validation must:
 - be minimal

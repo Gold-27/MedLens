@@ -134,7 +134,7 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.header}>
-            <Text style={[styles.title, { color: theme.colors.onSurface }]}>Log in to MedLens</Text>
+            <Text style={[styles.title, { color: theme.colors.onSurface }]}>Log in to MedQuire</Text>
           </View>
 
           <View style={styles.formContainer}>

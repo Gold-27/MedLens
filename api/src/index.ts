@@ -65,7 +65,7 @@ app.post('/api/interactions', async (req, res) => {
     return res.status(400).json({ error: 'At least two drug names are required' });
   }
 
-  // MedLens currently supports pairwise check for simplicity
+  // MedQuire currently supports pairwise check for simplicity
   const drug1Name = drug_keys[0];
   const drug2Name = drug_keys[1];
 
@@ -129,7 +129,7 @@ app.use((req, res) => {
 // ── Server Start ─────────────────────────────────────────────────────────────
 
 const server = app.listen(Number(PORT), '0.0.0.0', () => {
-  console.log(`🚀 MedLens API server running on port ${PORT}`);
+  console.log(`🚀 MedQuire API server running on port ${PORT}`);
   console.log(`🏥 Health check: http://localhost:${PORT}/health`);
   
   // Log configuration status
@@ -151,7 +151,7 @@ process.on('unhandledRejection', (reason, promise) => {
 // preventing "clean exit" issues on certain environments/Windows.
 const HEARTBEAT_INTERVAL = 30000; // 30 seconds
 const heartbeat = setInterval(() => {
-  console.log(`💓 Heartbeat: MedLens API is still alive and listening on port ${PORT} [${new Date().toISOString()}]`);
+  console.log(`💓 Heartbeat: MedQuire API is still alive and listening on port ${PORT} [${new Date().toISOString()}]`);
 }, HEARTBEAT_INTERVAL);
 
 // ── Entry Point Confirmation ──────────────────────────────────────────────────

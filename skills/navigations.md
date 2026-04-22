@@ -1,10 +1,10 @@
-# MedLens Navigation Specification (Production-Grade)
+# MedQuire Navigation Specification (Production-Grade)
 
 ---
 
 ## 0. Purpose
 
-This document defines navigation structure and behavior across the MedLens mobile application.
+This document defines navigation structure and behavior across the MedQuire mobile application.
 
 It ensures:
 
@@ -400,7 +400,7 @@ Navigation MUST:
 
 ## Final Navigation Summary
 
-MedLens navigation is:
+MedQuire navigation is:
 
 - minimal → avoids unnecessary complexity  
 - predictable → easy to understand  

@@ -86,7 +86,7 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
       if (event.error === 'not-allowed') {
         Alert.alert(
           "Permission Required",
-          "MedLens needs microphone and speech recognition access. Please enable them in your settings.",
+          "MedQuire needs microphone and speech recognition access. Please enable them in your settings.",
           [{ text: "OK" }]
         );
       }

@@ -1,10 +1,10 @@
-# MedLens Typography Specification 
+# MedQuire Typography Specification 
 
 ---
 
 ## 0. Purpose
 
-Define strict typography rules for MedLens UI.
+Define strict typography rules for MedQuire UI.
 
 All typography MUST:
 - use design tokens only  

@@ -336,7 +336,7 @@ const InteractionScreen: React.FC = () => {
       <View style={[styles.disclaimerContainer, { backgroundColor: theme.colors.accentContainer }]}>
         <Ionicons name="information-circle-outline" size={24} color={theme.colors.onAccentContainer} style={styles.disclaimerIcon} />
         <Text style={[styles.disclaimerText, { color: theme.colors.onAccentContainer }]}>
-          MedLens simplifies medical information for understanding. It does not replace professional medical advice, diagnosis, or treatment.
+          MedQuire simplifies medical information for understanding. It does not replace professional medical advice, diagnosis, or treatment.
         </Text>
       </View>
     </ScrollView>

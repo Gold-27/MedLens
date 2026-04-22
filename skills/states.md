@@ -1,6 +1,6 @@
 # Interaction States Rules
 
-Defines how UI states behave across MedLens.
+Defines how UI states behave across MedQuire.
 
 States are critical because:
 - users are often anxious
@@ -30,7 +30,7 @@ Users must never wonder:
 
 ---
 
-## 2. Core States (MedLens)
+## 2. Core States (MedQuire)
 
 ---
 

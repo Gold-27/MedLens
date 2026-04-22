@@ -1,4 +1,4 @@
-# Supabase Setup for MedLens
+# Supabase Setup for MedQuire
 
 ## 1. Create Supabase Project
 1. Go to [supabase.com](https://supabase.com) and create a new project

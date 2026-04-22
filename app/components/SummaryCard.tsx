@@ -222,7 +222,7 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
       <View style={[styles.footerDisclaimer, { backgroundColor: theme.colors.accentContainer }]}>
         <Ionicons name="information-circle-outline" size={20} color={theme.colors.onAccentContainer} />
         <Text style={[styles.footerDisclaimerText, { color: theme.colors.onAccentContainer }]}>
-          MedLens simplifies medical information. It does not replace professional medical advice.
+          MedQuire simplifies medical information for understanding. It does not replace professional medical advice.
         </Text>
       </View>
     </View>

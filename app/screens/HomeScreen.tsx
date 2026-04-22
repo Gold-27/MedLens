@@ -265,13 +265,13 @@ const HomeScreen: React.FC = () => {
       return; 
     }
     const summary = isELI12 && eli12Result ? eli12Result : baseResult.summary;
-    const shareContent = `MedLens Summary: ${baseResult.drug_name}\n\n` +
+    const shareContent = `MedQuire Summary: ${baseResult.drug_name}\n\n` +
       `WHAT IT DOES:\n${summary.what_it_does}\n\n` +
       `HOW TO TAKE IT:\n${summary.how_to_take}\n\n` +
       `WARNINGS:\n${summary.warnings}\n\n` +
       `POSSIBLE SIDE EFFECTS:\n${summary.side_effects}\n\n` +
       `Source: OpenFDA\n` +
-      `MedLens simplifies medical information for understanding. It does not replace professional medical advice.`;
+      `MedQuire simplifies medical information for understanding. It does not replace professional medical advice.`;
     
     try { 
       await Share.share({ title: `Medication Summary: ${baseResult.drug_name}`, message: shareContent }); 

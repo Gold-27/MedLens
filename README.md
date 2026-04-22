@@ -1,6 +1,6 @@
-# MedLens - Medication Information Simplifier
+# MedQuire - Medication Information Simplifier
 
-MedLens is a mobile application that translates complex medication information into clear, plain, everyday language. It helps users understand prescriptions, dosage instructions, warnings, and side effects without medical jargon.
+MedQuire is a mobile application that translates complex medication information into clear, plain, everyday language. It helps users understand prescriptions, dosage instructions, warnings, and side effects without medical jargon.
 
 ## Features
 
@@ -133,7 +133,7 @@ npm run web      # Web browser
 ## Project Structure
 
 ```
-MedLens/
+MedQuire/
 ├── api/                    # Backend server
 │   ├── src/
 │   │   ├── controllers/   # API endpoints
@@ -197,7 +197,7 @@ MedLens/
 
 ## Compliance
 
-MedLens is designed as a health literacy tool, not a medical device:
+MedQuire is designed as a health literacy tool, not a medical device:
 - Never provides medical advice
 - Only rewrites existing FDA-approved information
 - Always shows disclaimer
@@ -223,4 +223,4 @@ Proprietary - All rights reserved.
 
 ## Disclaimer
 
-MedLens simplifies medical information for understanding. It does not replace professional medical advice. Always consult a healthcare professional for medical decisions.
+MedQuire simplifies medical information for understanding. It does not replace professional medical advice. Always consult a healthcare professional for medical decisions.

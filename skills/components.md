@@ -1,6 +1,6 @@
 # Component System Rules
 
-Defines reusable UI components in MedLens.
+Defines reusable UI components in MedQuire.
 
 All components must:
 - be consistent
@@ -59,7 +59,7 @@ Rules:
 
 ### 2.2 Summary Card (CORE SYSTEM COMPONENT)
 
-This is the most important component in MedLens.
+This is the most important component in MedQuire.
 
 It is the primary output of the system:
 OpenFDA → DeepSeek → Summary Card
@@ -109,7 +109,7 @@ Sections (strict order):
 
 #### Disclaimer (Mandatory)
 
-“MedLens simplifies medical information. It does not replace professional medical advice.”
+“MedQuire simplifies medical information. It does not replace professional medical advice.”
 
 ---
 
@@ -177,7 +177,7 @@ Rules:
 
 ## 4. Summary
 
-Components in MedLens must:
+Components in MedQuire must:
 
 - support fast understanding  
 - remain consistent across flows  

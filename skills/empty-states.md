@@ -1,6 +1,6 @@
 # Empty States Rules
 
-Defines how empty states behave in MedLens.
+Defines how empty states behave in MedQuire.
 
 Empty states are critical for:
 - guidance

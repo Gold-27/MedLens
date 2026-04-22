@@ -1,12 +1,12 @@
-# MedLens Color Specification (Production-Grade)
+# MedQuire Color Specification (Production-Grade)
 
 ---
 
 ## 0. Purpose
 
-Define strict color rules for MedLens.
+Define strict color rules for MedQuire.
 
-Color in MedLens is not decorative.  
+Color in MedQuire is not decorative.  
 It is a **clinical communication tool** used to:
 
 - guide understanding  
@@ -21,7 +21,7 @@ All raw color values must exist only in:
 
 ## 1. Color Philosophy
 
-MedLens follows a **medical-first color philosophy**:
+MedQuire follows a **medical-first color philosophy**:
 
 - clarity over aesthetics  
 - meaning over branding  
@@ -484,7 +484,7 @@ All colors must be tested for:
 
 ---
 
-Color in MedLens must always:
+Color in MedQuire must always:
 
 - guide decisions clearly  
 - reduce medical risk  

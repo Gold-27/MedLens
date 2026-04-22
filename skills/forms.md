@@ -1,6 +1,6 @@
 # Form Rules
 
-Defines form behavior in MedLens.
+Defines form behavior in MedQuire.
 
 ---
 
