@@ -250,8 +250,11 @@ const HomeScreen: React.FC = () => {
       }
     })();
 
-    // 4. Do NOT reset search state immediately, let the user see the "In Cabinet" state
-    // We only reset if specifically requested or on new search
+    // 4. Reset search state immediately to return to default/empty state
+    setState('empty');
+    setBaseResult(null);
+    setEli12Result(null);
+    setQuery('');
   }, [baseResult, isGuest, getToken]);
 
   const handleExport = useCallback(async () => {
