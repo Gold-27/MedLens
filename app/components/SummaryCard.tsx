@@ -24,6 +24,7 @@ export interface SummaryCardProps {
   isSaved?: boolean;
   requiresAuth?: boolean;
   onClose?: () => void;
+  isExporting?: boolean;
 }
 
 const SummaryCard: React.FC<SummaryCardProps> = ({
