@@ -115,7 +115,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signUp = async (email: string, password: string, displayName?: string) => {
     try {
-      const { data: { session: newSession }, error } = await supabase.auth.signUp({ 
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({ 
         email, 
         password,
         options: {
@@ -125,26 +125,47 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
       });
 
-      if (!error) {
-        console.log('[Auth] SignUp successful, refreshing session...');
-        // Force session update immediately
-        const { data: { session: refreshedSession } } = await supabase.auth.getSession();
+      if (signUpError) throw signUpError;
+
+      if (signUpData.user) {
+        console.log('[Auth] SignUp successful, creating profile for user:', signUpData.user.id);
+        
+        // Explicitly create profile in database
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: signUpData.user.id,
+            email: signUpData.user.email,
+            full_name: displayName,
+            created_at: new Date().toISOString(),
+          });
+
+        if (profileError) {
+          console.error('[Auth] Profile creation failed:', profileError.message);
+          // We don't throw here to avoid blocking the user if they've technically signed up
+        } else {
+          console.log('[Auth] Profile created successfully');
+        }
+
+        // Force session update/refresh logic
+        const { data: { session: refreshedSession }, error: sessionError } = await supabase.auth.getSession();
+        
         if (refreshedSession) {
-          console.log('[Auth] Session refreshed successfully');
+          console.log('[Auth] Session active, updating state');
           setSession(refreshedSession);
           await setGuestState(false);
           await LocalStorageService.setOnboardingCompleted();
-        } else if (newSession) {
-          console.log('[Auth] Using newSession from signUp');
-          setSession(newSession);
+        } else if (signUpData.session) {
+          console.log('[Auth] Using initial session from signUp');
+          setSession(signUpData.session);
           await setGuestState(false);
           await LocalStorageService.setOnboardingCompleted();
         } else {
-          console.warn('[Auth] No session found after signUp - email confirmation might be required');
+          console.log('[Auth] No immediate session (normal if email confirmation enabled)');
         }
       }
 
-      return { error };
+      return { error: signUpError };
     } catch (error) {
       console.error('Sign up error:', error);
       return { error: error as AuthError };
