@@ -53,7 +53,7 @@ const CabinetScreen: React.FC = () => {
   const [interactionCount, setInteractionCount] = useState(0);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [viewingItemId, setViewingItemId] = useState<string | null>(null);
+  const [viewingItem, setViewingItem] = useState<CabinetItem | null>(null);
   const [selectedDrugSummary, setSelectedDrugSummary] = useState<api.SearchResponse | null>(null);
 
   const fetchStats = useCallback(async () => {
@@ -84,12 +84,12 @@ const CabinetScreen: React.FC = () => {
     navigation.navigate('Interaction', { drugKeys: selectedKeys });
   };
 
-  const handleViewDrug = async (itemId: string, drugName: string) => {
-    setViewingItemId(itemId);
+  const handleViewDrug = async (item: CabinetItem) => {
+    setViewingItem(item);
     setSelectedDrugSummary(null); // Clear previous summary immediately to avoid mapping issues
     try {
       // 1. Check Cache
-      const cached = await LocalStorageService.getCachedResult(drugName);
+      const cached = await LocalStorageService.getCachedResult(item.drug_name);
       if (cached) {
         setSelectedDrugSummary(cached);
         setIsModalVisible(true);
@@ -97,18 +97,17 @@ const CabinetScreen: React.FC = () => {
       }
 
       // 2. Fetch from API
-      const response = await api.searchMedication(drugName);
+      const response = await api.searchMedication(item.drug_name);
       setSelectedDrugSummary(response);
       
       // 3. Cache it
-      await LocalStorageService.setCachedResult(drugName, response);
+      await LocalStorageService.setCachedResult(item.drug_name, response);
       
       setIsModalVisible(true);
     } catch (error) {
       console.error('Failed to fetch drug summary:', error);
+      setViewingItem(null); // Clear on error since modal won't show
       Alert.alert('Error', 'Failed to load medication details. Please check your connection.');
-    } finally {
-      setViewingItemId(null);
     }
   };
 
@@ -142,7 +141,7 @@ const CabinetScreen: React.FC = () => {
       [
         { 
           text: 'View summary', 
-          onPress: () => handleViewDrug(item.id, item.drug_name) 
+          onPress: () => handleViewDrug(item) 
         },
         { 
           text: 'Delete from cabinet', 
@@ -222,9 +221,9 @@ const CabinetScreen: React.FC = () => {
         <TouchableOpacity 
           style={styles.menuButton}
           onPress={() => showActionMenu(item)}
-          disabled={viewingItemId !== null}
+          disabled={viewingItem !== null}
         >
-          {viewingItemId === item.id ? (
+          {viewingItem?.id === item.id ? (
             <ActivityIndicator size="small" color={theme.colors.primary} />
           ) : (
             <Ionicons name="ellipsis-vertical" size={22} color={theme.colors.outline} />
