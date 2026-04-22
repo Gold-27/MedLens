@@ -26,6 +26,9 @@ interface AuthContextType {
   updateProfile: (data: { full_name?: string; email?: string }) => Promise<{ error: Error | null }>;
   deleteAccount: () => Promise<{ error: Error | null }>;
   resetPassword: (email: string) => Promise<{ error: AuthError | null }>;
+  sendResetOtp: (email: string) => Promise<{ error: AuthError | null }>;
+  verifyResetOtp: (email: string, token: string) => Promise<{ error: AuthError | null }>;
+  updatePassword: (password: string) => Promise<{ error: AuthError | null }>;
   completeOnboarding: () => Promise<void>;
   isPro: boolean;
 }
@@ -322,6 +325,45 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const sendResetOtp = async (email: string) => {
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { shouldCreateUser: false }
+      });
+      return { error };
+    } catch (error) {
+      console.error('Send reset OTP error:', error);
+      return { error: error as AuthError };
+    }
+  };
+
+  const verifyResetOtp = async (email: string, token: string) => {
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        email,
+        token,
+        type: 'email'
+      });
+      return { error };
+    } catch (error) {
+      console.error('Verify reset OTP error:', error);
+      return { error: error as AuthError };
+    }
+  };
+
+  const updatePassword = async (password: string) => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password
+      });
+      return { error };
+    } catch (error) {
+      console.error('Update password error:', error);
+      return { error: error as AuthError };
+    }
+  };
+
   const completeOnboarding = async () => {
     await LocalStorageService.setOnboardingCompleted();
   };
@@ -340,6 +382,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     updateProfile,
     deleteAccount,
     resetPassword,
+    sendResetOtp,
+    verifyResetOtp,
+    updatePassword,
     completeOnboarding,
     isPro,
   };

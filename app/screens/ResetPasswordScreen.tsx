@@ -12,36 +12,39 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { useTheme, ThemeContextType } from '../theme/ThemeProvider';
 import { useAuth } from '../context/AuthContext';
-import { RootStackParamList } from '../navigation/AppNavigator';
 
-type Props = any;
+type Props = {
+  navigation: any;
+  route: {
+    params: {
+      email: string;
+    };
+  };
+};
 
-const ForgotPasswordScreen = ({ navigation }: Props) => {
+const ResetPasswordScreen = ({ navigation, route }: Props) => {
   const theme = useTheme();
   const styles = makeStyles(theme);
-  const { sendResetOtp } = useAuth();
+  const { updatePassword } = useAuth();
 
-  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
 
   const handleReset = async () => {
-    if (!email.trim()) {
-      setError('Please enter your email address');
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
       return;
     }
 
-    const isValidDomain = email.toLowerCase().endsWith('@gmail.com') || 
-                          email.toLowerCase().endsWith('@yahoo.com') || 
-                          email.toLowerCase().endsWith('@icloud.com');
-    
-    if (!isValidDomain) {
-      setError('Enter a valid email address');
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
       return;
     }
 
@@ -49,11 +52,15 @@ const ForgotPasswordScreen = ({ navigation }: Props) => {
     setError('');
 
     try {
-      const { error: resetError } = await sendResetOtp(email);
+      const { error: resetError } = await updatePassword(password);
       if (resetError) {
         setError(resetError.message);
       } else {
-        navigation.navigate('VerifyOtp', { email });
+        Alert.alert(
+          'Success',
+          'Your password has been successfully reset. Please log in with your new password.',
+          [{ text: 'Log In', onPress: () => navigation.navigate('Login') }]
+        );
       }
     } catch (err) {
       setError('An unexpected error occurred. Please try again.');
@@ -61,28 +68,6 @@ const ForgotPasswordScreen = ({ navigation }: Props) => {
       setLoading(false);
     }
   };
-
-  if (success) {
-    return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <View style={styles.successContainer}>
-          <View style={[styles.successIconBg, { backgroundColor: theme.colors.primaryContainer }]}>
-            <MaterialIcons name="mark-email-read" size={48} color={theme.colors.primary} />
-          </View>
-          <Text style={[styles.title, { color: theme.colors.onSurface }]}>Check your email</Text>
-          <Text style={[styles.description, { color: theme.colors.onSurfaceVariant }]}>
-            We've sent a password reset link to <Text style={{ fontWeight: '700', color: theme.colors.onSurface }}>{email}</Text>.
-          </Text>
-          <TouchableOpacity
-            style={[styles.submitButton, { backgroundColor: theme.colors.primary, width: '100%', marginTop: 32 }]}
-            onPress={() => navigation.navigate('Login')}
-          >
-            <Text style={[styles.submitButtonText, { color: theme.colors.onPrimary }]}>Back to Login</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top', 'left', 'right']}>
@@ -93,12 +78,11 @@ const ForgotPasswordScreen = ({ navigation }: Props) => {
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
-          scrollEnabled={false}
         >
           <View style={styles.header}>
-            <Text style={[styles.title, { color: theme.colors.onSurface }]}>Reset Password</Text>
+            <Text style={[styles.title, { color: theme.colors.onSurface }]}>New Password</Text>
             <Text style={[styles.description, { color: theme.colors.onSurfaceVariant }]}>
-              Enter your email address and we'll send you a verification code to reset your password.
+              Create a secure new password for your account.
             </Text>
           </View>
 
@@ -111,26 +95,62 @@ const ForgotPasswordScreen = ({ navigation }: Props) => {
             ) : null}
 
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: theme.colors.onSurfaceVariant }]}>Email</Text>
+              <Text style={[styles.label, { color: theme.colors.onSurfaceVariant }]}>New Password</Text>
+              <View style={styles.passwordWrapper}>
+                <TextInput
+                  style={[
+                    styles.input,
+                    {
+                      backgroundColor: focusedInput === 'password' ? 'transparent' : theme.colors.surfaceContainerLow,
+                      color: theme.colors.onSurface,
+                      borderColor: error ? theme.colors.error : (focusedInput === 'password' ? theme.colors.primaryContainer : theme.colors.outlineVariant),
+                      flex: 1,
+                    }
+                  ]}
+                  placeholder="At least 6 characters"
+                  placeholderTextColor={theme.colors.outlineVariant}
+                  secureTextEntry={!showPassword}
+                  value={password}
+                  onChangeText={(text) => {
+                    setPassword(text);
+                    setError('');
+                  }}
+                  onFocus={() => setFocusedInput('password')}
+                  onBlur={() => setFocusedInput(null)}
+                />
+                <TouchableOpacity 
+                  style={styles.eyeIcon} 
+                  onPress={() => setShowPassword(!showPassword)}
+                >
+                  <Ionicons 
+                    name={showPassword ? "eye-off-outline" : "eye-outline"} 
+                    size={20} 
+                    color={theme.colors.onSurfaceVariant} 
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: theme.colors.onSurfaceVariant }]}>Confirm Password</Text>
               <TextInput
                 style={[
                   styles.input,
                   {
-                    backgroundColor: focusedInput === 'email' ? 'transparent' : theme.colors.surfaceContainerLow,
-                    color: focusedInput === 'email' ? theme.colors.onPrimaryContainer : theme.colors.onSurface,
-                    borderColor: error ? theme.colors.error : (focusedInput === 'email' ? theme.colors.primaryContainer : theme.colors.outlineVariant)
+                    backgroundColor: focusedInput === 'confirm' ? 'transparent' : theme.colors.surfaceContainerLow,
+                    color: theme.colors.onSurface,
+                    borderColor: error ? theme.colors.error : (focusedInput === 'confirm' ? theme.colors.primaryContainer : theme.colors.outlineVariant),
                   }
                 ]}
-                placeholder="johndoe@gmail.com"
+                placeholder="Confirm your new password"
                 placeholderTextColor={theme.colors.outlineVariant}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                value={email}
+                secureTextEntry={!showPassword}
+                value={confirmPassword}
                 onChangeText={(text) => {
-                  setEmail(text);
+                  setConfirmPassword(text);
                   setError('');
                 }}
-                onFocus={() => setFocusedInput('email')}
+                onFocus={() => setFocusedInput('confirm')}
                 onBlur={() => setFocusedInput(null)}
               />
             </View>
@@ -143,15 +163,9 @@ const ForgotPasswordScreen = ({ navigation }: Props) => {
               {loading ? (
                 <ActivityIndicator color={theme.colors.onPrimary} />
               ) : (
-                <Text style={[styles.submitButtonText, { color: theme.colors.onPrimary }]}>Send Verification Code</Text>
+                <Text style={[styles.submitButtonText, { color: theme.colors.onPrimary }]}>Reset Password</Text>
               )}
             </TouchableOpacity>
-          </View>
-
-          <View style={styles.footer}>
-            <Text style={[styles.footerText, { color: theme.colors.onSurfaceVariant }]}>
-              Remembered your password? <Text style={{ color: theme.colors.primary, fontWeight: '600' }} onPress={() => navigation.navigate('Login')}>Log In</Text>
-            </Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -170,30 +184,14 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
     paddingTop: 40,
     paddingBottom: 40,
   },
-
   header: {
     alignItems: 'center',
     marginBottom: 40,
     paddingHorizontal: 12,
   },
-  successContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-  },
-  successIconBg: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 24,
-  },
   title: {
     fontSize: 28,
     fontWeight: '700',
-    fontFamily: 'Outfit',
     textAlign: 'center',
     marginBottom: 12,
   },
@@ -201,7 +199,6 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     lineHeight: 24,
-    fontFamily: 'Outfit',
   },
   formContainer: {
     gap: 20,
@@ -218,7 +215,6 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
   errorText: {
     fontSize: 14,
     fontWeight: '600',
-    fontFamily: 'Outfit',
     flex: 1,
   },
   inputGroup: {
@@ -229,34 +225,31 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
     fontWeight: '600',
     marginLeft: 4,
   },
+  passwordWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   input: {
     paddingHorizontal: 16,
     paddingVertical: 16,
     borderRadius: 16,
-    fontSize: 16,
     borderWidth: 1,
+    fontSize: 16,
+  },
+  eyeIcon: {
+    position: 'absolute',
+    right: 16,
   },
   submitButton: {
     marginTop: 12,
     paddingVertical: 18,
     borderRadius: 16,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
   },
   submitButtonText: {
     fontSize: 18,
     fontWeight: '600',
   },
-  footer: {
-    alignItems: 'center',
-  },
-  footerText: {
-    fontSize: 14,
-  },
 });
 
-export default ForgotPasswordScreen;
+export default ResetPasswordScreen;

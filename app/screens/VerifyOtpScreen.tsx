@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,33 +15,42 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme, ThemeContextType } from '../theme/ThemeProvider';
 import { useAuth } from '../context/AuthContext';
-import { RootStackParamList } from '../navigation/AppNavigator';
 
-type Props = any;
+type Props = {
+  navigation: any;
+  route: {
+    params: {
+      email: string;
+    };
+  };
+};
 
-const ForgotPasswordScreen = ({ navigation }: Props) => {
+const VerifyOtpScreen = ({ navigation, route }: Props) => {
   const theme = useTheme();
   const styles = makeStyles(theme);
-  const { sendResetOtp } = useAuth();
+  const { email } = route.params;
+  const { verifyResetOtp, sendResetOtp } = useAuth();
 
-  const [email, setEmail] = useState('');
-  const [focusedInput, setFocusedInput] = useState<string | null>(null);
+  const [otp, setOtp] = useState('');
+  const [focusedInput, setFocusedInput] = useState<boolean>(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [timer, setTimer] = useState(60);
 
-  const handleReset = async () => {
-    if (!email.trim()) {
-      setError('Please enter your email address');
-      return;
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (timer > 0) {
+      interval = setInterval(() => {
+        setTimer((prev) => prev - 1);
+      }, 1000);
     }
+    return () => clearInterval(interval);
+  }, [timer]);
 
-    const isValidDomain = email.toLowerCase().endsWith('@gmail.com') || 
-                          email.toLowerCase().endsWith('@yahoo.com') || 
-                          email.toLowerCase().endsWith('@icloud.com');
-    
-    if (!isValidDomain) {
-      setError('Enter a valid email address');
+  const handleVerify = async () => {
+    if (otp.length !== 6) {
+      setError('Please enter the 6-digit code');
       return;
     }
 
@@ -49,11 +58,11 @@ const ForgotPasswordScreen = ({ navigation }: Props) => {
     setError('');
 
     try {
-      const { error: resetError } = await sendResetOtp(email);
-      if (resetError) {
-        setError(resetError.message);
+      const { error: verifyError } = await verifyResetOtp(email, otp);
+      if (verifyError) {
+        setError(verifyError.message || 'Invalid code. Please try again.');
       } else {
-        navigation.navigate('VerifyOtp', { email });
+        navigation.navigate('ResetPassword', { email });
       }
     } catch (err) {
       setError('An unexpected error occurred. Please try again.');
@@ -62,27 +71,26 @@ const ForgotPasswordScreen = ({ navigation }: Props) => {
     }
   };
 
-  if (success) {
-    return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <View style={styles.successContainer}>
-          <View style={[styles.successIconBg, { backgroundColor: theme.colors.primaryContainer }]}>
-            <MaterialIcons name="mark-email-read" size={48} color={theme.colors.primary} />
-          </View>
-          <Text style={[styles.title, { color: theme.colors.onSurface }]}>Check your email</Text>
-          <Text style={[styles.description, { color: theme.colors.onSurfaceVariant }]}>
-            We've sent a password reset link to <Text style={{ fontWeight: '700', color: theme.colors.onSurface }}>{email}</Text>.
-          </Text>
-          <TouchableOpacity
-            style={[styles.submitButton, { backgroundColor: theme.colors.primary, width: '100%', marginTop: 32 }]}
-            onPress={() => navigation.navigate('Login')}
-          >
-            <Text style={[styles.submitButtonText, { color: theme.colors.onPrimary }]}>Back to Login</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
+  const handleResend = async () => {
+    if (timer > 0) return;
+    
+    setResending(true);
+    setError('');
+    
+    try {
+      const { error: resendError } = await sendResetOtp(email);
+      if (resendError) {
+        setError(resendError.message);
+      } else {
+        setTimer(60);
+        Alert.alert('Code Sent', 'A new verification code has been sent to your email.');
+      }
+    } catch (err) {
+      setError('Failed to resend code. Please try again.');
+    } finally {
+      setResending(false);
+    }
+  };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top', 'left', 'right']}>
@@ -93,12 +101,12 @@ const ForgotPasswordScreen = ({ navigation }: Props) => {
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
-          scrollEnabled={false}
         >
           <View style={styles.header}>
-            <Text style={[styles.title, { color: theme.colors.onSurface }]}>Reset Password</Text>
+            <Text style={[styles.title, { color: theme.colors.onSurface }]}>Verify Email</Text>
             <Text style={[styles.description, { color: theme.colors.onSurfaceVariant }]}>
-              Enter your email address and we'll send you a verification code to reset your password.
+              We've sent a 6-digit verification code to{' '}
+              <Text style={{ fontWeight: '700', color: theme.colors.onSurface }}>{email}</Text>.
             </Text>
           </View>
 
@@ -111,46 +119,59 @@ const ForgotPasswordScreen = ({ navigation }: Props) => {
             ) : null}
 
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: theme.colors.onSurfaceVariant }]}>Email</Text>
+              <Text style={[styles.label, { color: theme.colors.onSurfaceVariant }]}>Verification Code</Text>
               <TextInput
                 style={[
                   styles.input,
                   {
-                    backgroundColor: focusedInput === 'email' ? 'transparent' : theme.colors.surfaceContainerLow,
-                    color: focusedInput === 'email' ? theme.colors.onPrimaryContainer : theme.colors.onSurface,
-                    borderColor: error ? theme.colors.error : (focusedInput === 'email' ? theme.colors.primaryContainer : theme.colors.outlineVariant)
+                    backgroundColor: focusedInput ? 'transparent' : theme.colors.surfaceContainerLow,
+                    color: theme.colors.onSurface,
+                    borderColor: error ? theme.colors.error : (focusedInput ? theme.colors.primaryContainer : theme.colors.outlineVariant),
+                    letterSpacing: 8,
+                    textAlign: 'center',
+                    fontSize: 24,
+                    fontWeight: '700',
                   }
                 ]}
-                placeholder="johndoe@gmail.com"
+                placeholder="000000"
                 placeholderTextColor={theme.colors.outlineVariant}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                value={email}
+                keyboardType="number-pad"
+                maxLength={6}
+                value={otp}
                 onChangeText={(text) => {
-                  setEmail(text);
+                  setOtp(text);
                   setError('');
                 }}
-                onFocus={() => setFocusedInput('email')}
-                onBlur={() => setFocusedInput(null)}
+                onFocus={() => setFocusedInput(true)}
+                onBlur={() => setFocusedInput(false)}
               />
             </View>
 
             <TouchableOpacity
               style={[styles.submitButton, { backgroundColor: theme.colors.primary }]}
-              onPress={handleReset}
+              onPress={handleVerify}
               disabled={loading}
             >
               {loading ? (
                 <ActivityIndicator color={theme.colors.onPrimary} />
               ) : (
-                <Text style={[styles.submitButtonText, { color: theme.colors.onPrimary }]}>Send Verification Code</Text>
+                <Text style={[styles.submitButtonText, { color: theme.colors.onPrimary }]}>Verify Code</Text>
               )}
             </TouchableOpacity>
           </View>
 
           <View style={styles.footer}>
             <Text style={[styles.footerText, { color: theme.colors.onSurfaceVariant }]}>
-              Remembered your password? <Text style={{ color: theme.colors.primary, fontWeight: '600' }} onPress={() => navigation.navigate('Login')}>Log In</Text>
+              Didn't receive the code?{' '}
+              <Text 
+                style={{ 
+                  color: timer > 0 ? theme.colors.outlineVariant : theme.colors.primary, 
+                  fontWeight: '600' 
+                }} 
+                onPress={handleResend}
+              >
+                {resending ? 'Sending...' : timer > 0 ? `Resend in ${timer}s` : 'Resend Code'}
+              </Text>
             </Text>
           </View>
         </ScrollView>
@@ -170,30 +191,14 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
     paddingTop: 40,
     paddingBottom: 40,
   },
-
   header: {
     alignItems: 'center',
     marginBottom: 40,
     paddingHorizontal: 12,
   },
-  successContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-  },
-  successIconBg: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 24,
-  },
   title: {
     fontSize: 28,
     fontWeight: '700',
-    fontFamily: 'Outfit',
     textAlign: 'center',
     marginBottom: 12,
   },
@@ -201,7 +206,6 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     lineHeight: 24,
-    fontFamily: 'Outfit',
   },
   formContainer: {
     gap: 20,
@@ -218,7 +222,6 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
   errorText: {
     fontSize: 14,
     fontWeight: '600',
-    fontFamily: 'Outfit',
     flex: 1,
   },
   inputGroup: {
@@ -233,7 +236,6 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 16,
     borderRadius: 16,
-    fontSize: 16,
     borderWidth: 1,
   },
   submitButton: {
@@ -241,11 +243,6 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
     paddingVertical: 18,
     borderRadius: 16,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
   },
   submitButtonText: {
     fontSize: 18,
@@ -259,4 +256,4 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
   },
 });
 
-export default ForgotPasswordScreen;
+export default VerifyOtpScreen;

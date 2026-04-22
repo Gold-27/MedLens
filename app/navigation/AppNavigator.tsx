@@ -16,6 +16,8 @@ import SettingsScreen from '../screens/SettingsScreen';
 import SignUpScreen from '../screens/SignUpScreen';
 import LoginScreen from '../screens/LoginScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
+import VerifyOtpScreen from '../screens/VerifyOtpScreen';
+import ResetPasswordScreen from '../screens/ResetPasswordScreen';
 import { useAuth } from '../context/AuthContext';
 import { CabinetProvider } from '../context/CabinetContext';
 
@@ -28,6 +30,8 @@ export type RootStackParamList = {
   Cabinet: undefined;
   Settings: undefined;
   ForgotPassword: undefined;
+  VerifyOtp: { email: string };
+  ResetPassword: { email: string };
   Interaction: { drugKeys?: string[] };
 };
 
@@ -216,6 +220,16 @@ const AppNavigator = () => {
           <Stack.Screen 
             name="ForgotPassword" 
             component={ForgotPasswordScreen} 
+            options={{ presentation: 'push', gestureEnabled: false }} 
+          />
+          <Stack.Screen 
+            name="VerifyOtp" 
+            component={VerifyOtpScreen} 
+            options={{ presentation: 'push', gestureEnabled: false }} 
+          />
+          <Stack.Screen 
+            name="ResetPassword" 
+            component={ResetPasswordScreen} 
             options={{ presentation: 'push', gestureEnabled: false }} 
           />
           <Stack.Screen name="Home" component={DrawerNavigator} />
