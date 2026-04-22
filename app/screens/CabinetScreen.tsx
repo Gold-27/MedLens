@@ -294,7 +294,6 @@ const CabinetScreen: React.FC = () => {
                       warnings: selectedDrugSummary.summary.warnings,
                       sideEffects: selectedDrugSummary.summary.side_effects,
                     }}
-                    isSaved={savedDrugNames.has(selectedDrugSummary.drug_name.toLowerCase())}
                   />
                 </View>
               ) : (
