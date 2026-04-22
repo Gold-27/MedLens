@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, SafeAreaView, Modal } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, Modal } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme, ThemeContextType } from '../theme/ThemeProvider';
 import { useAuth } from '../context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
@@ -155,12 +156,6 @@ const CabinetScreen: React.FC = () => {
 
   const renderHeader = () => (
     <View style={styles.headerContainer}>
-      <View style={styles.topRow}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={theme.colors.onSurface} />
-        </TouchableOpacity>
-        <Text style={[styles.title, { color: theme.colors.onSurface }]}>My Cabinet</Text>
-      </View>
       <Text style={[styles.subtitle, { color: theme.colors.outline }]}>
         Your saved medications, always at your fingertips.
       </Text>
@@ -248,7 +243,15 @@ const CabinetScreen: React.FC = () => {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
+      {/* Fixed Sticky Header */}
+      <View style={[styles.stickyHeader, { backgroundColor: theme.colors.background }]}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color={theme.colors.onSurface} />
+        </TouchableOpacity>
+        <Text style={[styles.title, { color: theme.colors.onSurface }]}>My Cabinet</Text>
+      </View>
+
       <FlatList
         data={items}
         renderItem={renderItem}
@@ -321,7 +324,15 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   headerContainer: {
-    marginBottom: 24,
+    paddingBottom: 24,
+  },
+  stickyHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 12,
+    zIndex: 10,
   },
   topRow: {
     flexDirection: 'row',

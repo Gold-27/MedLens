@@ -158,14 +158,15 @@ const SettingsScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
+      {/* Fixed Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color={theme.colors.onSurface} />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { color: theme.colors.onSurface }]}>Settings</Text>
+      </View>
+
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color={theme.colors.onSurface} />
-          </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: theme.colors.onSurface }]}>Settings</Text>
-        </View>
 
         {/* Profile Section (Centered) */}
         {!isGuest && user && (
@@ -313,8 +314,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 24,
-    paddingBottom: 16,
+    paddingTop: 12,
+    paddingBottom: 12,
   },
   headerTitle: { fontSize: 28, fontWeight: 'bold' },
   backButton: { marginRight: 12 },
