@@ -292,6 +292,7 @@ const CabinetScreen: React.FC = () => {
                     drugName={selectedDrugSummary.drug_name}
                     drugKey={items.find(i => i.id === viewingItemId)?.drug_key || selectedDrugSummary.drug_name.toLowerCase().replace(/\s+/g, '-')}
                     source={selectedDrugSummary.source}
+                    isSaved={true}
                     sections={{
                       whatItDoes: selectedDrugSummary.summary.what_it_does,
                       howToTake: selectedDrugSummary.summary.how_to_take,

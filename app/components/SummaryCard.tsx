@@ -21,6 +21,7 @@ export interface SummaryCardProps {
   onSave?: () => void;
   onExport?: () => void;
   isEli12?: boolean;
+  isSaved?: boolean;
   requiresAuth?: boolean;
   onClose?: () => void;
 }
@@ -33,6 +34,7 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
   onSave,
   onExport,
   isEli12 = false,
+  isSaved,
   requiresAuth = false,
   onClose,
 }) => {
@@ -41,9 +43,9 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
   const { savedDrugNames, savedDrugKeys } = useCabinet();
   
   // Real-time check against global cabinet state
-  // Check by key first (precise), then by name (fuzzy fallback)
-  const isInCabinet = (drugKey && savedDrugKeys.has(drugKey.toLowerCase())) || 
-                     savedDrugNames.has(drugName.toLowerCase());
+  // Prioritize explicit isSaved prop if provided (source of truth from cabinet)
+  const isInCabinet = isSaved ?? ((drugKey && savedDrugKeys.has(drugKey.toLowerCase())) || 
+                     savedDrugNames.has(drugName.toLowerCase()));
 
   const [eli12Enabled, setEli12Enabled] = useState(isEli12);
   const [activeSection, setActiveSection] = useState<string | null>(null);
