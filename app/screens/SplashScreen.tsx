@@ -6,6 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useAuth } from '../context/AuthContext';
+import { LocalStorageService } from '../services/storage';
 
 type SplashScreenProps = any;
 
@@ -59,12 +60,23 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
         
         await new Promise(resolve => setTimeout(resolve, 2000)); // Minimum splash time
         
-        // STRICT PRD RULE: Only authenticated users bypass onboarding
+        
+        // Check for persistent onboarding completion flag
+        const hasCompletedOnboarding = await LocalStorageService.getOnboardingCompleted();
+        console.log(`[Splash] Onboarding record: ${hasCompletedOnboarding}`);
+
+        // Routing Rules:
+        // 1. Authenticated session exists -> Home
+        // 2. No session BUT onboarding completed -> Login
+        // 3. Otherwise -> Onboarding
         if (session?.user?.id) {
           console.log('[Splash] Authenticated session detected -> Home');
           navigate('Home');
+        } else if (hasCompletedOnboarding) {
+          console.log('[Splash] Returning user detected (onboarding complete) -> Login');
+          navigate('Login');
         } else {
-          console.log('[Splash] No session found -> Onboarding');
+          console.log('[Splash] New user detected -> Onboarding');
           navigate('Onboarding');
         }
       } catch (error) {

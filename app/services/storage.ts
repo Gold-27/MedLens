@@ -8,6 +8,7 @@ const KEYS = {
   CABINET: 'ml_cabinet',
   SETTINGS: 'ml_settings',
   INTERACTION_COUNT: 'ml_interaction_count',
+  ONBOARDING_COMPLETED: 'ml_onboarding_completed',
 };
 
 const CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
@@ -159,6 +160,22 @@ export const LocalStorageService = {
       return updated;
     } catch (e) {
       return 0;
+    }
+  },
+  
+  // Onboarding
+  async setOnboardingCompleted(): Promise<void> {
+    try {
+      await AsyncStorage.setItem(KEYS.ONBOARDING_COMPLETED, 'true');
+    } catch (e) {}
+  },
+
+  async getOnboardingCompleted(): Promise<boolean> {
+    try {
+      const value = await AsyncStorage.getItem(KEYS.ONBOARDING_COMPLETED);
+      return value === 'true';
+    } catch (e) {
+      return false;
     }
   },
 };

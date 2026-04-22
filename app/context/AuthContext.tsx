@@ -6,6 +6,7 @@ import * as AuthSession from 'expo-auth-session';
 import { supabase } from '../services/supabase';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LocalStorageService } from '../services/storage';
 
 if (Platform.OS === 'web') {
   WebBrowser.maybeCompleteAuthSession();
@@ -25,6 +26,7 @@ interface AuthContextType {
   updateProfile: (data: { full_name?: string; email?: string }) => Promise<{ error: Error | null }>;
   deleteAccount: () => Promise<{ error: Error | null }>;
   resetPassword: (email: string) => Promise<{ error: AuthError | null }>;
+  completeOnboarding: () => Promise<void>;
   isPro: boolean;
 }
 
@@ -102,6 +104,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (newSession) {
         setSession(newSession);
         await setGuestState(false);
+        await LocalStorageService.setOnboardingCompleted();
       }
       return { error };
     } catch (error) {
@@ -130,10 +133,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           console.log('[Auth] Session refreshed successfully');
           setSession(refreshedSession);
           await setGuestState(false);
+          await LocalStorageService.setOnboardingCompleted();
         } else if (newSession) {
           console.log('[Auth] Using newSession from signUp');
           setSession(newSession);
           await setGuestState(false);
+          await LocalStorageService.setOnboardingCompleted();
         } else {
           console.warn('[Auth] No session found after signUp - email confirmation might be required');
         }
@@ -162,7 +167,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       await supabase.auth.signOut();
       setSession(null);
       await setGuestState(true);
-      console.log('[Auth] Continued as guest - session cleared');
+      await LocalStorageService.setOnboardingCompleted();
+      console.log('[Auth] Continued as guest - session cleared and onboarding marked complete');
     } catch (error) {
       console.error('Guest transition error:', error);
       setSession(null);
@@ -295,6 +301,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const completeOnboarding = async () => {
+    await LocalStorageService.setOnboardingCompleted();
+  };
+
   const value = {
     user,
     session,
@@ -309,6 +319,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     updateProfile,
     deleteAccount,
     resetPassword,
+    completeOnboarding,
     isPro,
   };
 
