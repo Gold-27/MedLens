@@ -20,29 +20,32 @@ export interface AppSettings {
 
 export const LocalStorageService = {
   // Recent Searches
-  async getRecentSearches(): Promise<string[]> {
+  async getRecentSearches(userId?: string | null): Promise<string[]> {
     try {
-      const data = await AsyncStorage.getItem(KEYS.RECENT_SEARCHES);
+      const key = userId ? `${KEYS.RECENT_SEARCHES}_${userId}` : `${KEYS.RECENT_SEARCHES}_guest`;
+      const data = await AsyncStorage.getItem(key);
       return data ? JSON.parse(data) : [];
     } catch (e) {
       return [];
     }
   },
 
-  async addRecentSearch(query: string): Promise<string[]> {
+  async addRecentSearch(query: string, userId?: string | null): Promise<string[]> {
     try {
-      const current = await this.getRecentSearches();
+      const current = await this.getRecentSearches(userId);
       const filtered = current.filter(s => s.toLowerCase() !== query.toLowerCase());
       const updated = [query, ...filtered].slice(0, 10);
-      await AsyncStorage.setItem(KEYS.RECENT_SEARCHES, JSON.stringify(updated));
+      const key = userId ? `${KEYS.RECENT_SEARCHES}_${userId}` : `${KEYS.RECENT_SEARCHES}_guest`;
+      await AsyncStorage.setItem(key, JSON.stringify(updated));
       return updated;
     } catch (e) {
       return [];
     }
   },
 
-  async clearRecentSearches(): Promise<void> {
-    await AsyncStorage.removeItem(KEYS.RECENT_SEARCHES);
+  async clearRecentSearches(userId?: string | null): Promise<void> {
+    const key = userId ? `${KEYS.RECENT_SEARCHES}_${userId}` : `${KEYS.RECENT_SEARCHES}_guest`;
+    await AsyncStorage.removeItem(key);
   },
 
   // Search Result Caching

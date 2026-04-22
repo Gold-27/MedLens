@@ -153,7 +153,7 @@ const HomeScreen: React.FC = () => {
       
       // Async persistence
       LocalStorageService.setCachedResult(cleanQuery, response);
-      LocalStorageService.addRecentSearch(searchQuery.trim()).then(updated => setRecentSearches(updated));
+      LocalStorageService.addRecentSearch(searchQuery.trim(), user?.id).then(updated => setRecentSearches(updated));
 
     } catch (error: any) {
       if (error.name === 'AbortError') return;
@@ -219,7 +219,7 @@ const HomeScreen: React.FC = () => {
     // Load local data on mount
     const loadLocalData = async () => {
       const [recent] = await Promise.all([
-        LocalStorageService.getRecentSearches(),
+        LocalStorageService.getRecentSearches(user?.id),
       ]);
       setRecentSearches(recent);
     };
