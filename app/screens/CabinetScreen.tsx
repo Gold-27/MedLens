@@ -274,7 +274,8 @@ const CabinetScreen: React.FC = () => {
               <TouchableOpacity
                 onPress={() => {
                   setIsModalVisible(false);
-                  setSelectedDrugSummary(null); // Clean up state on dismiss
+                  setSelectedDrugSummary(null); 
+                  setViewingItem(null); 
                 }}
                 style={styles.closeButton}
               >
@@ -288,8 +289,8 @@ const CabinetScreen: React.FC = () => {
               renderItem={() => selectedDrugSummary ? (
                 <View style={styles.cardWrapper}>
                   <SummaryCard
-                    drugName={selectedDrugSummary.drug_name}
-                    drugKey={items.find(i => i.id === viewingItemId)?.drug_key || selectedDrugSummary.drug_name.toLowerCase().replace(/\s+/g, '-')}
+                    drugName={viewingItem?.drug_name || selectedDrugSummary.drug_name}
+                    drugKey={viewingItem?.drug_key || selectedDrugSummary.drug_name.toLowerCase().replace(/\s+/g, '-')}
                     source={selectedDrugSummary.source}
                     isSaved={true}
                     sections={{
