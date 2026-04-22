@@ -47,7 +47,7 @@ export const searchMedication = async (req: Request, res: Response) => {
       layer1 = await deepseekService.generateSummary(fdaData);
       aiProvider = 'DeepSeek';
     } catch (dsError: any) {
-      console.warn(`[Search] DeepSeek failed: ${dsError.message}`);
+      console.warn(`[Search] DeepSeek Layer 1 failed: ${dsError.message}`);
       
       // Attempt 2: Gemini Failover
       try {
@@ -55,16 +55,17 @@ export const searchMedication = async (req: Request, res: Response) => {
         layer1 = await geminiService.generateSummary(fdaData);
         aiProvider = 'Gemini';
       } catch (gemError: any) {
-        console.error(`[Search] Gemini also failed: ${gemError.message}`);
+        console.error(`[Search] Gemini Layer 1 also failed: ${gemError.message}`);
         
-        // Final Fallback: Safe Mode
+        // Final Fallback: Safe Mode (Raw Data)
         layer1 = {
-          what_it_does: fdaData.indications || '',
-          how_to_take: fdaData.dosage || '',
-          warnings: fdaData.warnings || '',
-          side_effects: fdaData.side_effects || '',
+          what_it_does: fdaData.indications || 'Information not available.',
+          how_to_take: fdaData.dosage || 'Information not available.',
+          warnings: fdaData.warnings || 'Information not available.',
+          side_effects: fdaData.side_effects || 'Information not available.',
         };
-        aiProvider = 'Fallback (Manual)';
+        aiProvider = 'Fallback (Raw FDA Data)';
+        console.log('[Search] All AI engines failed. Using Raw FDA fallback.');
       }
     }
 
