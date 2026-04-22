@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, Modal } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, Modal, Share } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme, ThemeContextType } from '../theme/ThemeProvider';
 import { useAuth } from '../context/AuthContext';
@@ -110,6 +110,24 @@ const CabinetScreen: React.FC = () => {
       Alert.alert('Error', 'Failed to load medication details. Please check your connection.');
     }
   };
+
+  const handleExport = useCallback(async () => {
+    if (!selectedDrugSummary) return;
+    
+    const summary = selectedDrugSummary.summary;
+    const shareContent = `MedQuire Summary: ${selectedDrugSummary.drug_name}\n\n` +
+      `WHAT IT DOES:\n${summary.what_it_does}\n\n` +
+      `HOW TO TAKE IT:\n${summary.how_to_take}\n\n` +
+      `WARNINGS:\n${summary.warnings}\n\n` +
+      `POSSIBLE SIDE EFFECTS:\n${summary.side_effects}\n\n` +
+      `Source: OpenFDA\n` +
+      `MedQuire simplifies medical information for understanding. It does not replace professional medical advice.`;
+    
+    try { 
+      await Share.share({ title: `Medication Summary: ${selectedDrugSummary.drug_name}`, message: shareContent }); 
+    }
+    catch (error) { console.error('Share failed:', error); }
+  }, [selectedDrugSummary]);
 
   const handleDeleteDrug = async (item: CabinetItem) => {
     Alert.alert(
@@ -293,6 +311,7 @@ const CabinetScreen: React.FC = () => {
                     drugKey={viewingItem?.drug_key || selectedDrugSummary.drug_name.toLowerCase().replace(/\s+/g, '-')}
                     source={selectedDrugSummary.source}
                     isSaved={true}
+                    onExport={handleExport}
                     sections={{
                       whatItDoes: selectedDrugSummary.summary.what_it_does,
                       howToTake: selectedDrugSummary.summary.how_to_take,
