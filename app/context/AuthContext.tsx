@@ -177,9 +177,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signOut = async () => {
     try {
+      const userId = user?.id;
       await supabase.auth.signOut();
       setSession(null);
       await setGuestState(false);
+      
+      // Clear sensitive local data for this user
+      if (userId) {
+        await LocalStorageService.clearUserSessionData(userId);
+      }
     } catch (error) {
       console.error('Sign out error:', error);
     }
@@ -187,9 +193,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   
   const continueAsGuest = async () => {
     try {
+      const userId = user?.id;
       // Clear any existing session to ensure clean guest state
       await supabase.auth.signOut();
       setSession(null);
+      
+      // Clear sensitive local data for the user that just logged out
+      if (userId) {
+        await LocalStorageService.clearUserSessionData(userId);
+      } else {
+        // Also clear any guest data to ensure a fresh start
+        await LocalStorageService.clearUserSessionData(null);
+      }
+
       await setGuestState(true);
       await LocalStorageService.setOnboardingCompleted();
       console.log('[Auth] Continued as guest - session cleared and onboarding marked complete');
@@ -257,15 +273,37 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const getToken = async (): Promise<string | null> => {
+  const getToken = React.useCallback(async (): Promise<string | null> => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      return session?.access_token || null;
-    } catch (error) {
-      console.error('Get token error:', error);
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error || !session) {
+        if (error) console.error('[Auth] getSession error:', error.message);
+        return null;
+      }
+      
+      // Check if token is expired or expiring soon (within 60 seconds)
+      const now = Math.floor(Date.now() / 1000);
+      const expiresAt = session.expires_at || 0;
+      
+      if (expiresAt - now < 60) {
+        console.log('[Auth] Token expiring soon or expired, refreshing...');
+        const { data: { session: refreshed }, error: refreshError } = await supabase.auth.refreshSession();
+        
+        if (refreshError) {
+          console.error('[Auth] Token refresh failed:', refreshError.message);
+          return null;
+        }
+        
+        return refreshed?.access_token || null;
+      }
+      
+      return session.access_token;
+    } catch (error: any) {
+      console.error('[Auth] Get token error:', error.message);
       return null;
     }
-  };
+  }, []);
 
   const updateProfile = async (data: { full_name?: string; email?: string }) => {
     try {

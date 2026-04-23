@@ -17,7 +17,7 @@ import EmptyState from '../components/EmptyState';
 import AuthModal from '../components/AuthModal';
 import Disclaimer from '../components/Disclaimer';
 import TrustBadges from '../components/TrustBadges';
-import ExportCard, { ExportCardRef } from '../components/ExportCard';
+import { PDFService } from '../services/pdf';
 import * as api from '../services/api';
 import { LocalStorageService } from '../services/storage';
 import RecentSearches from '../components/RecentSearches';
@@ -44,7 +44,6 @@ const HomeScreen: React.FC = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
-  const exportCardRef = useRef<ExportCardRef>(null);
   
   // Performance and Cache Refs
   const sessionCache = useRef<Map<string, api.SearchResponse>>(new Map());
@@ -267,16 +266,27 @@ const HomeScreen: React.FC = () => {
       setPendingAction('export');
       return; 
     }
-    const summary = isELI12 && eli12Result ? eli12Result : baseResult.summary;
+    const currentSummary = isELI12 && eli12Result ? eli12Result : baseResult.summary;
     
     try { 
-      if (!exportCardRef.current) throw new Error('Export reference missing');
+      setState('loading');
       
-      const uri = await exportCardRef.current.capture();
+      const uri = await PDFService.generateMedicationReport({
+        drugName: baseResult.drug_name,
+        source: baseResult.source,
+        isEli12: isELI12,
+        sections: {
+          whatItDoes: currentSummary.what_it_does,
+          howToTake: currentSummary.how_to_take,
+          warnings: currentSummary.warnings,
+          sideEffects: currentSummary.side_effects,
+        }
+      });
+
       await Sharing.shareAsync(uri, { 
-        mimeType: 'image/jpeg', 
-        dialogTitle: `Medication Summary: ${baseResult.drug_name}`,
-        UTI: 'public.jpeg'
+        mimeType: 'application/pdf', 
+        dialogTitle: `Medication Report: ${baseResult.drug_name}`,
+        UTI: 'com.adobe.pdf'
       });
       
       // Reset state after export
@@ -286,8 +296,9 @@ const HomeScreen: React.FC = () => {
       setQuery('');
     }
     catch (error: any) { 
-      console.error('Visual export failed:', error); 
-      Alert.alert('Export Failed', 'We could not generate the visual summary. Please try again.');
+      console.error('PDF export failed:', error); 
+      Alert.alert('Export Failed', 'We could not generate the medical report PDF. Please try again.');
+      setState('success');
     }
   }, [baseResult, isELI12, eli12Result, isGuest]);
 
@@ -451,21 +462,6 @@ const HomeScreen: React.FC = () => {
             onToggleEli12={handleToggleELI12}
           />
         </View>
-        {/* Export Capture Component (Off-screen) */}
-      {baseResult && (
-        <ExportCard
-          ref={exportCardRef}
-          drugName={baseResult.drug_name}
-          source={baseResult.source}
-          isEli12={isELI12}
-          sections={{
-            whatItDoes: (isELI12 && eli12Result) ? eli12Result.what_it_does : baseResult.summary.what_it_does,
-            howToTake: (isELI12 && eli12Result) ? eli12Result.how_to_take : baseResult.summary.how_to_take,
-            warnings: (isELI12 && eli12Result) ? eli12Result.warnings : baseResult.summary.warnings,
-            sideEffects: (isELI12 && eli12Result) ? eli12Result.side_effects : baseResult.summary.side_effects,
-          }}
-        />
-      )}
     </SafeAreaView>
 
       <AuthModal

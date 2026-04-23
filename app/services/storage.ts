@@ -130,19 +130,41 @@ export const LocalStorageService = {
   },
   
   // Cabinet Data
-  async getCachedCabinet(): Promise<CabinetItem[]> {
+  async getCachedCabinet(userId?: string | null): Promise<CabinetItem[]> {
     try {
-      const data = await AsyncStorage.getItem(KEYS.CABINET);
+      // Use user-specific key, fallback to guest
+      const key = userId ? `${KEYS.CABINET}_${userId}` : `${KEYS.CABINET}_guest`;
+      const data = await AsyncStorage.getItem(key);
       return data ? JSON.parse(data) : [];
     } catch (e) {
       return [];
     }
   },
 
-  async setCachedCabinet(items: CabinetItem[]): Promise<void> {
+  async setCachedCabinet(items: CabinetItem[], userId?: string | null): Promise<void> {
     try {
-      await AsyncStorage.setItem(KEYS.CABINET, JSON.stringify(items));
+      const key = userId ? `${KEYS.CABINET}_${userId}` : `${KEYS.CABINET}_guest`;
+      await AsyncStorage.setItem(key, JSON.stringify(items));
     } catch (e) {}
+  },
+
+  async clearUserSessionData(userId?: string | null): Promise<void> {
+    try {
+      const cabinetKey = userId ? `${KEYS.CABINET}_${userId}` : `${KEYS.CABINET}_guest`;
+      const searchesKey = userId ? `${KEYS.RECENT_SEARCHES}_${userId}` : `${KEYS.RECENT_SEARCHES}_guest`;
+      
+      const keysToRemove = [cabinetKey, searchesKey];
+      
+      // Also attempt to remove legacy global cabinet key just in case
+      if (!userId) {
+        keysToRemove.push(KEYS.CABINET);
+      }
+
+      await AsyncStorage.multiRemove(keysToRemove);
+      console.log(`[Storage] Cleared session data for ${userId || 'guest'}`);
+    } catch (e) {
+      console.error('[Storage] Failed to clear session data:', e);
+    }
   },
 
   // Stats

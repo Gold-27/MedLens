@@ -30,7 +30,7 @@ export const CabinetProvider: React.FC<{ children: React.ReactNode }> = ({ child
     new Set(items.map(item => item.drug_key.toLowerCase())),
   [items]);
 
-  const refreshCabinet = useCallback(async () => {
+  const refreshCabinet = useCallback(async (isRetry = false) => {
     // Guest users have no cabinet
     if (isGuest || !user) {
       setItems([]);
@@ -39,23 +39,44 @@ export const CabinetProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
 
     try {
-      // 1. Local-First: Load from cache instantly
-      const cached = await LocalStorageService.getCachedCabinet();
-      if (cached.length > 0 && items.length === 0) {
-        setItems(cached);
+      // 1. Local-First: Load from cache instantly (scoped to user)
+      // Only do this on initial load, not on retries
+      if (!isRetry) {
+        const cached = await LocalStorageService.getCachedCabinet(user?.id);
+        if (cached.length > 0 && items.length === 0) {
+          setItems(cached);
+        }
       }
 
       // 2. Background Revalidation: Sync with API
       const token = await getToken();
       if (token) {
-        const response = await api.getCabinetItems(token);
-        // Ensure unique items by ID to prevent duplicate key errors in UI
-        const uniqueItems = Array.from(new Map(response.items.map(item => [item.id, item])).values());
-        setItems(uniqueItems);
-        await LocalStorageService.setCachedCabinet(uniqueItems);
+        try {
+          const response = await api.getCabinetItems(token);
+          // Ensure unique items by ID to prevent duplicate key errors in UI
+          const uniqueItems = Array.from(new Map(response.items.map(item => [item.id, item])).values());
+          setItems(uniqueItems);
+          await LocalStorageService.setCachedCabinet(uniqueItems, user?.id);
+        } catch (apiError: any) {
+          // If we get a 401 and we haven't retried yet, try refreshing the token and retrying
+          if (apiError.status === 401 && !isRetry) {
+            console.warn('[CabinetContext] 401 detected, attempting token refresh and retry...');
+            // getToken() already handles refresh if token is stale, 
+            // so just calling refreshCabinet(true) will trigger a fresh getToken call
+            return refreshCabinet(true);
+          }
+          throw apiError;
+        }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('[CabinetContext] Refresh failed:', error);
+      
+      // If we still get a 401 after retry, or any other critical auth error
+      if (error.status === 401) {
+        console.error('[CabinetContext] Persistent 401 error. Clearing local cabinet state.');
+        setItems([]);
+        // Optional: Trigger a logout or show a "Session Expired" alert here
+      }
     } finally {
       setLoading(false);
     }
@@ -79,7 +100,7 @@ export const CabinetProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setItems(prev => {
           if (prev.some(item => item.id === response.item.id)) return prev;
           const updated = [response.item, ...prev];
-          LocalStorageService.setCachedCabinet(updated);
+          LocalStorageService.setCachedCabinet(updated, user?.id);
           return updated;
         });
       }
@@ -96,7 +117,7 @@ export const CabinetProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const previousItems = [...items];
     setItems(prev => {
       const updated = prev.filter(i => i.id !== id);
-      LocalStorageService.setCachedCabinet(updated);
+      LocalStorageService.setCachedCabinet(updated, user?.id);
       return updated;
     });
 
@@ -112,7 +133,7 @@ export const CabinetProvider: React.FC<{ children: React.ReactNode }> = ({ child
       console.error('[CabinetContext] Remove failed, rolling back:', error);
       // Rollback on failure
       setItems(previousItems);
-      LocalStorageService.setCachedCabinet(previousItems);
+      LocalStorageService.setCachedCabinet(previousItems, user?.id);
       throw error;
     }
   }, [user, isGuest, getToken, items]);
