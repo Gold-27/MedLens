@@ -11,7 +11,7 @@ import { CabinetItem } from '../services/api';
 import { LocalStorageService } from '../services/storage';
 import EmptyState from '../components/EmptyState';
 import SummaryCard from '../components/SummaryCard';
-import ExportCard, { ExportCardRef } from '../components/ExportCard';
+import { PDFService } from '../services/pdf';
 import { useCabinet } from '../context/CabinetContext';
 
 const DRUG_DESCRIPTIONS: Record<string, string> = {
@@ -57,7 +57,6 @@ const CabinetScreen: React.FC = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [viewingItem, setViewingItem] = useState<CabinetItem | null>(null);
   const [selectedDrugSummary, setSelectedDrugSummary] = useState<api.SearchResponse | null>(null);
-  const exportCardRef = React.useRef<ExportCardRef>(null);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -118,18 +117,31 @@ const CabinetScreen: React.FC = () => {
     if (!selectedDrugSummary) return;
     
     try { 
-      if (!exportCardRef.current) throw new Error('Export reference missing');
+      setLoading(true);
       
-      const uri = await exportCardRef.current.capture();
+      const uri = await PDFService.generateMedicationReport({
+        drugName: selectedDrugSummary.drug_name,
+        source: selectedDrugSummary.source,
+        isEli12: false,
+        sections: {
+          whatItDoes: selectedDrugSummary.summary.what_it_does,
+          howToTake: selectedDrugSummary.summary.how_to_take,
+          warnings: selectedDrugSummary.summary.warnings,
+          sideEffects: selectedDrugSummary.summary.side_effects,
+        }
+      });
+
       await Sharing.shareAsync(uri, { 
-        mimeType: 'image/jpeg', 
-        dialogTitle: `Medication Summary: ${selectedDrugSummary.drug_name}`,
-        UTI: 'public.jpeg'
+        mimeType: 'application/pdf', 
+        dialogTitle: `Medication Report: ${selectedDrugSummary.drug_name}`,
+        UTI: 'com.adobe.pdf'
       });
     }
     catch (error: any) { 
-      console.error('Visual export failed:', error); 
-      Alert.alert('Export Failed', 'We could not generate the visual summary. Please try again.');
+      console.error('PDF export failed:', error); 
+      Alert.alert('Export Failed', 'We could not generate the medical report PDF. Please try again.');
+    } finally {
+      setLoading(false);
     }
   }, [selectedDrugSummary]);
 
@@ -336,21 +348,6 @@ const CabinetScreen: React.FC = () => {
         </View>
       </Modal>
 
-      {/* Export Capture Component (Off-screen) */}
-      {selectedDrugSummary && (
-        <ExportCard
-          ref={exportCardRef}
-          drugName={selectedDrugSummary.drug_name}
-          source={selectedDrugSummary.source}
-          isEli12={false} // Cabinet items currently show base summary
-          sections={{
-            whatItDoes: selectedDrugSummary.summary.what_it_does,
-            howToTake: selectedDrugSummary.summary.how_to_take,
-            warnings: selectedDrugSummary.summary.warnings,
-            sideEffects: selectedDrugSummary.summary.side_effects,
-          }}
-        />
-      )}
     </SafeAreaView>
   );
 };
