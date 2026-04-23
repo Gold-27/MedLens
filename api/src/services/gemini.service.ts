@@ -21,7 +21,7 @@ export class GeminiService {
     }
 
     const prompt = `
-      You are MedQuire, an AI assistant specialized in translating complex medical jargon into clear, simplified medical language (Health Literacy focus).
+      You are MedLens, an AI assistant specialized in translating complex medical jargon into clear, simplified medical language (Health Literacy focus).
       
       RULES:
       1. Use ALL provided raw fields to construct a complete summary. For example, if "Indications" is sparse, look into "Warnings" or "Dosage" to explain what the drug does.
@@ -76,7 +76,7 @@ export class GeminiService {
     }
 
     const prompt = `
-      You are MedQuire, an AI assistant specialized in extreme simplification (ELI12 mode).
+      You are MedLens, an AI assistant specialized in extreme simplification (ELI12 mode).
       You are performing "Layer 2" simplification: taking a simplified medical summary and making it even MORE basic for a 12-year-old child.
       
       CRITICAL RULES:
