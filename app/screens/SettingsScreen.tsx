@@ -56,7 +56,7 @@ const SettingsScreen: React.FC = () => {
       { text: 'Sign Out', style: 'destructive', onPress: async () => {
         try {
           await signOut();
-          navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+          navigation.reset({ index: 0, routes: [{ name: 'Onboarding' }] });
         } catch (error) {
           Alert.alert('Error', 'Failed to sign out.');
         }
@@ -96,7 +96,7 @@ const SettingsScreen: React.FC = () => {
             const { error } = await deleteAccount();
             setIsUpdating(false);
             if (!error) {
-              navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+              navigation.reset({ index: 0, routes: [{ name: 'Onboarding' }] });
             }
           }
         }
