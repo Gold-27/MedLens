@@ -31,26 +31,30 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
     ]).start();
 
     const checkRouting = async () => {
+      console.log('[Splash] Initializing routing check...');
+      
       try {
-        // FOR DEVELOPMENT: Reset onboarding so it shows again as requested
-        await LocalStorageService.resetOnboarding();
-        
-        // Minimum visibility time for branding
-        await new Promise(resolve => setTimeout(resolve, 2500));
-        
-        const hasCompletedOnboarding = await LocalStorageService.getOnboardingCompleted();
-        
-        if (hasCompletedOnboarding) {
-          if (session?.user?.id) {
-            navigation.replace('Home');
-          } else {
-            navigation.replace('Login');
-          }
+        // Minimum visibility time for branding (aesthetic delay)
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        const isAuthenticated = !!session?.user;
+        const isGuestMode = !isAuthenticated; // Per new logic, if not authenticated, they are treated as guest/new
+
+        console.log('[Splash] Routing Diagnosis:');
+        console.log(`  - Session exists: ${!!session}`);
+        console.log(`  - Authenticated user: ${isAuthenticated}`);
+        console.log(`  - Guest mode/New user: ${isGuestMode}`);
+
+        if (isAuthenticated) {
+          console.log('[Splash] Result: Navigating directly to Home (Authenticated)');
+          navigation.replace('Home');
         } else {
+          console.log('[Splash] Result: Navigating to Onboarding (Guest/New User)');
+          // We always show onboarding for non-authenticated users on every launch
           navigation.replace('Onboarding');
         }
       } catch (error) {
-        console.error('[Splash] Routing error:', error);
+        console.error('[Splash] Routing critical error:', error);
         navigation.replace('Onboarding');
       }
     };

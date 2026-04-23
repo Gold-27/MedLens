@@ -153,7 +153,7 @@ export const LocalStorageService = {
       const cabinetKey = userId ? `${KEYS.CABINET}_${userId}` : `${KEYS.CABINET}_guest`;
       const searchesKey = userId ? `${KEYS.RECENT_SEARCHES}_${userId}` : `${KEYS.RECENT_SEARCHES}_guest`;
       
-      const keysToRemove = [cabinetKey, searchesKey];
+      const keysToRemove = [cabinetKey, searchesKey, KEYS.ONBOARDING_COMPLETED];
       
       // Also attempt to remove legacy global cabinet key just in case
       if (!userId) {
@@ -161,7 +161,7 @@ export const LocalStorageService = {
       }
 
       await AsyncStorage.multiRemove(keysToRemove);
-      console.log(`[Storage] Cleared session data for ${userId || 'guest'}`);
+      console.log(`[Storage] Cleared session data and onboarding state for ${userId || 'guest'}`);
     } catch (e) {
       console.error('[Storage] Failed to clear session data:', e);
     }
