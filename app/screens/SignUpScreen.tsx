@@ -6,6 +6,8 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useTheme, ThemeContextType } from '../theme/ThemeProvider';
 import { useAuth } from '../context/AuthContext';
+import { getPasswordRequirements } from '../utils/validation';
+import PasswordRequirements from '../components/PasswordRequirements';
 
 type SignUpScreenProps = any;
 
@@ -39,13 +41,7 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
     }
   }, [signUpSuccess, isGuest, loading, navigation]);
 
-  const getPasswordRequirements = (password: string) => ({
-    length: password.length >= 8,
-    uppercase: /[A-Z]/.test(password),
-    lowercase: /[a-z]/.test(password),
-    number: /[0-9]/.test(password),
-    special: /[!@#$%^&*(),.?":{}|<> ]/.test(password),
-  });
+  // Password requirements logic moved to shared utility
 
   const requirements = getPasswordRequirements(form.password);
 
@@ -238,13 +234,7 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
               ) : null}
 
               {(form.password.length > 0 || focusedInput === 'password') && (
-                <View style={styles.requirementsContainer}>
-                  <RequirementRow met={requirements.length} label="At least 8 characters long" theme={theme} />
-                  <RequirementRow met={requirements.uppercase} label="At least one uppercase letter" theme={theme} />
-                  <RequirementRow met={requirements.lowercase} label="At least one lowercase letter" theme={theme} />
-                  <RequirementRow met={requirements.number} label="At least one number" theme={theme} />
-                  <RequirementRow met={requirements.special} label="At least one special character" theme={theme} />
-                </View>
+                <PasswordRequirements requirements={requirements} theme={theme} />
               )}
             </View>
 
@@ -423,20 +413,6 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
     marginLeft: 4,
     fontFamily: 'Outfit',
   },
-  requirementsContainer: {
-    marginTop: 12,
-    gap: 8,
-    paddingLeft: 4,
-  },
-  requirementRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  requirementText: {
-    fontSize: 13,
-    fontFamily: 'Outfit',
-  },
   guestLink: {
     marginTop: 20,
     paddingVertical: 8,
@@ -447,23 +423,5 @@ const makeStyles = (theme: ThemeContextType) => StyleSheet.create({
     textAlign: 'center',
   },
 });
-
-
-
-const RequirementRow = ({ met, label, theme }: { met: boolean; label: string; theme: ThemeContextType }) => {
-  const styles = makeStyles(theme);
-  return (
-    <View style={styles.requirementRow}>
-      <MaterialIcons
-        name={met ? "check-circle" : "radio-button-unchecked"}
-        size={16}
-        color={met ? theme.colors.success : theme.colors.outlineVariant}
-      />
-      <Text style={[styles.requirementText, { color: met ? theme.colors.onSurface : theme.colors.onSurfaceVariant }]}>
-        {label}
-      </Text>
-    </View>
-  );
-};
 
 export default SignUpScreen;

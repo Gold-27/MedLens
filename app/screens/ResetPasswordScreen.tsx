@@ -15,6 +15,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { useTheme, ThemeContextType } from '../theme/ThemeProvider';
 import { useAuth } from '../context/AuthContext';
+import { getPasswordRequirements, isPasswordValid, PASSWORD_MIN_LENGTH } from '../utils/validation';
+import PasswordRequirements from '../components/PasswordRequirements';
 
 type Props = {
   navigation: any;
@@ -37,9 +39,11 @@ const ResetPasswordScreen = ({ navigation, route }: Props) => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const requirements = getPasswordRequirements(password);
+
   const handleReset = async () => {
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+    if (!isPasswordValid(password)) {
+      setError(`Password does not meet requirements`);
       return;
     }
 
@@ -107,7 +111,7 @@ const ResetPasswordScreen = ({ navigation, route }: Props) => {
                       flex: 1,
                     }
                   ]}
-                  placeholder="At least 6 characters"
+                  placeholder={`At least ${PASSWORD_MIN_LENGTH} characters`}
                   placeholderTextColor={theme.colors.outlineVariant}
                   secureTextEntry={!showPassword}
                   value={password}
@@ -129,6 +133,9 @@ const ResetPasswordScreen = ({ navigation, route }: Props) => {
                   />
                 </TouchableOpacity>
               </View>
+              {(password.length > 0 || focusedInput === 'password') && (
+                <PasswordRequirements requirements={requirements} theme={theme} />
+              )}
             </View>
 
             <View style={styles.inputGroup}>
