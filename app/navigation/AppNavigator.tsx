@@ -257,9 +257,8 @@ const AppNavigator = () => {
 const styles = StyleSheet.create({
   drawerHeader: {
     padding: 24,
-    paddingTop: 60,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.05)',
+    paddingTop: 80,
+    paddingBottom: 16,
   },
   logoWrapper: {
     height: 40,
