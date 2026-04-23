@@ -39,8 +39,8 @@ export const CabinetProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
 
     try {
-      // 1. Local-First: Load from cache instantly
-      const cached = await LocalStorageService.getCachedCabinet();
+      // 1. Local-First: Load from cache instantly (scoped to user)
+      const cached = await LocalStorageService.getCachedCabinet(user?.id);
       if (cached.length > 0 && items.length === 0) {
         setItems(cached);
       }
@@ -52,7 +52,7 @@ export const CabinetProvider: React.FC<{ children: React.ReactNode }> = ({ child
         // Ensure unique items by ID to prevent duplicate key errors in UI
         const uniqueItems = Array.from(new Map(response.items.map(item => [item.id, item])).values());
         setItems(uniqueItems);
-        await LocalStorageService.setCachedCabinet(uniqueItems);
+        await LocalStorageService.setCachedCabinet(uniqueItems, user?.id);
       }
     } catch (error) {
       console.error('[CabinetContext] Refresh failed:', error);
@@ -79,7 +79,7 @@ export const CabinetProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setItems(prev => {
           if (prev.some(item => item.id === response.item.id)) return prev;
           const updated = [response.item, ...prev];
-          LocalStorageService.setCachedCabinet(updated);
+          LocalStorageService.setCachedCabinet(updated, user?.id);
           return updated;
         });
       }
@@ -96,7 +96,7 @@ export const CabinetProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const previousItems = [...items];
     setItems(prev => {
       const updated = prev.filter(i => i.id !== id);
-      LocalStorageService.setCachedCabinet(updated);
+      LocalStorageService.setCachedCabinet(updated, user?.id);
       return updated;
     });
 
@@ -112,7 +112,7 @@ export const CabinetProvider: React.FC<{ children: React.ReactNode }> = ({ child
       console.error('[CabinetContext] Remove failed, rolling back:', error);
       // Rollback on failure
       setItems(previousItems);
-      LocalStorageService.setCachedCabinet(previousItems);
+      LocalStorageService.setCachedCabinet(previousItems, user?.id);
       throw error;
     }
   }, [user, isGuest, getToken, items]);

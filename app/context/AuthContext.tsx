@@ -177,9 +177,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signOut = async () => {
     try {
+      const userId = user?.id;
       await supabase.auth.signOut();
       setSession(null);
       await setGuestState(false);
+      
+      // Clear sensitive local data for this user
+      if (userId) {
+        await LocalStorageService.clearUserSessionData(userId);
+      }
     } catch (error) {
       console.error('Sign out error:', error);
     }
@@ -187,9 +193,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   
   const continueAsGuest = async () => {
     try {
+      const userId = user?.id;
       // Clear any existing session to ensure clean guest state
       await supabase.auth.signOut();
       setSession(null);
+      
+      // Clear sensitive local data for the user that just logged out
+      if (userId) {
+        await LocalStorageService.clearUserSessionData(userId);
+      } else {
+        // Also clear any guest data to ensure a fresh start
+        await LocalStorageService.clearUserSessionData(null);
+      }
+
       await setGuestState(true);
       await LocalStorageService.setOnboardingCompleted();
       console.log('[Auth] Continued as guest - session cleared and onboarding marked complete');

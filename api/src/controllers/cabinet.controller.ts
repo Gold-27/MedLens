@@ -27,6 +27,7 @@ export const getCabinetItems = async (req: AuthenticatedRequest, res: Response) 
     const { data, error, status } = await supabase
       .from('cabinet_items')
       .select('*')
+      .eq('user_id', req.userId)
       .order('created_at', { ascending: false });
 
     if (error) {
