@@ -92,6 +92,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setSession(currentSession);
       if (currentSession?.user) {
         setGuestState(false);
+        await LocalStorageService.setHasAuthenticatedBefore();
       }
       setLoading(false);
     });
@@ -179,8 +180,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const signOut = async () => {
+    console.log('[Auth] Sign out triggered');
     try {
       const userId = user?.id;
+      const onboardingCompleted = await LocalStorageService.getOnboardingCompleted();
+      const hasAuthenticatedBefore = await LocalStorageService.getHasAuthenticatedBefore();
+      
+      console.log(`[Auth] Sign out state: Onboarding done=${onboardingCompleted}, Auth history=${hasAuthenticatedBefore}`);
+      
       await supabase.auth.signOut();
       setSession(null);
       await setGuestState(false);
@@ -189,6 +196,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (userId) {
         await LocalStorageService.clearUserSessionData(userId);
       }
+      console.log('[Auth] Sign out complete, tokens cleared. Navigation destination: Login');
     } catch (error) {
       console.error('Sign out error:', error);
     }

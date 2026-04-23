@@ -156,14 +156,13 @@ export const LocalStorageService = {
       
       const keysToRemove = [cabinetKey, searchesKey];
       
-      // Note: We no longer clear ONBOARDING_COMPLETED here to preserve returning user state
-      
+      // Also attempt to remove legacy global cabinet key just in case
       if (!userId) {
         keysToRemove.push(KEYS.CABINET);
       }
 
       await AsyncStorage.multiRemove(keysToRemove);
-      console.log(`[Storage] Cleared session data for ${userId || 'guest'}`);
+      console.log(`[Storage] Cleared session data for ${userId || 'guest'} (Onboarding & Auth flags preserved)`);
     } catch (e) {
       console.error('[Storage] Failed to clear session data:', e);
     }
@@ -208,10 +207,11 @@ export const LocalStorageService = {
 
   async resetOnboarding(): Promise<void> {
     try {
-      await AsyncStorage.multiRemove([KEYS.ONBOARDING_COMPLETED, KEYS.HAS_AUTHENTICATED_BEFORE]);
+      await AsyncStorage.removeItem(KEYS.ONBOARDING_COMPLETED);
     } catch (e) {}
   },
 
+  // Authentication History
   async setHasAuthenticatedBefore(): Promise<void> {
     try {
       await AsyncStorage.setItem(KEYS.HAS_AUTHENTICATED_BEFORE, 'true');

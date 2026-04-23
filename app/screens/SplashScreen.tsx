@@ -12,20 +12,21 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
   const theme = useTheme();
   const { session, loading: authLoading } = useAuth();
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.9)).current;
+  const scaleAnim = useRef(new Animated.Value(0.95)).current;
+  const screenOpacity = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    // Entrance animations
+    // Entrance animations: Slower and more graceful
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 1000,
+        duration: 1200,
         useNativeDriver: true,
       }),
       Animated.spring(scaleAnim, {
         toValue: 1,
-        friction: 8,
-        tension: 40,
+        friction: 9,
+        tension: 30,
         useNativeDriver: true,
       }),
     ]).start();
@@ -34,28 +35,45 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
       console.log('[Splash] Initializing routing check...');
       
       try {
-        // Minimum visibility time for branding (aesthetic delay)
-        await new Promise(resolve => setTimeout(resolve, 2000));
-
+        // Balanced visibility time for premium feel (4 seconds)
+        // This allows session checks to complete in the background while the user sees the brand
+        const startTime = Date.now();
+        
         const isAuthenticated = !!session?.user;
-        const hasCompletedOnboarding = await LocalStorageService.getOnboardingCompleted();
         const hasAuthenticatedBefore = await LocalStorageService.getHasAuthenticatedBefore();
+        const onboardingCompleted = await LocalStorageService.getOnboardingCompleted();
+
+        // Calculate remaining time to hit the ~4s mark
+        const elapsed = Date.now() - startTime;
+        const remaining = Math.max(4000 - elapsed, 500); 
+        await new Promise(resolve => setTimeout(resolve, remaining));
 
         console.log('[Splash] Routing Diagnosis:');
-        console.log(`  - Authenticated session: ${isAuthenticated}`);
-        console.log(`  - Onboarding completed: ${hasCompletedOnboarding}`);
-        console.log(`  - Authenticated before: ${hasAuthenticatedBefore}`);
+        console.log(`  - Session exists: ${!!session}`);
+        console.log(`  - Authenticated user: ${isAuthenticated}`);
+        console.log(`  - Has authenticated before: ${hasAuthenticatedBefore}`);
+        console.log(`  - Onboarding completed: ${onboardingCompleted}`);
 
-        if (isAuthenticated) {
-          console.log('[Splash] Result: Navigating to Home (Authenticated User)');
-          navigation.replace('Home');
-        } else if (hasCompletedOnboarding && hasAuthenticatedBefore) {
-          console.log('[Splash] Result: Navigating to Login (Returning Signed-out User)');
-          navigation.replace('Login');
-        } else {
-          console.log('[Splash] Result: Navigating to Onboarding (New or Guest User)');
-          navigation.replace('Onboarding');
-        }
+        // Smoothly fade out the entire splash content before transition
+        Animated.timing(screenOpacity, {
+          toValue: 0,
+          duration: 600,
+          useNativeDriver: true,
+        }).start(() => {
+          if (isAuthenticated) {
+            console.log('[Splash] Result: Navigating directly to Home (Authenticated)');
+            navigation.replace('Home');
+          } else if (hasAuthenticatedBefore) {
+            console.log('[Splash] Result: Navigating to Login (Returning User)');
+            navigation.replace('Login');
+          } else if (!onboardingCompleted) {
+            console.log('[Splash] Result: Navigating to Onboarding (New User)');
+            navigation.replace('Onboarding');
+          } else {
+            console.log('[Splash] Result: Navigating to Login (Onboarding done, but not authenticated)');
+            navigation.replace('Login');
+          }
+        });
       } catch (error) {
         console.error('[Splash] Routing critical error:', error);
         navigation.replace('Onboarding');
@@ -68,7 +86,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
   }, [authLoading, session, navigation]);
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.primaryContainer }]}>
+    <Animated.View style={[styles.container, { backgroundColor: theme.colors.primaryContainer, opacity: screenOpacity }]}>
       <StatusBar barStyle="dark-content" />
       <Animated.View 
         style={[
@@ -89,7 +107,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
           Your Medication Simplified
         </Text>
       </View>
-    </View>
+    </Animated.View>
   );
 };
 
