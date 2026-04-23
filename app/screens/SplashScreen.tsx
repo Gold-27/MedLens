@@ -38,19 +38,22 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
         await new Promise(resolve => setTimeout(resolve, 2000));
 
         const isAuthenticated = !!session?.user;
-        const isGuestMode = !isAuthenticated; // Per new logic, if not authenticated, they are treated as guest/new
+        const hasCompletedOnboarding = await LocalStorageService.getOnboardingCompleted();
+        const hasAuthenticatedBefore = await LocalStorageService.getHasAuthenticatedBefore();
 
         console.log('[Splash] Routing Diagnosis:');
-        console.log(`  - Session exists: ${!!session}`);
-        console.log(`  - Authenticated user: ${isAuthenticated}`);
-        console.log(`  - Guest mode/New user: ${isGuestMode}`);
+        console.log(`  - Authenticated session: ${isAuthenticated}`);
+        console.log(`  - Onboarding completed: ${hasCompletedOnboarding}`);
+        console.log(`  - Authenticated before: ${hasAuthenticatedBefore}`);
 
         if (isAuthenticated) {
-          console.log('[Splash] Result: Navigating directly to Home (Authenticated)');
+          console.log('[Splash] Result: Navigating to Home (Authenticated User)');
           navigation.replace('Home');
+        } else if (hasCompletedOnboarding && hasAuthenticatedBefore) {
+          console.log('[Splash] Result: Navigating to Login (Returning Signed-out User)');
+          navigation.replace('Login');
         } else {
-          console.log('[Splash] Result: Navigating to Onboarding (Guest/New User)');
-          // We always show onboarding for non-authenticated users on every launch
+          console.log('[Splash] Result: Navigating to Onboarding (New or Guest User)');
           navigation.replace('Onboarding');
         }
       } catch (error) {

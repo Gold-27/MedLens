@@ -120,7 +120,7 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
             props.navigation.closeDrawer();
             (navigation as any).reset({
               index: 0,
-              routes: [{ name: 'Onboarding' }],
+              routes: [{ name: 'Login' }],
             });
           } catch (error) {
             console.error('Logout error:', error);

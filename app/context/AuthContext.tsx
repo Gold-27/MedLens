@@ -108,6 +108,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setSession(newSession);
         await setGuestState(false);
         await LocalStorageService.setOnboardingCompleted();
+        await LocalStorageService.setHasAuthenticatedBefore();
       }
       return { error };
     } catch (error) {
@@ -158,11 +159,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setSession(refreshedSession);
           await setGuestState(false);
           await LocalStorageService.setOnboardingCompleted();
+          await LocalStorageService.setHasAuthenticatedBefore();
         } else if (signUpData.session) {
           console.log('[Auth] Using initial session from signUp');
           setSession(signUpData.session);
           await setGuestState(false);
           await LocalStorageService.setOnboardingCompleted();
+          await LocalStorageService.setHasAuthenticatedBefore();
         } else {
           console.log('[Auth] No immediate session (normal if email confirmation enabled)');
         }
@@ -259,6 +262,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               }
               console.log('Session established successfully!');
               await LocalStorageService.setOnboardingCompleted();
+              await LocalStorageService.setHasAuthenticatedBefore();
             }
           }
         } else if (res.type === 'cancel' || res.type === 'dismiss') {

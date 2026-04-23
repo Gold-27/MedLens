@@ -9,6 +9,7 @@ const KEYS = {
   SETTINGS: 'ml_settings',
   INTERACTION_COUNT: 'ml_interaction_count',
   ONBOARDING_COMPLETED: 'ml_onboarding_completed',
+  HAS_AUTHENTICATED_BEFORE: 'ml_has_authenticated_before',
 };
 
 const CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
@@ -153,15 +154,16 @@ export const LocalStorageService = {
       const cabinetKey = userId ? `${KEYS.CABINET}_${userId}` : `${KEYS.CABINET}_guest`;
       const searchesKey = userId ? `${KEYS.RECENT_SEARCHES}_${userId}` : `${KEYS.RECENT_SEARCHES}_guest`;
       
-      const keysToRemove = [cabinetKey, searchesKey, KEYS.ONBOARDING_COMPLETED];
+      const keysToRemove = [cabinetKey, searchesKey];
       
-      // Also attempt to remove legacy global cabinet key just in case
+      // Note: We no longer clear ONBOARDING_COMPLETED here to preserve returning user state
+      
       if (!userId) {
         keysToRemove.push(KEYS.CABINET);
       }
 
       await AsyncStorage.multiRemove(keysToRemove);
-      console.log(`[Storage] Cleared session data and onboarding state for ${userId || 'guest'}`);
+      console.log(`[Storage] Cleared session data for ${userId || 'guest'}`);
     } catch (e) {
       console.error('[Storage] Failed to clear session data:', e);
     }
@@ -206,7 +208,22 @@ export const LocalStorageService = {
 
   async resetOnboarding(): Promise<void> {
     try {
-      await AsyncStorage.removeItem(KEYS.ONBOARDING_COMPLETED);
+      await AsyncStorage.multiRemove([KEYS.ONBOARDING_COMPLETED, KEYS.HAS_AUTHENTICATED_BEFORE]);
     } catch (e) {}
+  },
+
+  async setHasAuthenticatedBefore(): Promise<void> {
+    try {
+      await AsyncStorage.setItem(KEYS.HAS_AUTHENTICATED_BEFORE, 'true');
+    } catch (e) {}
+  },
+
+  async getHasAuthenticatedBefore(): Promise<boolean> {
+    try {
+      const value = await AsyncStorage.getItem(KEYS.HAS_AUTHENTICATED_BEFORE);
+      return value === 'true';
+    } catch (e) {
+      return false;
+    }
   },
 };
