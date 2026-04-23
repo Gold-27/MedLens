@@ -134,7 +134,7 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <View style={styles.drawerHeader}>
         <View style={styles.logoWrapper}>
-          <SvgXml xml={LOGO_SVG} width={120} height={40} />
+          <SvgXml xml={LOGO_SVG} width={120} height={40} preserveAspectRatio="xMinYMid meet" />
         </View>
       </View>
 
@@ -264,6 +264,7 @@ const styles = StyleSheet.create({
   logoWrapper: {
     height: 40,
     justifyContent: 'center',
+    alignItems: 'flex-start',
   },
   userEmail: {
     fontSize: 12,

@@ -79,7 +79,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
       
       <View style={styles.footer}>
         <Text style={[styles.footerText, { color: theme.colors.onPrimaryContainer }]}>
-          Your Health Simplified
+          Your Medication Simplified
         </Text>
       </View>
     </View>
