@@ -1,119 +1,86 @@
-import React, { useEffect } from 'react';
-import { View, StyleSheet, Animated, Image } from 'react-native';
-import { Asset } from 'expo-asset';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, StyleSheet, Animated, Text, StatusBar } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../navigation/AppNavigator';
 import { useAuth } from '../context/AuthContext';
 import { LocalStorageService } from '../services/storage';
+import { SvgXml } from 'react-native-svg';
+import { LOGO_SVG } from '../assets/logo_svg';
 
 type SplashScreenProps = any;
 
 const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
   const theme = useTheme();
-  const { session, user, isGuest, loading: authLoading } = useAuth();
-  const pulseAnim = new Animated.Value(1);
+  const { session, loading: authLoading } = useAuth();
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.9)).current;
 
   useEffect(() => {
-    // Pulse animation
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.1,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
+    // Entrance animations
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 8,
+        tension: 40,
+        useNativeDriver: true,
+      }),
+    ]).start();
 
-    // Preload onboarding images in the background WHILE the splash timer runs.
-    // By the time we navigate to Onboarding, images are already in the Expo cache.
-    Asset.loadAsync([
-      require('../assets/img_onboard1.png'),
-      require('../assets/img_onboard2.png'),
-      require('../assets/img_onboard3.png'),
-    ]).catch(() => {/* silent — local assets always available */});
-  }, []);
-
-  useEffect(() => {
-    let hasNavigated = false;
-
-    const navigate = (screen: keyof RootStackParamList) => {
-      if (hasNavigated) return;
-      hasNavigated = true;
-      navigation.replace(screen as any);
-    };
-
-    // Check onboarding status and navigate
-    const checkStatus = async () => {
+    const checkRouting = async () => {
       try {
-        // Wait for auth to initialize — but don't wait if it's still loading
-        if (authLoading) return;
-
-        console.log(`[Splash] Starting check: sessionUser=${session?.user?.id}`);
+        // FOR DEVELOPMENT: Reset onboarding so it shows again as requested
+        await LocalStorageService.resetOnboarding();
         
-        await new Promise(resolve => setTimeout(resolve, 2000)); // Minimum splash time
+        // Minimum visibility time for branding
+        await new Promise(resolve => setTimeout(resolve, 2500));
         
-        
-        // Check for persistent onboarding completion flag
         const hasCompletedOnboarding = await LocalStorageService.getOnboardingCompleted();
-        console.log(`[Splash] Onboarding completed flag: ${hasCompletedOnboarding}`);
-
-        // Routing Rules:
-        // 1. Authenticated session exists -> Home
-        // 2. No session BUT onboarding completed -> Login
-        // 3. Otherwise -> Onboarding
-        if (session?.user?.id) {
-          console.log('[Splash] Decision: Authenticated -> navigating to Home');
-          navigate('Home');
-        } else if (hasCompletedOnboarding) {
-          console.log('[Splash] Decision: Returning user -> navigating to Login');
-          navigate('Login');
+        
+        if (hasCompletedOnboarding) {
+          if (session?.user?.id) {
+            navigation.replace('Home');
+          } else {
+            navigation.replace('Login');
+          }
         } else {
-          console.log('[Splash] Decision: New user -> navigating to Onboarding');
-          navigate('Onboarding');
+          navigation.replace('Onboarding');
         }
       } catch (error) {
-        console.error('[Splash] Check failed:', error);
-        navigate('Onboarding');
+        console.error('[Splash] Routing error:', error);
+        navigation.replace('Onboarding');
       }
     };
 
     if (!authLoading) {
-      checkStatus();
+      checkRouting();
     }
-
-    // Safety timeout: if auth never resolves, force navigation to Onboarding
-    const safetyTimer = setTimeout(async () => {
-      if (hasNavigated) return;
-      console.warn('[Splash] Safety timeout reached — forcing Onboarding');
-      navigate('Onboarding');
-    }, 5000);
-
-    return () => clearTimeout(safetyTimer);
-  }, [authLoading, user, isGuest, session]);
+  }, [authLoading, session, navigation]);
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.primary }]}>
-      <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
-        <View style={styles.logoContainer}>
-          <Image source={require('../assets/splash-icon.png')} style={styles.logo} />
-          <View style={styles.logoTextContainer}>
-            <View style={[styles.logoTextLine, { backgroundColor: theme.colors.onPrimary }]} />
-            <View style={[styles.logoTextLineShort, { backgroundColor: theme.colors.onPrimary }]} />
-          </View>
+    <View style={[styles.container, { backgroundColor: theme.colors.primaryContainer }]}>
+      <StatusBar barStyle="dark-content" />
+      <Animated.View 
+        style={[
+          styles.content, 
+          { 
+            opacity: fadeAnim,
+            transform: [{ scale: scaleAnim }]
+          }
+        ]}
+      >
+        <View style={styles.logoWrapper}>
+          <SvgXml xml={LOGO_SVG} width={200} height={100} />
         </View>
       </Animated.View>
       
-      {/* Preload assets for subsequent screens */}
-      <View style={{ opacity: 0, position: 'absolute', width: 1, height: 1 }}>
-        <Image source={require('../assets/google_g_logo.png')} />
+      <View style={styles.footer}>
+        <Text style={[styles.footerText, { color: theme.colors.onPrimaryContainer }]}>
+          MedQuire • Your Health, Simplified
+        </Text>
       </View>
     </View>
   );
@@ -125,28 +92,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  logoContainer: {
-    flexDirection: 'row',
+  content: {
     alignItems: 'center',
-    gap: 16,
+    justifyContent: 'center',
   },
-  logo: {
-    width: 60,
-    height: 60,
-    borderRadius: 16,
+  logoWrapper: {
+    marginBottom: 20,
   },
-  logoTextContainer: {
-    gap: 8,
+  footer: {
+    position: 'absolute',
+    bottom: 50,
   },
-  logoTextLine: {
-    width: 120,
-    height: 12,
-    borderRadius: 6,
-  },
-  logoTextLineShort: {
-    width: 80,
-    height: 12,
-    borderRadius: 6,
+  footerText: {
+    fontSize: 14,
+    fontWeight: '500',
+    opacity: 0.8,
+    letterSpacing: 0.5,
   },
 });
 

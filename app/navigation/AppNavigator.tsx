@@ -53,6 +53,9 @@ const clearDrawerHistoryCache = () => {
   drawerHistoryCache = null;
 };
 
+import { SvgXml } from 'react-native-svg';
+import { LOGO_SVG } from '../assets/logo_svg';
+
 const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
   const theme = useTheme();
   const navigation = useNavigation();
@@ -71,7 +74,7 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [user?.id]);
 
   // Update history whenever drawer status changes (opening/open)
   React.useEffect(() => {
@@ -130,10 +133,9 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <View style={styles.drawerHeader}>
-        <View style={[styles.logoContainer, { backgroundColor: theme.colors.primary }]}>
-          <Ionicons name="medical" size={32} color={theme.colors.onPrimary} />
+        <View style={styles.logoWrapper}>
+          <SvgXml xml={LOGO_SVG} width={120} height={40} />
         </View>
-        <Text style={[styles.appName, { color: theme.colors.onSurface }]}>MedQuire</Text>
       </View>
 
       <View style={styles.historySection}>
@@ -256,23 +258,12 @@ const styles = StyleSheet.create({
   drawerHeader: {
     padding: 24,
     paddingTop: 60,
-    alignItems: 'flex-start',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
   },
-  logoContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    alignItems: 'center',
+  logoWrapper: {
+    height: 40,
     justifyContent: 'center',
-    marginBottom: 12,
-  },
-  headerText: {
-    marginTop: 8,
-  },
-  appName: {
-    fontSize: 24,
-    fontWeight: '800',
-    letterSpacing: -0.5,
   },
   userEmail: {
     fontSize: 12,
