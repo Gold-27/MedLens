@@ -273,15 +273,37 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const getToken = async (): Promise<string | null> => {
+  const getToken = React.useCallback(async (): Promise<string | null> => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      return session?.access_token || null;
-    } catch (error) {
-      console.error('Get token error:', error);
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error || !session) {
+        if (error) console.error('[Auth] getSession error:', error.message);
+        return null;
+      }
+      
+      // Check if token is expired or expiring soon (within 60 seconds)
+      const now = Math.floor(Date.now() / 1000);
+      const expiresAt = session.expires_at || 0;
+      
+      if (expiresAt - now < 60) {
+        console.log('[Auth] Token expiring soon or expired, refreshing...');
+        const { data: { session: refreshed }, error: refreshError } = await supabase.auth.refreshSession();
+        
+        if (refreshError) {
+          console.error('[Auth] Token refresh failed:', refreshError.message);
+          return null;
+        }
+        
+        return refreshed?.access_token || null;
+      }
+      
+      return session.access_token;
+    } catch (error: any) {
+      console.error('[Auth] Get token error:', error.message);
       return null;
     }
-  };
+  }, []);
 
   const updateProfile = async (data: { full_name?: string; email?: string }) => {
     try {
