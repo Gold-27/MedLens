@@ -96,7 +96,7 @@ const SettingsScreen: React.FC = () => {
             const { error } = await deleteAccount();
             setIsUpdating(false);
             if (!error) {
-              navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+              navigation.reset({ index: 0, routes: [{ name: 'Onboarding' }] });
             }
           }
         }

@@ -349,6 +349,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       if (cabinetError) console.warn('Failed to clear cabinet data during deletion:', cabinetError);
 
+      // Wipe all local storage (onboarding, history, settings)
+      await LocalStorageService.clearAllData();
+
       // Sign out
       await signOut();
       
