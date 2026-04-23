@@ -1,14 +1,14 @@
 import React, { useRef, useImperativeHandle, forwardRef } from 'react';
 import { View, StyleSheet, Dimensions } from 'react-native';
 import ViewShot from 'react-native-view-shot';
-import SummaryCard, { SummaryCardProps } from './SummaryCard';
+import ExportSummary, { ExportSummaryProps } from './ExportSummary';
 import { ThemeProvider } from '../theme/ThemeProvider';
 
 export interface ExportCardRef {
   capture: () => Promise<string>;
 }
 
-interface ExportCardProps extends Omit<SummaryCardProps, 'onSave' | 'onExport' | 'onClose'> {}
+interface ExportCardProps extends ExportSummaryProps {}
 
 const ExportCard = forwardRef<ExportCardRef, ExportCardProps>((props, ref) => {
   const viewShotRef = useRef<ViewShot>(null);
@@ -30,10 +30,7 @@ const ExportCard = forwardRef<ExportCardRef, ExportCardProps>((props, ref) => {
         style={styles.viewShot}
       >
         <View style={styles.cardWrapper}>
-          <SummaryCard
-            {...props}
-            isExporting={true}
-          />
+          <ExportSummary {...props} />
         </View>
       </ViewShot>
     </View>
@@ -45,15 +42,14 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: -Dimensions.get('window').width * 2, // Way off screen
     top: 0,
-    width: Dimensions.get('window').width,
+    width: 420, // Match ExportSummary width
     opacity: 0,
   },
   viewShot: {
-    backgroundColor: 'transparent',
+    backgroundColor: '#ffffff',
   },
   cardWrapper: {
-    padding: 10,
-    backgroundColor: '#0F172A', // Match background for better edges
+    backgroundColor: '#ffffff',
   },
 });
 
