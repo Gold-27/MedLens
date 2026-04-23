@@ -10,6 +10,25 @@ interface PasswordRequirementsProps {
 }
 
 const PasswordRequirements: React.FC<PasswordRequirementsProps> = ({ requirements, theme }) => {
+  const allMet = Object.values(requirements).every(val => val === true);
+
+  if (allMet) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.requirementRow}>
+          <MaterialIcons
+            name="check-circle"
+            size={18}
+            color={theme.colors.success}
+          />
+          <Text style={[styles.requirementText, { color: theme.colors.success, fontWeight: '600' }]}>
+            Password meets requirements
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <RequirementRow 

@@ -6,7 +6,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useTheme, ThemeContextType } from '../theme/ThemeProvider';
 import { useAuth } from '../context/AuthContext';
-import { getPasswordRequirements } from '../utils/validation';
+import { getPasswordRequirements, isPasswordValid } from '../utils/validation';
 import PasswordRequirements from '../components/PasswordRequirements';
 
 type SignUpScreenProps = any;
@@ -90,8 +90,9 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
     // Basic validation check before starting loading
     const hasErrors = Object.values(errors).some(err => err !== '');
     const isComplete = form.name && form.email && form.password;
+    const isPassValid = isPasswordValid(form.password);
 
-    if (!hasErrors && isComplete) {
+    if (!hasErrors && isComplete && isPassValid) {
       setLoading(true);
       try {
         const { error } = await signUp(form.email, form.password, form.name);
@@ -112,7 +113,11 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
       const newErrors = { ...errors };
       if (!form.name) newErrors.name = 'Field must not be empty';
       if (!form.email) newErrors.email = 'Field must not be empty';
-      if (!form.password) newErrors.password = 'Field must not be empty';
+      if (!form.password) {
+        newErrors.password = 'Field must not be empty';
+      } else if (!isPassValid) {
+        newErrors.password = 'Password does not meet requirements';
+      }
       setErrors(newErrors);
     }
   };
