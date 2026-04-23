@@ -203,4 +203,10 @@ export const LocalStorageService = {
       return false;
     }
   },
+
+  async resetOnboarding(): Promise<void> {
+    try {
+      await AsyncStorage.removeItem(KEYS.ONBOARDING_COMPLETED);
+    } catch (e) {}
+  },
 };
