@@ -258,6 +258,57 @@ export class DeepSeekService {
       return summary; // Fallback to original
     }
   }
+
+  async generateChatResponse(messages: { role: 'user' | 'assistant' | 'system'; content: string }[]): Promise<string> {
+    if (!this.apiKey) {
+      throw new Error('DeepSeek API key is not configured');
+    }
+
+    const systemPrompt = `
+      You are the MedLens AI Support Assistant. Your goal is to help users understand their medication information, troubleshoot app issues, and navigate features.
+      
+      CAPABILITIES:
+      - Troubleshooting: Help with cabinet issues, export errors, or account questions.
+      - Simplification: Explain medication summaries or interaction results in simpler terms.
+      - Navigation: Guide users on how to use the search, cabinet, and checker features.
+      
+      SAFETY & TRUST (NON-NEGOTIABLE):
+      - DO NOT diagnose diseases.
+      - DO NOT prescribe medications or suggest dosage changes.
+      - DO NOT provide emergency medical advice.
+      - ALWAYS include a disclaimer if the user asks for direct medical advice: "I can help explain medical information, but I cannot provide medical advice. Please consult a healthcare professional for clinical decisions."
+      - If you are unsure or the issue is complex, say: "I'm not confident I can resolve this issue. This may require human support."
+      
+      TONE: Professional, empathetic, and clear.
+    `;
+
+    const fullMessages = [
+      { role: 'system', content: systemPrompt },
+      ...messages
+    ];
+
+    try {
+      const response = await axios.post(
+        this.baseUrl,
+        {
+          model: 'deepseek-chat',
+          messages: fullMessages,
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json'
+          },
+          timeout: 30000
+        }
+      );
+
+      return response.data.choices[0].message.content;
+    } catch (error: any) {
+      console.error('DeepSeek Chat error:', error.message);
+      throw new Error('AI support is temporarily unavailable. Please try again later.');
+    }
+  }
 }
 
 export default new DeepSeekService();

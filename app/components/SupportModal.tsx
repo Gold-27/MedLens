@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeProvider';
 import { useAuth } from '../context/AuthContext';
 import { SupportService, SupportTicket } from '../services/support';
+import ChatSupport from './ChatSupport';
 
 interface SupportModalProps {
   visible: boolean;
@@ -32,6 +33,7 @@ const SupportModal: React.FC<SupportModalProps> = ({ visible, onClose }) => {
   const [latestTicket, setLatestTicket] = useState<SupportTicket | null>(null);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [activeTab, setActiveTab] = useState<'chat' | 'tickets'>('chat');
 
   const fetchHistory = useCallback(async () => {
     if (!user) return;
@@ -255,16 +257,40 @@ const SupportModal: React.FC<SupportModalProps> = ({ visible, onClose }) => {
             </TouchableOpacity>
           </View>
 
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-            {isLoadingHistory ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={theme.colors.primary} />
-                <Text style={[styles.loadingText, { color: theme.colors.onSurfaceVariant }]}>Loading your tickets...</Text>
-              </View>
+          <View style={[styles.tabBar, { borderBottomColor: theme.colors.outlineVariant }]}>
+            <TouchableOpacity 
+              style={[styles.tab, activeTab === 'chat' && { borderBottomColor: theme.colors.primary }]}
+              onPress={() => setActiveTab('chat')}
+            >
+              <Text style={[styles.tabText, { color: activeTab === 'chat' ? theme.colors.primary : theme.colors.onSurfaceVariant }]}>AI Support</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.tab, activeTab === 'tickets' && { borderBottomColor: theme.colors.primary }]}
+              onPress={() => setActiveTab('tickets')}
+            >
+              <Text style={[styles.tabText, { color: activeTab === 'tickets' ? theme.colors.primary : theme.colors.onSurfaceVariant }]}>Ticket History</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.contentArea}>
+            {activeTab === 'chat' ? (
+              <ChatSupport onEscalate={() => {
+                setActiveTab('tickets');
+                setShowForm(true);
+              }} />
             ) : (
-              showForm ? renderForm() : renderTrackingView()
+              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+                {isLoadingHistory ? (
+                  <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color={theme.colors.primary} />
+                    <Text style={[styles.loadingText, { color: theme.colors.onSurfaceVariant }]}>Loading your tickets...</Text>
+                  </View>
+                ) : (
+                  showForm ? renderForm() : renderTrackingView()
+                )}
+              </ScrollView>
             )}
-          </ScrollView>
+          </View>
         </View>
       </KeyboardAvoidingView>
     </Modal>
@@ -307,6 +333,28 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     padding: 4,
+  },
+  tabBar: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    marginBottom: 12,
+    marginHorizontal: -24,
+    paddingHorizontal: 24,
+  },
+  tab: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+  },
+  tabText: {
+    fontSize: 15,
+    fontWeight: '700',
+    fontFamily: 'Outfit',
+  },
+  contentArea: {
+    flex: 1,
+    marginHorizontal: -24,
   },
   scrollContent: {
     flexGrow: 1,

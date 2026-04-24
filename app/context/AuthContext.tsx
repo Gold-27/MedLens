@@ -5,7 +5,7 @@ import * as Linking from 'expo-linking';
 import * as AuthSession from 'expo-auth-session';
 import { supabase } from '../services/supabase';
 import { Config } from '../config';
-import { Platform } from 'react-native';
+import { Platform, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LocalStorageService } from '../services/storage';
 
@@ -356,13 +356,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           
           if (!response.ok) {
             const errorData = await response.json();
-            console.error('[Auth] Backend deletion failed:', errorData.error);
-            // We continue anyway to clear local data, but the admin delete might have failed
+            console.warn('[Auth] Backend deletion failed:', errorData.error);
+            
+            // Show a friendly alert instead of a red screen
+            if (errorData.error?.includes('Server configuration error')) {
+              Alert.alert(
+                "Deletion Partially Failed",
+                "Your local data was cleared, but the backend account couldn't be deleted due to a server configuration error (Missing SUPABASE_SERVICE_ROLE_KEY).",
+                [{ text: "OK" }]
+              );
+            } else {
+              Alert.alert(
+                "Deletion Error",
+                `The backend account could not be deleted: ${errorData.error}`,
+                [{ text: "OK" }]
+              );
+            }
           } else {
             console.log('[Auth] Permanent account deletion triggered successfully');
           }
         } catch (e) {
-          console.error('[Auth] Failed to reach deletion API:', e);
+          console.warn('[Auth] Failed to reach deletion API:', e);
         }
       }
 

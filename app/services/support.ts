@@ -1,4 +1,18 @@
 import { supabase } from './supabase';
+import { Config } from '../config';
+
+export interface SupportMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  created_at: string;
+}
+
+export interface SupportConversation {
+  id: string;
+  status: 'active' | 'waiting_for_user' | 'escalated' | 'resolved' | 'closed';
+  updated_at: string;
+}
 
 export interface SupportTicket {
   id?: string;
@@ -38,5 +52,48 @@ export const SupportService = {
       .order('created_at', { ascending: false });
 
     return { data, error };
+  },
+
+  /**
+   * AI Chat Support
+   */
+  async sendChatMessage(message: string, conversationId?: string) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const response = await fetch(`${Config.API_BASE_URL}/api/support/chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({ message, conversationId })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to send message');
+    }
+
+    return await response.json() as { conversationId: string; message: string };
+  },
+
+  async getChatHistory() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const response = await fetch(`${Config.API_BASE_URL}/api/support/chat/history`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`
+      }
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to fetch history');
+    }
+
+    return await response.json() as { conversation: SupportConversation | null; messages: SupportMessage[] };
   }
 };
