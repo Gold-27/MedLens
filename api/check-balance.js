@@ -1,7 +1,7 @@
 const axios = require('axios');
 
 async function checkBalance() {
-  const apiKey = 'sk-ada9dbdc1dca4b7da7a6d835d01ede77';
+  const apiKey = process.env.EXPO_PUBLIC_DEEPSEEK_API_KEY
   const url = 'https://api.deepseek.com/user/balance';
 
   console.log('Checking DeepSeek balance for key:', apiKey);

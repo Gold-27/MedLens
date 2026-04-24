@@ -2,10 +2,13 @@ const axios = require('axios');
 require('dotenv').config();
 
 async function testDeepSeek() {
-  const apiKey = 'sk-94f377dcbf39421ba66956ef81eff46e';
+  const apiKey = process.env.DEEPSEEK_API_KEY;
   const baseUrl = 'https://api.deepseek.com/v1/chat/completions';
 
-  console.log('Testing DeepSeek API Key:', apiKey);
+  if (!apiKey) {
+    console.log('DEEPSEEK_API_KEY is not set in .env');
+    return;
+  }
 
   try {
     const response = await axios.post(
