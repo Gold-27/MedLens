@@ -11,6 +11,7 @@ import { useAuth } from '../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 
 import SummaryCard from '../components/SummaryCard';
+import SummaryCardSkeleton from '../components/SummaryCardSkeleton';
 import Skeleton from '../components/Skeleton';
 import InputBar, { InputBarHandle } from '../components/InputBar';
 import EmptyState from '../components/EmptyState';
@@ -225,9 +226,27 @@ const HomeScreen: React.FC = () => {
     loadLocalData();
   }, []);
 
+  // Restore pending search context after Auth transition
+  useEffect(() => {
+    const restoreContext = async () => {
+      if (user && state === 'empty') {
+        const pending = await LocalStorageService.getPendingSearch();
+        if (pending && pending.query) {
+          console.log(`[Home] Restoring pending search context: ${pending.query}`);
+          setIsELI12(pending.eli12);
+          handleSearch(pending.query);
+          await LocalStorageService.clearPendingSearch();
+        }
+      }
+    };
+    restoreContext();
+  }, [user, state, handleSearch]);
+
   const handleSave = useCallback(async () => {
     if (!baseResult) return;
     if (isGuest) { 
+      // Save context before auth transition
+      LocalStorageService.setPendingSearch(query, isELI12);
       setShowAuthModal(true);
       setPendingAction('save');
       return; 
@@ -262,6 +281,8 @@ const HomeScreen: React.FC = () => {
   const handleExport = useCallback(async () => {
     if (!baseResult) return;
     if (isGuest) { 
+      // Save context before auth transition
+      LocalStorageService.setPendingSearch(query, isELI12);
       setShowAuthModal(true);
       setPendingAction('export');
       return; 
@@ -332,10 +353,8 @@ const HomeScreen: React.FC = () => {
     switch (state) {
       case 'loading':
         return (
-          <View style={styles.loadingState}>
-            <Skeleton width="60%" height={32} borderRadius={8} />
-            <View style={styles.skeletonSpacing} />
-            <Skeleton width="100%" height={300} borderRadius={24} />
+          <View style={styles.resultContainer}>
+            <SummaryCardSkeleton />
           </View>
         );
 
@@ -408,7 +427,14 @@ const HomeScreen: React.FC = () => {
           <View style={styles.headerActions}>
             <TouchableOpacity
               style={[styles.cabinetPill, { backgroundColor: theme.colors.primaryContainer, borderWidth: 0 }]}
-              onPress={() => isGuest ? navigation.navigate('SignUp') : navigation.navigate('Cabinet')}
+              onPress={() => {
+                if (isGuest) {
+                  if (query) LocalStorageService.setPendingSearch(query, isELI12);
+                  navigation.navigate('SignUp');
+                } else {
+                  navigation.navigate('Cabinet');
+                }
+              }}
             >
               <Ionicons name="briefcase" size={18} color={theme.colors.onPrimaryContainer} />
               <Text style={[styles.cabinetText, { color: theme.colors.onPrimaryContainer }]}>Cabinet</Text>

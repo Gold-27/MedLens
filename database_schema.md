@@ -154,6 +154,31 @@ Stores user-saved medications safely and consistently.
 
 ---
 
+## 7. Support Tickets Table
+
+### Purpose
+Stores user-submitted support requests for tracking and administration.
+
+### Fields
+- id (UUID, primary key)
+
+- user_id (UUID, foreign key → users.id)
+- email (string, auto-populated)
+
+- subject (string, required)
+- message (string, required)
+
+- status (string, default: "open", options: ["open", "in-progress", "closed"])
+
+- created_at (timestamp)
+
+### Security (RLS)
+- users can insert their own tickets
+- users can view their own tickets
+- admins (future) can view and update all tickets
+
+---
+
 ## 6. Critical Design Decisions
 
 ---

@@ -10,6 +10,7 @@ const KEYS = {
   INTERACTION_COUNT: 'ml_interaction_count',
   ONBOARDING_COMPLETED: 'ml_onboarding_completed',
   HAS_AUTHENTICATED_BEFORE: 'ml_has_authenticated_before',
+  PENDING_SEARCH: 'ml_pending_search',
 };
 
 const CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
@@ -225,6 +226,28 @@ export const LocalStorageService = {
     } catch (e) {
       return false;
     }
+  },
+
+  // Pending Search Context (for Auth transitions)
+  async setPendingSearch(query: string, eli12: boolean): Promise<void> {
+    try {
+      await AsyncStorage.setItem(KEYS.PENDING_SEARCH, JSON.stringify({ query, eli12 }));
+    } catch (e) {}
+  },
+
+  async getPendingSearch(): Promise<{ query: string; eli12: boolean } | null> {
+    try {
+      const data = await AsyncStorage.getItem(KEYS.PENDING_SEARCH);
+      return data ? JSON.parse(data) : null;
+    } catch (e) {
+      return null;
+    }
+  },
+
+  async clearPendingSearch(): Promise<void> {
+    try {
+      await AsyncStorage.removeItem(KEYS.PENDING_SEARCH);
+    } catch (e) {}
   },
 
   async clearAllData(): Promise<void> {

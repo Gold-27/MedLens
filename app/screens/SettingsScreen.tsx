@@ -12,13 +12,13 @@ import {
   Modal,
   TextInput,
   ActivityIndicator,
-  Linking
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeProvider';
 import { useAuth } from '../context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import SupportModal from '../components/SupportModal';
 
 type SettingsItem = 
   | { label: string; value: string; type: 'info' }
@@ -44,6 +44,7 @@ const SettingsScreen: React.FC = () => {
   const [editName, setEditName] = useState(user?.user_metadata?.full_name || '');
   const [editEmail, setEditEmail] = useState(user?.email || '');
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isSupportModalVisible, setIsSupportModalVisible] = useState(false);
 
   const toggleAccordion = (label: string) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -120,7 +121,7 @@ const SettingsScreen: React.FC = () => {
   };
 
   const handleSupport = () => {
-    Linking.openURL('mailto:support@medquire.ai?subject=Support Request');
+    setIsSupportModalVisible(true);
   };
 
   const sections: SettingsSection[] = ([
@@ -304,6 +305,12 @@ const SettingsScreen: React.FC = () => {
           </View>
         </View>
       </Modal>
+
+      {/* Support Modal */}
+      <SupportModal 
+        visible={isSupportModalVisible} 
+        onClose={() => setIsSupportModalVisible(false)} 
+      />
     </SafeAreaView>
   );
 };
