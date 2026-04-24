@@ -6,7 +6,7 @@ export interface SupportTicket {
   email: string;
   subject: string;
   message: string;
-  status: 'open' | 'in-progress' | 'closed';
+  status: 'open' | 'in-review' | 'viewed' | 'resolved' | 'closed';
   created_at?: string;
 }
 
