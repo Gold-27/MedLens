@@ -3,8 +3,15 @@ import { createClient } from '@supabase/supabase-js';
 import DeepSeekService from '../services/deepseek.service';
 
 const supabaseUrl = process.env.SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+
+// Use service role to bypass RLS for backend-managed support flows
+const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+});
 
 export const handleSupportChat = async (req: Request, res: Response) => {
   const userId = (req as any).userId;

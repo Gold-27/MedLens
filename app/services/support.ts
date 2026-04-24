@@ -70,12 +70,23 @@ export const SupportService = {
       body: JSON.stringify({ message, conversationId })
     });
 
+    const responseText = await response.text();
+    
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to send message');
+      try {
+        const error = JSON.parse(responseText);
+        throw new Error(error.error || `Server error (${response.status})`);
+      } catch (e) {
+        throw new Error(`Server error (${response.status}): ${responseText.substring(0, 100)}`);
+      }
     }
 
-    return await response.json() as { conversationId: string; message: string };
+    try {
+      return JSON.parse(responseText) as { conversationId: string; message: string };
+    } catch (e) {
+      console.error('[Support] JSON Parse Error:', e, 'Raw content:', responseText);
+      throw new Error('Received invalid response from server');
+    }
   },
 
   async getChatHistory() {
@@ -89,11 +100,22 @@ export const SupportService = {
       }
     });
 
+    const responseText = await response.text();
+
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to fetch history');
+      try {
+        const error = JSON.parse(responseText);
+        throw new Error(error.error || `Server error (${response.status})`);
+      } catch (e) {
+        throw new Error(`Server error (${response.status}): ${responseText.substring(0, 100)}`);
+      }
     }
 
-    return await response.json() as { conversation: SupportConversation | null; messages: SupportMessage[] };
+    try {
+      return JSON.parse(responseText) as { conversation: SupportConversation | null; messages: SupportMessage[] };
+    } catch (e) {
+      console.error('[Support] JSON Parse Error:', e, 'Raw content:', responseText);
+      throw new Error('Received invalid response from server');
+    }
   }
 };
