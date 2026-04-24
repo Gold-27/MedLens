@@ -31,6 +31,7 @@ export interface InteractionResponse {
   status: 'safe' | 'caution' | 'risky' | 'unknown' | 'potential_interaction' | 'insufficient_data';
   severity?: 'safe' | 'caution' | 'risky' | 'unknown';
   message: string;
+  eli12_summary?: string;
   details?: {
     interactions: Array<{
       drugKey: string;

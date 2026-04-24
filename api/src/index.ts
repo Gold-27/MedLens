@@ -98,9 +98,14 @@ app.post('/api/interactions', async (req, res) => {
       drug2Name, info2
     );
 
+    // Generate ELI12 version
+    const eli12Summary = await DeepSeekService.simplifyInteraction(analysis.summary);
+
     res.json({
       status: analysis.severity, // 'safe', 'caution', 'risky', 'unknown'
       message: analysis.summary,
+      summary: analysis.summary,
+      eli12_summary: eli12Summary,
       severity: analysis.severity
     });
 

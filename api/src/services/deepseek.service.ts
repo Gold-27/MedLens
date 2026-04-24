@@ -205,6 +205,59 @@ export class DeepSeekService {
       };
     }
   }
+
+  async simplifyInteraction(summary: string): Promise<string> {
+    if (!this.apiKey) {
+      throw new Error('DeepSeek API key is not configured');
+    }
+
+    const systemPrompt = `
+      You are MedLens, an AI assistant specialized in extreme simplification (ELI12 mode).
+      You are taking a medication interaction summary and making it even MORE basic for a 12-year-old child.
+      
+      CRITICAL RULES:
+      1. Use very simple language, metaphors, and short sentences.
+      2. If there are still any medical terms, explain them like you're talking to a kid.
+      3. DO NOT change the medical meaning or severity.
+      4. NEVER provide medical advice.
+      5. Keep the output very concise (1-2 short sentences).
+      
+      OUTPUT FORMAT:
+      Return a JSON object: { "eli12_summary": "..." }
+    `;
+
+    const userPrompt = `
+      Simplify this interaction summary for a 12-year-old:
+      
+      Summary: ${summary}
+    `;
+
+    try {
+      const response = await axios.post(
+        this.baseUrl,
+        {
+          model: 'deepseek-chat',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ],
+          response_format: { type: 'json_object' }
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      const content = JSON.parse(response.data.choices[0].message.content);
+      return content.eli12_summary || summary;
+    } catch (error: any) {
+      console.error('DeepSeek Interaction ELI12 error:', error.message);
+      return summary; // Fallback to original
+    }
+  }
 }
 
 export default new DeepSeekService();

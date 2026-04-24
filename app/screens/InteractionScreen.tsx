@@ -10,6 +10,7 @@ import { RootStackParamList } from '../navigation/AppNavigator';
 import * as api from '../services/api';
 import { useTheme, ThemeContextType } from '../theme/ThemeProvider';
 import { LocalStorageService } from '../services/storage';
+import InteractionSkeleton from '../components/InteractionSkeleton';
 
 
 
@@ -28,6 +29,7 @@ const InteractionScreen: React.FC = () => {
   const [availableDrugs, setAvailableDrugs] = useState<DrugItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [checking, setChecking] = useState(false);
+  const [isELI12, setIsELI12] = useState(false);
   const [result, setResult] = useState<api.InteractionResponse | null>(null);
 
   // Load cabinet items for selection
@@ -265,6 +267,37 @@ const InteractionScreen: React.FC = () => {
         )}
       </TouchableOpacity>
 
+      {checking && <InteractionSkeleton />}
+
+      {result && (
+        <View style={styles.resultHeader}>
+          <Text style={[styles.sectionLabel, { color: theme.colors.onSurface, marginBottom: 0 }]}>
+            Interaction Result
+          </Text>
+          <TouchableOpacity 
+            style={[
+              styles.eliButton, 
+              { 
+                backgroundColor: isELI12 ? theme.colors.primary : theme.colors.surface,
+                borderColor: theme.colors.primary,
+                borderWidth: 1,
+              }
+            ]}
+            onPress={() => setIsELI12(!isELI12)}
+          >
+            {isELI12 && (
+              <Ionicons name="checkmark-circle" size={16} color={theme.colors.onPrimary} />
+            )}
+            <Text style={[
+              styles.eliButtonText, 
+              { color: isELI12 ? theme.colors.onPrimary : theme.colors.primary }
+            ]}>
+              ELI 12
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       {result && (
         <View style={[
           styles.resultCard,
@@ -303,7 +336,7 @@ const InteractionScreen: React.FC = () => {
                 theme.colors.onSurfaceVariant
             },
           ]}>
-            {result.message}
+            {isELI12 && result.eli12_summary ? result.eli12_summary : result.message}
           </Text>
           {result.details?.interactions && result.details.interactions.length > 0 && (
             <View style={styles.interactionDetails}>
@@ -454,6 +487,25 @@ const styles = StyleSheet.create({
   },
   checkButtonText: {
     fontSize: 18,
+    fontWeight: '700',
+  },
+  resultHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginHorizontal: 24,
+    marginBottom: 16,
+  },
+  eliButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    height: 36,
+    borderRadius: 18,
+    gap: 6,
+  },
+  eliButtonText: {
+    fontSize: 12,
     fontWeight: '700',
   },
   resultCard: {
