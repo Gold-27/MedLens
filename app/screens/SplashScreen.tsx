@@ -37,7 +37,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
       try {
         // FOR DEVELOPMENT: Reset onboarding so you can see the changes
         await LocalStorageService.resetOnboarding();
-        
+
         // Balanced visibility time for premium feel (4 seconds)
         // This allows session checks to complete in the background while the user sees the brand
         const startTime = Date.now();

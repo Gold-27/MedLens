@@ -226,4 +226,13 @@ export const LocalStorageService = {
       return false;
     }
   },
+
+  async clearAllData(): Promise<void> {
+    try {
+      await AsyncStorage.clear();
+      console.log('[Storage] All local storage cleared successfully');
+    } catch (e) {
+      console.error('[Storage] Failed to clear all local storage:', e);
+    }
+  },
 };
