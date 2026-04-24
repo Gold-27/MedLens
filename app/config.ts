@@ -52,6 +52,7 @@ export const Config = {
     CABINET_SAVE: `${API_BASE_URL}/api/cabinet/save`,
     CABINET_ITEMS: `${API_BASE_URL}/api/cabinet/items`,
     CABINET_DELETE: (id: string) => `${API_BASE_URL}/api/cabinet/items/${id}`,
+    AUTH_DELETE: `${API_BASE_URL}/api/auth/account`,
   },
   SUPABASE: {
     URL: process.env.EXPO_PUBLIC_SUPABASE_URL || '',

@@ -11,6 +11,7 @@ import express from 'express';
 import cors from 'cors';
 import { searchMedication, generateELI12, autocomplete, transcribeAudio } from './controllers/search.controller';
 import { getCabinetItems, saveCabinetItem, deleteCabinetItem } from './controllers/cabinet.controller';
+import { deleteAccount } from './controllers/auth.controller';
 import { requireAuth } from './middleware/auth.middleware';
 import OpenFDAService from './services/openfda.service';
 import DeepSeekService from './services/deepseek.service';
@@ -56,6 +57,9 @@ app.post('/api/search/transcribe', transcribeAudio);
 app.get('/api/cabinet/items', requireAuth, getCabinetItems);
 app.post('/api/cabinet/save', requireAuth, saveCabinetItem);
 app.delete('/api/cabinet/items/:id', requireAuth, deleteCabinetItem);
+
+// ── Auth Management ──────────────────────────────────────────────────────────
+app.delete('/api/auth/account', requireAuth, deleteAccount);
 
 // ── Interaction Checker ──────────────────────────────────────────────────────
 app.post('/api/interactions', async (req, res) => {

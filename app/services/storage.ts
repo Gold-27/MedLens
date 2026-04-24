@@ -229,13 +229,13 @@ export const LocalStorageService = {
   },
 
   // Pending Search Context (for Auth transitions)
-  async setPendingSearch(query: string, eli12: boolean): Promise<void> {
+  async setPendingSearch(query: string, eli12: boolean, action?: string): Promise<void> {
     try {
-      await AsyncStorage.setItem(KEYS.PENDING_SEARCH, JSON.stringify({ query, eli12 }));
+      await AsyncStorage.setItem(KEYS.PENDING_SEARCH, JSON.stringify({ query, eli12, action }));
     } catch (e) {}
   },
 
-  async getPendingSearch(): Promise<{ query: string; eli12: boolean } | null> {
+  async getPendingSearch(): Promise<{ query: string; eli12: boolean; action?: string } | null> {
     try {
       const data = await AsyncStorage.getItem(KEYS.PENDING_SEARCH);
       return data ? JSON.parse(data) : null;

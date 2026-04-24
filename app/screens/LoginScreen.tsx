@@ -94,7 +94,11 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
       const { error } = await signIn(form.email, form.password);
       
       if (error) {
-        setErrors((prev) => ({ ...prev, general: error.message }));
+        let errorMsg = error.message;
+        if (errorMsg === 'Invalid login credentials') {
+          errorMsg = 'Account does not exist or invalid credentials.';
+        }
+        setErrors((prev) => ({ ...prev, general: errorMsg }));
       } else {
         // Success! Mark as success and wait for useEffect to navigate
         setLoginSuccess(true);

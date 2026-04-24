@@ -15,7 +15,6 @@ import SummaryCardSkeleton from '../components/SummaryCardSkeleton';
 import Skeleton from '../components/Skeleton';
 import InputBar, { InputBarHandle } from '../components/InputBar';
 import EmptyState from '../components/EmptyState';
-import AuthModal from '../components/AuthModal';
 import Disclaimer from '../components/Disclaimer';
 import TrustBadges from '../components/TrustBadges';
 import { PDFService } from '../services/pdf';
@@ -42,7 +41,6 @@ const HomeScreen: React.FC = () => {
   const [baseResult, setBaseResult] = useState<api.SearchResponse | null>(null);
   const [eli12Result, setEli12Result] = useState<api.SearchResponse['summary'] | null>(null);
   const [isELI12, setIsELI12] = useState(false);
-  const [showAuthModal, setShowAuthModal] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   
@@ -226,29 +224,13 @@ const HomeScreen: React.FC = () => {
     loadLocalData();
   }, []);
 
-  // Restore pending search context after Auth transition
-  useEffect(() => {
-    const restoreContext = async () => {
-      if (user && state === 'empty') {
-        const pending = await LocalStorageService.getPendingSearch();
-        if (pending && pending.query) {
-          console.log(`[Home] Restoring pending search context: ${pending.query}`);
-          setIsELI12(pending.eli12);
-          handleSearch(pending.query);
-          await LocalStorageService.clearPendingSearch();
-        }
-      }
-    };
-    restoreContext();
-  }, [user, state, handleSearch]);
 
   const handleSave = useCallback(async () => {
     if (!baseResult) return;
     if (isGuest) { 
       // Save context before auth transition
-      LocalStorageService.setPendingSearch(query, isELI12);
-      setShowAuthModal(true);
-      setPendingAction('save');
+      LocalStorageService.setPendingSearch(query, isELI12, 'save');
+      navigation.navigate('SignUp');
       return; 
     }
     
@@ -282,9 +264,8 @@ const HomeScreen: React.FC = () => {
     if (!baseResult) return;
     if (isGuest) { 
       // Save context before auth transition
-      LocalStorageService.setPendingSearch(query, isELI12);
-      setShowAuthModal(true);
-      setPendingAction('export');
+      LocalStorageService.setPendingSearch(query, isELI12, 'export');
+      navigation.navigate('SignUp');
       return; 
     }
     const currentSummary = isELI12 && eli12Result ? eli12Result : baseResult.summary;
@@ -323,11 +304,40 @@ const HomeScreen: React.FC = () => {
     }
   }, [baseResult, isELI12, eli12Result, isGuest]);
 
-  const handleAuthSuccess = useCallback(() => {
-    if (pendingAction.includes('save')) handleSave();
-    else if (pendingAction.includes('export')) handleExport();
-    setPendingAction('');
-  }, [pendingAction, baseResult, handleSave, handleExport]);
+  // Restore pending search context after Auth transition
+  useEffect(() => {
+    const restoreContext = async () => {
+      if (user && state === 'empty') {
+        const pending = await LocalStorageService.getPendingSearch();
+        if (pending && pending.query) {
+          console.log(`[Home] Restoring pending search context: ${pending.query}`);
+          setIsELI12(pending.eli12);
+          
+          // Execute search
+          await handleSearch(pending.query);
+          
+          // Handle pending action if any
+          if (pending.action === 'save') {
+            setPendingAction('save');
+          } else if (pending.action === 'export') {
+            setPendingAction('export');
+          }
+          
+          await LocalStorageService.clearPendingSearch();
+        }
+      }
+    };
+    restoreContext();
+  }, [user, state, handleSearch]);
+
+  // Handle pending actions after search is restored
+  useEffect(() => {
+    if (state === 'success' && pendingAction) {
+      if (pendingAction === 'save') handleSave();
+      else if (pendingAction === 'export') handleExport();
+      setPendingAction('');
+    }
+  }, [state, pendingAction, handleSave, handleExport]);
 
   const fetchSuggestions = useCallback(async (suggestionQuery: string) => {
     if (suggestionAbortController.current) {
@@ -490,12 +500,7 @@ const HomeScreen: React.FC = () => {
         </View>
     </SafeAreaView>
 
-      <AuthModal
-        visible={showAuthModal}
-        onClose={() => { setShowAuthModal(false); setPendingAction(''); }}
-        onSuccess={handleAuthSuccess}
-        pendingAction={pendingAction}
-      />
+
     </KeyboardAvoidingView>
   );
 };

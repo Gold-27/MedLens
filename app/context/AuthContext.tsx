@@ -4,6 +4,7 @@ import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import * as AuthSession from 'expo-auth-session';
 import { supabase } from '../services/supabase';
+import { Config } from '../config';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LocalStorageService } from '../services/storage';
@@ -341,7 +342,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       if (!user) return { error: new Error('No user to delete') };
 
-      // Safe Wipe: Delete Cabinet Data
+      // 1. Call backend to permanently delete user from auth.users
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        try {
+          const response = await fetch(Config.ENDPOINTS.AUTH_DELETE, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            console.error('[Auth] Backend deletion failed:', errorData.error);
+            // We continue anyway to clear local data, but the admin delete might have failed
+          } else {
+            console.log('[Auth] Permanent account deletion triggered successfully');
+          }
+        } catch (e) {
+          console.error('[Auth] Failed to reach deletion API:', e);
+        }
+      }
+
+      // 2. Safe Wipe: Delete Cabinet Data (via RLS/Cascade usually, but being explicit)
       const { error: cabinetError } = await supabase
         .from('cabinet_items')
         .delete()
@@ -349,10 +374,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       if (cabinetError) console.warn('Failed to clear cabinet data during deletion:', cabinetError);
 
-      // Wipe all local storage (onboarding, history, settings)
+      // 3. Wipe all local storage (onboarding, history, settings)
       await LocalStorageService.clearAllData();
 
-      // Sign out
+      // 4. Sign out
       await signOut();
       
       return { error: null };
