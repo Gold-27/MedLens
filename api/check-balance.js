@@ -1,14 +1,10 @@
 const axios = require('axios');
-require('dotenv').config();
 
 async function checkBalance() {
-  const apiKey = process.env.DEEPSEEK_API_KEY;
+  const apiKey = process.env.EXPO_PUBLIC_DEEPSEEK_API_KEY
   const url = 'https://api.deepseek.com/user/balance';
 
-  if (!apiKey) {
-    console.log('DEEPSEEK_API_KEY is not set in .env');
-    return;
-  }
+  console.log('Checking DeepSeek balance for key:', apiKey);
 
   try {
     const response = await axios.get(url, {
