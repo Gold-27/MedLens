@@ -6,12 +6,14 @@ const supabaseUrl = process.env.SUPABASE_URL || '';
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 // Use service role to bypass RLS for backend-managed support flows
-const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false
-  }
-});
+const supabase = supabaseUrl && supabaseServiceRoleKey 
+  ? createClient(supabaseUrl, supabaseServiceRoleKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    })
+  : null;
 
 export const handleSupportChat = async (req: Request, res: Response) => {
   const userId = (req as any).userId;
@@ -19,6 +21,11 @@ export const handleSupportChat = async (req: Request, res: Response) => {
 
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
   if (!message) return res.status(400).json({ error: 'Message is required' });
+
+  if (!supabase) {
+    console.error('[SupportChat] Supabase client not initialized. Missing SUPABASE_SERVICE_ROLE_KEY?');
+    return res.status(500).json({ error: 'Support service is currently unavailable due to server configuration.' });
+  }
 
   try {
     let currentConversationId = conversationId;
@@ -92,6 +99,10 @@ export const handleSupportChat = async (req: Request, res: Response) => {
 export const getChatHistory = async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+  if (!supabase) {
+    return res.json({ conversation: null, messages: [] });
+  }
 
   try {
     // Get latest active conversation

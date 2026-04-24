@@ -107,7 +107,22 @@ async function apiRequest<T>(endpoint: string, options: (RequestInit & { timeout
       headers,
     }, MAX_RETRIES, options.timeout || DEFAULT_TIMEOUT);
 
-    const data = await response.json();
+    const text = await response.text();
+    let data: any;
+    
+    try {
+      data = text ? JSON.parse(text) : null;
+    } catch (e) {
+      // If parsing fails, and the response is not OK, throw the raw text or status
+      if (!response.ok) {
+        const error = new Error(`API Error ${response.status}: ${text.substring(0, 150) || response.statusText}`);
+        (error as any).status = response.status;
+        (error as any).data = text;
+        throw error;
+      }
+      // If it's a 200 but not JSON, that's also an error in our system
+      throw new Error(`Invalid JSON response: ${text.substring(0, 100)}`);
+    }
 
     if (!response.ok) {
       const error = new Error(`API Error: ${response.status}`);
