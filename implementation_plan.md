@@ -192,7 +192,7 @@ Includes: request cancellation (AbortController), retry logic (max 2), timeout 8
 #### [NEW] `app/src/screens/OnboardingScreen.js`
 - 3-slide horizontal FlatList/PagerView
 - **Slide 1:** "Understand your medication instantly" — hero illustration
-- **Slide 2:** "Search. Read. Understand." — search flow illustration
+- **Slide 2:** "Search. Read. Understand with Clarity" — search flow illustration
 - **Slide 3:** "Clear, safe, and easy to use" — checkmark/confidence illustration
 - Progress dots indicator
 - "Next" and "Skip" buttons (token-styled)
