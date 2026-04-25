@@ -94,6 +94,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (currentSession?.user) {
         setGuestState(false);
         await LocalStorageService.setHasAuthenticatedBefore();
+        // Migrate guest searches to account
+        await LocalStorageService.migrateRecentSearches(currentSession.user.id);
       }
       setLoading(false);
     });
@@ -111,6 +113,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         await setGuestState(false);
         await LocalStorageService.setOnboardingCompleted();
         await LocalStorageService.setHasAuthenticatedBefore();
+        await LocalStorageService.migrateRecentSearches(newSession.user.id);
       }
       return { error };
     } catch (error) {
@@ -162,12 +165,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           await setGuestState(false);
           await LocalStorageService.setOnboardingCompleted();
           await LocalStorageService.setHasAuthenticatedBefore();
+          await LocalStorageService.migrateRecentSearches(refreshedSession.user.id);
         } else if (signUpData.session) {
           console.log('[Auth] Using initial session from signUp');
           setSession(signUpData.session);
           await setGuestState(false);
           await LocalStorageService.setOnboardingCompleted();
           await LocalStorageService.setHasAuthenticatedBefore();
+          await LocalStorageService.migrateRecentSearches(signUpData.session.user.id);
         } else {
           console.log('[Auth] No immediate session (normal if email confirmation enabled)');
         }
@@ -272,6 +277,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               console.log('Session established successfully!');
               await LocalStorageService.setOnboardingCompleted();
               await LocalStorageService.setHasAuthenticatedBefore();
+              const { data: { user: googleUser } } = await supabase.auth.getUser(access_token);
+              if (googleUser) {
+                await LocalStorageService.migrateRecentSearches(googleUser.id);
+              }
             }
           }
         } else if (res.type === 'cancel' || res.type === 'dismiss') {
