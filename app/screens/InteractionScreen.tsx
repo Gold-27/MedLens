@@ -196,20 +196,25 @@ const InteractionScreen: React.FC = () => {
     <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={styles.header}>
         <View style={styles.headerTop}>
-          <Text style={[styles.headerTitle, { color: theme.colors.onSurface }]}>Interaction Checker</Text>
+          <View>
+            <Text style={[styles.headerTitle, { color: theme.colors.onSurface }]}>Interactions</Text>
+            <Text style={[styles.headerSubtitle, { color: theme.colors.onSurfaceVariant }]}>
+              Safety check for combined meds
+            </Text>
+          </View>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton}>
-            <Ionicons name="close" size={28} color={theme.colors.onSurface} />
+            <Ionicons name="close" size={24} color={theme.colors.onSurfaceVariant} />
           </TouchableOpacity>
         </View>
-        <Text style={[styles.headerSubtitle, { color: theme.colors.outline }]}>
-          Select two or more medications to check for potential interactions
-        </Text>
       </View>
 
       <View style={styles.drugSelection}>
-        <Text style={[styles.sectionLabel, { color: theme.colors.onSurface }]}>
-          {selectedDrugs.length} medication{selectedDrugs.length !== 1 ? 's' : ''} selected
-        </Text>
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionLabel, { color: theme.colors.onSurface }]}>Select Medications</Text>
+          <Text style={[styles.selectedCount, { color: theme.colors.primary }]}>
+            {selectedDrugs.length} selected
+          </Text>
+        </View>
         <View style={styles.drugList}>
           {availableDrugs.map(drug => {
             const isSelected = selectedDrugs.includes(drug.key);
@@ -219,134 +224,137 @@ const InteractionScreen: React.FC = () => {
                 style={[
                   styles.drugChip,
                   { 
-                    backgroundColor: 'transparent',
+                    backgroundColor: isSelected ? theme.colors.primary + '10' : theme.colors.surface,
                     borderColor: isSelected ? theme.colors.primary : theme.colors.outlineVariant,
-                    borderWidth: 1.5,
                   },
                 ]}
                 onPress={() => toggleDrug(drug.key)}
               >
-                <View style={styles.chipContent}>
-                  <Text style={[
-                    styles.drugChipText,
-                    { color: isSelected ? theme.colors.primary : theme.colors.onSurface },
-                  ]}>
-                    {drug.name}
-                  </Text>
-                  {isSelected && (
-                    <Ionicons name="close-circle" size={18} color={theme.colors.primary} style={styles.chipIcon} />
-                  )}
-                </View>
+                <Text style={[
+                  styles.drugChipText,
+                  { color: isSelected ? theme.colors.primary : theme.colors.onSurfaceVariant },
+                ]}>
+                  {drug.name}
+                </Text>
+                {isSelected && (
+                  <Ionicons name="checkmark" size={14} color={theme.colors.primary} />
+                )}
               </TouchableOpacity>
             );
           })}
         </View>
       </View>
 
-      <TouchableOpacity
-        style={[
-          styles.checkButton,
-          { 
-            backgroundColor: selectedDrugs.length >= 2 && !checking 
-              ? theme.colors.primary 
-              : theme.colors.surfaceContainerHigh 
-          },
-        ]}
-        onPress={handleCheck}
-        disabled={selectedDrugs.length < 2 || checking}
-      >
-        {checking ? (
-          <ActivityIndicator size="small" color={theme.colors.onPrimary} />
-        ) : (
-          <Text style={[
-            styles.checkButtonText,
-            { color: selectedDrugs.length >= 2 ? theme.colors.onPrimary : theme.colors.onSurfaceVariant },
-          ]}>
-            Check Interactions
-          </Text>
-        )}
-      </TouchableOpacity>
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity
+          style={[
+            styles.checkButton,
+            { 
+              backgroundColor: selectedDrugs.length >= 2 && !checking 
+                ? theme.colors.primary 
+                : theme.colors.surfaceContainerHigh 
+            },
+          ]}
+          onPress={handleCheck}
+          disabled={selectedDrugs.length < 2 || checking}
+        >
+          {checking ? (
+            <ActivityIndicator size="small" color={theme.colors.onPrimary} />
+          ) : (
+            <Text style={[
+              styles.checkButtonText,
+              { color: selectedDrugs.length >= 2 ? theme.colors.onPrimary : theme.colors.outline },
+            ]}>
+              Run Interaction Check
+            </Text>
+          )}
+        </TouchableOpacity>
+      </View>
 
       {checking && <InteractionSkeleton />}
 
       {result && (
-        <View style={styles.resultHeader}>
-          <Text style={[styles.sectionLabel, { color: theme.colors.onSurface, marginBottom: 0 }]}>
-            Interaction Result
-          </Text>
-          <TouchableOpacity 
-            style={[
-              styles.eliButton, 
-              { 
-                backgroundColor: isELI12 ? theme.colors.primary : theme.colors.surface,
-                borderColor: theme.colors.primary,
-                borderWidth: 1,
-              }
-            ]}
-            onPress={() => setIsELI12(!isELI12)}
-          >
-            {isELI12 && (
-              <Ionicons name="checkmark-circle" size={16} color={theme.colors.onPrimary} />
-            )}
-            <Text style={[
-              styles.eliButtonText, 
-              { color: isELI12 ? theme.colors.onPrimary : theme.colors.primary }
-            ]}>
-              ELI 12
+        <View style={styles.resultWrapper}>
+          <View style={styles.resultHeader}>
+            <Text style={[styles.sectionLabel, { color: theme.colors.onSurface }]}>
+              Findings
             </Text>
-          </TouchableOpacity>
-        </View>
-      )}
+            <TouchableOpacity 
+              style={[
+                styles.eliToggle,
+                { backgroundColor: isELI12 ? theme.colors.primary + '15' : theme.colors.surfaceVariant + '30' }
+              ]}
+              onPress={() => setIsELI12(!isELI12)}
+            >
+              <Text style={[styles.eliToggleText, { color: isELI12 ? theme.colors.primary : theme.colors.onSurfaceVariant }]}>
+                Simple Mode (ELI12)
+              </Text>
+              <View style={[styles.toggleTrack, { backgroundColor: isELI12 ? theme.colors.primary : theme.colors.outlineVariant }]}>
+                <View style={[styles.toggleThumb, isELI12 ? styles.toggleThumbActive : styles.toggleThumbInactive, { backgroundColor: '#FFF' }]} />
+              </View>
+            </TouchableOpacity>
+          </View>
 
-      {result && (
-        <View style={[
-          styles.resultCard,
-          { 
-            backgroundColor: 
-              result.status === 'risky' || result.status === 'potential_interaction' ? theme.colors.errorContainer : 
-              result.status === 'caution' ? theme.colors.accentContainer :
-              result.status === 'safe' ? theme.colors.successContainer :
-              theme.colors.surfaceContainerHighest
-          },
-        ]}>
-          <Text style={[
-            styles.resultTitle,
+          <View style={[
+            styles.resultCard,
             { 
-              color: 
-                result.status === 'risky' || result.status === 'potential_interaction' ? theme.colors.onErrorContainer : 
-                result.status === 'caution' ? theme.colors.onAccentContainer :
-                result.status === 'safe' ? theme.colors.onSuccessContainer :
-                theme.colors.onSurfaceVariant
+              backgroundColor: 
+                result.status === 'risky' || result.status === 'potential_interaction' ? theme.colors.errorContainer + '15' : 
+                result.status === 'caution' ? theme.colors.accentContainer + '15' :
+                result.status === 'safe' ? theme.colors.successContainer + '15' :
+                theme.colors.surfaceContainerLow,
+              borderColor: 
+                result.status === 'risky' || result.status === 'potential_interaction' ? theme.colors.error + '40' : 
+                result.status === 'caution' ? theme.colors.accent + '40' :
+                result.status === 'safe' ? theme.colors.success + '40' :
+                theme.colors.outlineVariant,
+              borderWidth: 1,
             },
           ]}>
-            {
-              result.status === 'risky' || result.status === 'potential_interaction' ? 'Dangerous Interaction' : 
-              result.status === 'caution' ? 'Caution Advised' :
-              result.status === 'safe' ? 'No Known Interaction' :
-              'Unknown'
-            }
-          </Text>
+            <View style={styles.resultTitleRow}>
+              <View style={[
+                styles.statusDot, 
+                { 
+                  backgroundColor: 
+                    result.status === 'risky' || result.status === 'potential_interaction' ? theme.colors.error : 
+                    result.status === 'caution' ? theme.colors.accent :
+                    result.status === 'safe' ? theme.colors.success :
+                    theme.colors.outline
+                }
+              ]} />
+              <Text style={[
+                styles.resultTitle,
+                { 
+                  color: 
+                    result.status === 'risky' || result.status === 'potential_interaction' ? theme.colors.error : 
+                    result.status === 'caution' ? theme.colors.accent :
+                    result.status === 'safe' ? theme.colors.success :
+                    theme.colors.onSurface
+                },
+              ]}>
+                {
+                  result.status === 'risky' || result.status === 'potential_interaction' ? 'Risky Interaction' : 
+                  result.status === 'caution' ? 'Use with Caution' :
+                  result.status === 'safe' ? 'No Known Interactions' :
+                  'Unknown Result'
+                }
+              </Text>
+            </View>
           <Text style={[
             styles.resultMessage,
-            { 
-              color: 
-                result.status === 'risky' || result.status === 'potential_interaction' ? theme.colors.onErrorContainer : 
-                result.status === 'caution' ? theme.colors.onAccentContainer :
-                result.status === 'safe' ? theme.colors.onSuccessContainer :
-                theme.colors.onSurfaceVariant
-            },
+            { color: theme.colors.onSurface },
           ]}>
             {isELI12 && result.eli12_summary ? result.eli12_summary : result.message}
           </Text>
           {result.details?.interactions && result.details.interactions.length > 0 && (
-            <View style={styles.interactionDetails}>
-              <Text style={[styles.detailsTitle, { color: theme.colors.onSurfaceVariant }]}>
+            <View style={[styles.interactionDetails, { borderTopColor: theme.colors.outlineVariant + '40' }]}>
+              <Text style={[styles.detailsTitle, { color: theme.colors.onSurface }]}>
                 Interaction Details:
               </Text>
               {result.details.interactions.map((interaction, index) => (
                 <View key={index} style={styles.interactionItem}>
-                  <Text style={[styles.drugKey, { color: theme.colors.onSurface }]}>
-                    {interaction.drugKey}:
+                  <Text style={[styles.drugKey, { color: theme.colors.primary }]}>
+                    {interaction.drugKey}
                   </Text>
                   {interaction.interactions.length > 0 ? (
                     interaction.interactions.map((text, textIndex) => (
@@ -366,12 +374,14 @@ const InteractionScreen: React.FC = () => {
         </View>
       )}
 
-      <View style={[styles.disclaimerContainer, { backgroundColor: theme.colors.accentContainer }]}>
-        <Ionicons name="information-circle-outline" size={24} color={theme.colors.onAccentContainer} style={styles.disclaimerIcon} />
-        <Text style={[styles.disclaimerText, { color: theme.colors.onAccentContainer }]}>
-          MedQuire simplifies medical information for understanding. It does not replace professional medical advice, diagnosis, or treatment.
-        </Text>
+        <View style={[styles.disclaimerContainer, { borderTopColor: theme.colors.outlineVariant + '40', borderTopWidth: 1 }]}>
+          <Ionicons name="shield-checkmark-outline" size={18} color={theme.colors.onSurfaceVariant} />
+          <Text style={[styles.disclaimerText, { color: theme.colors.onSurfaceVariant }]}>
+            MedQuire simplifies FDA data for understanding. It does not replace professional medical advice.
+          </Text>
+        </View>
       </View>
+      )}
     </ScrollView>
   );
 };
@@ -382,28 +392,29 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 16,
+    paddingTop: 32,
+    paddingBottom: 24,
   },
   headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
+    alignItems: 'flex-start',
   },
   closeButton: {
     padding: 4,
-    marginRight: -4,
+    marginTop: -4,
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '700',
+    fontFamily: 'Outfit',
     letterSpacing: -0.5,
   },
   headerSubtitle: {
-    fontSize: 15,
-    lineHeight: 20,
+    fontSize: 14,
     fontWeight: '500',
+    fontFamily: 'Outfit',
+    marginTop: 2,
   },
   loadingContainer: {
     flex: 1,
@@ -443,86 +454,137 @@ const styles = StyleSheet.create({
   cabinetButtonText: {
     fontSize: 16,
     fontWeight: '600',
+    fontFamily: 'Outfit',
   },
   drugSelection: {
     paddingHorizontal: 24,
-    marginBottom: 24,
+    marginBottom: 32,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    marginBottom: 16,
   },
   sectionLabel: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: '700',
-    marginBottom: 16,
-    letterSpacing: -0.3,
+    fontFamily: 'Outfit',
+    letterSpacing: -0.2,
+  },
+  selectedCount: {
+    fontSize: 13,
+    fontWeight: '600',
+    fontFamily: 'Outfit',
   },
   drugList: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
-  },
-  drugChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-  },
-  chipContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
     gap: 8,
   },
-  drugChipText: {
-    fontSize: 15,
-    fontWeight: '600',
+  drugChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    gap: 6,
   },
-  chipIcon: {
-    marginRight: -4,
+  drugChipText: {
+    fontSize: 14,
+    fontWeight: '600',
+    fontFamily: 'Outfit',
+  },
+  buttonContainer: {
+    paddingHorizontal: 24,
+    marginBottom: 40,
   },
   checkButton: {
-    marginHorizontal: 24,
-    marginBottom: 32,
-    paddingVertical: 16,
-    borderRadius: 16,
+    height: 52,
+    borderRadius: 26,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 56,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
   checkButtonText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
+    fontFamily: 'Outfit',
+  },
+  resultWrapper: {
+    marginTop: 8,
   },
   resultHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginHorizontal: 24,
-    marginBottom: 16,
+    marginBottom: 12,
   },
-  eliButton: {
+  eliToggle: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    height: 36,
-    borderRadius: 18,
-    gap: 6,
+    paddingLeft: 12,
+    paddingRight: 6,
+    height: 32,
+    borderRadius: 16,
+    gap: 8,
   },
-  eliButtonText: {
+  eliToggleText: {
     fontSize: 12,
     fontWeight: '700',
+    fontFamily: 'Outfit',
+  },
+  toggleTrack: {
+    width: 32,
+    height: 18,
+    borderRadius: 9,
+    padding: 2,
+    justifyContent: 'center',
+  },
+  toggleThumb: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+  },
+  toggleThumbActive: {
+    alignSelf: 'flex-end',
+  },
+  toggleThumbInactive: {
+    alignSelf: 'flex-start',
   },
   resultCard: {
     marginHorizontal: 24,
-    marginBottom: 32,
-    padding: 24,
-    borderRadius: 20,
+    marginBottom: 0,
+    padding: 20,
+    borderRadius: 24,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  resultTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
   },
   resultTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '700',
-    marginBottom: 8,
+    fontFamily: 'Outfit',
   },
   resultMessage: {
     fontSize: 15,
     lineHeight: 22,
     fontWeight: '500',
+    fontFamily: 'Outfit',
   },
   interactionDetails: {
     marginTop: 20,
@@ -536,44 +598,43 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   interactionItem: {
-    marginBottom: 12,
+    marginBottom: 16,
   },
   drugKey: {
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 12,
+    fontWeight: '800',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 4,
+    letterSpacing: 1,
+    marginBottom: 6,
   },
   interactionText: {
     fontSize: 14,
     lineHeight: 20,
     fontWeight: '500',
+    fontFamily: 'Outfit',
     opacity: 0.8,
   },
   noInteractionText: {
     fontSize: 14,
     fontStyle: 'italic',
+    fontFamily: 'Outfit',
     opacity: 0.6,
   },
   disclaimerContainer: {
+    paddingTop: 24,
+    paddingBottom: 40,
     marginHorizontal: 24,
-    marginBottom: 40,
-    padding: 20,
-    borderRadius: 20,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
-  },
-  disclaimerIcon: {
-    // Vertically centered via parent
+    gap: 12,
   },
   disclaimerText: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 12,
+    lineHeight: 18,
     fontWeight: '500',
+    fontFamily: 'Outfit',
     flex: 1,
-    opacity: 0.9,
+    opacity: 0.7,
   },
 });
 
