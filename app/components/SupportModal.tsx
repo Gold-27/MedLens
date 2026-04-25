@@ -46,7 +46,8 @@ const SupportModal: React.FC<SupportModalProps> = ({ visible, onClose }) => {
         setShowForm(false);
       } else {
         setLatestTicket(null);
-        setShowForm(true);
+        // Do not automatically show form, show empty state instead
+        setShowForm(false);
       }
     } catch (error) {
       console.error('[Support] Failed to fetch history:', error);
@@ -288,7 +289,25 @@ const SupportModal: React.FC<SupportModalProps> = ({ visible, onClose }) => {
                     <Text style={[styles.loadingText, { color: theme.colors.onSurfaceVariant }]}>Loading your tickets...</Text>
                   </View>
                 ) : (
-                  showForm ? renderForm() : renderTrackingView()
+                  showForm ? renderForm() : (
+                    latestTicket ? renderTrackingView() : (
+                      <View style={styles.emptyTicketsContainer}>
+                        <View style={[styles.emptyIconContainer, { backgroundColor: theme.colors.surfaceContainerHigh }]}>
+                          <Ionicons name="receipt-outline" size={48} color={theme.colors.onSurfaceVariant} />
+                        </View>
+                        <Text style={[styles.emptyTicketsTitle, { color: theme.colors.onSurface }]}>No Tickets Found</Text>
+                        <Text style={[styles.emptyTicketsSubtitle, { color: theme.colors.onSurfaceVariant }]}>
+                          Your support ticket history will appear here once you've submitted a request through our AI Assistant.
+                        </Text>
+                        <TouchableOpacity 
+                          style={[styles.startChatBtn, { backgroundColor: theme.colors.primary }]}
+                          onPress={() => setActiveTab('chat')}
+                        >
+                          <Text style={styles.startChatBtnText}>Start AI Support Chat</Text>
+                        </TouchableOpacity>
+                      </View>
+                    )
+                  )
                 )}
               </ScrollView>
             )}
@@ -504,6 +523,45 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     fontSize: 14,
     fontWeight: '600',
+    fontFamily: 'Outfit',
+  },
+  emptyTicketsContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 60,
+    paddingHorizontal: 20,
+  },
+  emptyIconContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  emptyTicketsTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    fontFamily: 'Outfit',
+    marginBottom: 12,
+  },
+  emptyTicketsSubtitle: {
+    fontSize: 15,
+    textAlign: 'center',
+    fontFamily: 'Outfit',
+    lineHeight: 22,
+    marginBottom: 32,
+  },
+  startChatBtn: {
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 16,
+  },
+  startChatBtnText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '700',
     fontFamily: 'Outfit',
   },
 });
