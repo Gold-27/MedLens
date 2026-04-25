@@ -18,8 +18,12 @@ export class OpenFDAService {
 
   async searchDrug(query: string): Promise<NormalizedDrugData | null> {
     try {
-      const encodedQuery = encodeURIComponent(query);
-      const url = `${this.baseUrl}?search=(openfda.brand_name:${encodedQuery}+OR+openfda.generic_name:${encodedQuery})&limit=1${this.apiKey ? `&api_key=${this.apiKey}` : ''}`;
+      const trimmedQuery = query.trim().toLowerCase();
+      const encodedQuery = encodeURIComponent(trimmedQuery);
+      
+      // Use a more specific search to prioritize exact matches on brand or generic name
+      // We search for the query in both fields and limit to the best match
+      const url = `${this.baseUrl}?search=(openfda.brand_name:"${encodedQuery}"+OR+openfda.generic_name:"${encodedQuery}"+OR+openfda.brand_name:${encodedQuery}*+OR+openfda.generic_name:${encodedQuery}*)&limit=5${this.apiKey ? `&api_key=${this.apiKey}` : ''}`;
       
       const response = await axios.get(url);
       
@@ -27,23 +31,55 @@ export class OpenFDAService {
         return null;
       }
 
-      const result = response.data.results[0];
+      // Find the best match among results
+      // Sometimes the first result isn't the best match for the specific string
+      const results = response.data.results;
+      let bestResult = results[0];
       
-      const sanitize = (text?: string) => text ? text.replace(/\s+/g, ' ').trim() : undefined;
+      for (const res of results) {
+        const brandNames = (res.openfda?.brand_name || []).map((n: string) => n.toLowerCase());
+        const genericNames = (res.openfda?.generic_name || []).map((n: string) => n.toLowerCase());
+        
+        // Exact match priority
+        if (brandNames.includes(trimmedQuery) || genericNames.includes(trimmedQuery)) {
+          bestResult = res;
+          break;
+        }
+      }
+
+      // Verify relevance: ensure the query is at least a partial match for the found drug
+      const brandNames = (bestResult.openfda?.brand_name || []).map((n: string) => n.toLowerCase());
+      const genericNames = (bestResult.openfda?.generic_name || []).map((n: string) => n.toLowerCase());
+      const allNames = [...brandNames, ...genericNames];
+      
+      const isRelevant = allNames.some(name => 
+        name.includes(trimmedQuery) || trimmedQuery.includes(name)
+      );
+
+      if (!isRelevant && results.length > 0) {
+        console.warn(`[OpenFDA] Best match for "${query}" (found "${brandNames[0]}") failed relevance check.`);
+        return null;
+      }
+
+      const sanitize = (text?: string) => {
+        if (!text) return undefined;
+        // Remove excessive whitespace and clean up common label markers
+        return text.replace(/\s+/g, ' ').trim();
+      };
 
       return {
-        drug_name: result.openfda?.brand_name?.[0] || result.openfda?.generic_name?.[0] || query,
-        indications: sanitize(result.indications_and_usage?.[0] || result.purpose?.[0] || result.indications?.[0] || result.description?.[0] || result.usage?.[0]),
-        dosage: sanitize(result.dosage_and_administration?.[0] || result.how_to_use?.[0] || result.instructions_for_use?.[0] || result.dosage?.[0]),
-        warnings: sanitize(result.warnings?.[0] || result.boxed_warning?.[0] || result.precautions?.[0] || result.do_not_use?.[0] || result.warnings_and_precautions?.[0] || result.stop_use?.[0]),
-        side_effects: sanitize(result.adverse_reactions?.[0] || result.side_effects?.[0] || result.adverse_reactions_table?.[0]),
-        drug_interactions: sanitize(result.drug_interactions?.[0] || result.interactions?.[0])
+        drug_name: this.capitalizeWords(brandNames[0] || genericNames[0] || query),
+        indications: sanitize(bestResult.indications_and_usage?.[0] || bestResult.purpose?.[0] || bestResult.indications?.[0] || bestResult.description?.[0] || bestResult.usage?.[0]),
+        dosage: sanitize(bestResult.dosage_and_administration?.[0] || bestResult.how_to_use?.[0] || bestResult.instructions_for_use?.[0] || bestResult.dosage?.[0]),
+        warnings: sanitize(bestResult.warnings?.[0] || bestResult.boxed_warning?.[0] || bestResult.precautions?.[0] || bestResult.do_not_use?.[0] || bestResult.warnings_and_precautions?.[0] || bestResult.stop_use?.[0]),
+        side_effects: sanitize(bestResult.adverse_reactions?.[0] || bestResult.side_effects?.[0] || bestResult.adverse_reactions_table?.[0]),
+        drug_interactions: sanitize(bestResult.drug_interactions?.[0] || bestResult.interactions?.[0])
       };
     } catch (error: any) {
-      console.error('OpenFDA API error:', error.message);
       if (error.response?.status === 404) {
         return null;
       }
+      console.error('OpenFDA API error:', error.message);
       throw new Error(`OpenFDA search failed: ${error.message}`);
     }
   }

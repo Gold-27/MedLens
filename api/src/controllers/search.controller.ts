@@ -16,7 +16,7 @@ export const searchMedication = async (req: Request, res: Response) => {
   try {
     console.log(`[Search] Query: ${query}, ELI12: ${eli12}`);
 
-    const cacheKey = query.toLowerCase().trim();
+    const cacheKey = `v2_${query.toLowerCase().trim()}_${eli12 ? 'eli' : 'std'}`;
     if (searchCache.has(cacheKey)) {
       console.log(`[Search] Cache hit for: ${cacheKey}`);
       return res.json(searchCache.get(cacheKey));

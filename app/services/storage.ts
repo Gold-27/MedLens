@@ -3,7 +3,7 @@ import { SearchResponse, CabinetItem } from './api';
 
 const KEYS = {
   RECENT_SEARCHES: 'ml_recent_searches',
-  SEARCH_CACHE: 'ml_search_cache_',
+  SEARCH_CACHE: 'ml_search_cache_v2_',
   INTERACTION_CACHE: 'ml_interaction_cache_',
   CABINET: 'ml_cabinet',
   SETTINGS: 'ml_settings',

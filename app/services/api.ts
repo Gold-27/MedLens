@@ -163,8 +163,8 @@ export async function getAutocomplete(query: string): Promise<AutocompleteRespon
   // 1. Local Search First (Instant, Zero API Cost)
   const localSuggestions = (COMMON_DRUGS as any[])
     .filter(d => 
-      d.name.toLowerCase().includes(normalizedQuery) || 
-      d.drug_name.toLowerCase().includes(normalizedQuery)
+      d.name.toLowerCase().startsWith(normalizedQuery) || 
+      d.drug_name.toLowerCase().startsWith(normalizedQuery)
     )
     .slice(0, 5)
     .map(d => ({
