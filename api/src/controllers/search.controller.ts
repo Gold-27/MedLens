@@ -255,7 +255,13 @@ export const getRecentSearches = async (req: AuthenticatedRequest, res: Response
       .order('created_at', { ascending: false })
       .limit(10);
 
-    if (error) throw error;
+    if (error) {
+      if (error.code === 'PGRST205' || error.message?.includes('relation "public.recent_searches" does not exist')) {
+        console.warn('[Search] recent_searches table does not exist yet. Returning empty array.');
+        return res.json([]);
+      }
+      throw error;
+    }
     res.json(data.map(item => item.query));
   } catch (error: any) {
     console.error('[Search] getRecentSearches error:', error.message);
@@ -274,7 +280,13 @@ export const saveRecentSearch = async (req: AuthenticatedRequest, res: Response)
       .from('recent_searches')
       .upsert({ user_id: req.userId, query, created_at: new Date().toISOString() }, { onConflict: 'user_id, query' });
     
-    if (error) throw error;
+    if (error) {
+      if (error.code === 'PGRST205' || error.message?.includes('relation "public.recent_searches" does not exist')) {
+        console.warn('[Search] recent_searches table does not exist yet. Returning empty array.');
+        return res.json([]);
+      }
+      throw error;
+    }
 
     // Fetch updated list to return
     const { data } = await supabase
@@ -311,7 +323,13 @@ export const syncRecentSearches = async (req: AuthenticatedRequest, res: Respons
         .from('recent_searches')
         .upsert(rows, { onConflict: 'user_id, query' });
         
-      if (error) throw error;
+      if (error) {
+        if (error.code === 'PGRST205' || error.message?.includes('relation "public.recent_searches" does not exist')) {
+          console.warn('[Search] recent_searches table does not exist yet. Returning success.');
+          return res.json({ success: true });
+        }
+        throw error;
+      }
     }
 
     res.json({ success: true });
