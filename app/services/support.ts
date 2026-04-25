@@ -30,7 +30,7 @@ export const SupportService = {
    */
   async createTicket(ticket: Omit<SupportTicket, 'id' | 'created_at' | 'status'>) {
     const { data, error } = await supabase
-      .from('support_table')
+      .from('support_tickets')
       .insert([
         {
           ...ticket,
@@ -47,7 +47,7 @@ export const SupportService = {
    */
   async getMyTickets() {
     const { data, error } = await supabase
-      .from('support_table')
+      .from('support_tickets')
       .select('*')
       .order('created_at', { ascending: false });
 
