@@ -197,8 +197,8 @@ const InteractionScreen: React.FC = () => {
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <View>
-            <Text style={[styles.headerTitle, { color: theme.colors.onSurface }]}>Interactions</Text>
-            <Text style={[styles.headerSubtitle, { color: theme.colors.onSurfaceVariant }]}>
+            <Text style={[styles.headerTitle, { color: theme.colors.onSurface }]}>Interaction Checker</Text>
+            <Text style={[styles.headerSubtitle, { color: theme.colors.outline }]}>
               Safety check for combined meds
             </Text>
           </View>
@@ -265,7 +265,7 @@ const InteractionScreen: React.FC = () => {
               styles.checkButtonText,
               { color: selectedDrugs.length >= 2 ? theme.colors.onPrimary : theme.colors.outline },
             ]}>
-              Run Interaction Check
+              Check Interaction
             </Text>
           )}
         </TouchableOpacity>
@@ -342,7 +342,7 @@ const InteractionScreen: React.FC = () => {
             </View>
           <Text style={[
             styles.resultMessage,
-            { color: theme.colors.onSurface },
+            { color: theme.colors.outline },
           ]}>
             {isELI12 && result.eli12_summary ? result.eli12_summary : result.message}
           </Text>
@@ -371,17 +371,17 @@ const InteractionScreen: React.FC = () => {
               ))}
             </View>
           )}
-        </View>
-      )}
 
-        <View style={[styles.disclaimerContainer, { borderTopColor: theme.colors.outlineVariant + '40', borderTopWidth: 1 }]}>
+        </View>
+
+        <View style={styles.disclaimerContainer}>
           <Ionicons name="shield-checkmark-outline" size={18} color={theme.colors.onSurfaceVariant} />
           <Text style={[styles.disclaimerText, { color: theme.colors.onSurfaceVariant }]}>
             MedQuire simplifies FDA data for understanding. It does not replace professional medical advice.
           </Text>
         </View>
       </View>
-      )}
+    )}
     </ScrollView>
   );
 };
@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 24,
     paddingTop: 32,
-    paddingBottom: 24,
+    paddingBottom: 40,
   },
   headerTop: {
     flexDirection: 'row',
@@ -621,6 +621,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   disclaimerContainer: {
+    marginTop: 48,
     paddingTop: 24,
     paddingBottom: 40,
     marginHorizontal: 24,
