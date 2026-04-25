@@ -319,18 +319,19 @@ const styles = StyleSheet.create({
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    paddingHorizontal: 8,
-    paddingVertical: 10,
-    gap: 6,
+    paddingHorizontal: 12,
+    paddingTop: 12,
+    paddingBottom: 24,
+    gap: 8,
   },
   input: {
     flex: 1,
     minHeight: 44,
     maxHeight: 120,
     borderRadius: 22,
-    paddingHorizontal: 16,
-    paddingTop: 11,
-    paddingBottom: 11,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 12,
     fontSize: 15,
     borderWidth: 1,
     fontFamily: 'Outfit',
@@ -341,6 +342,7 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 0,
   },
 });
 
