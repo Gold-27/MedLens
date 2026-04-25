@@ -160,13 +160,13 @@ export const getChatHistory = async (req: Request, res: Response) => {
 
     const conversation = conv[0];
 
-    // Check if conversation is older than 24 hours
+    // Check if conversation is older than 1 hour
     const updatedAt = new Date(conversation.updated_at || conversation.created_at).getTime();
     const now = Date.now();
-    const twentyFourHours = 24 * 60 * 60 * 1000;
+    const oneHour = 60 * 60 * 1000;
 
-    if (now - updatedAt > twentyFourHours) {
-      console.log(`[GetChatHistory] Conversation ${conversation.id} expired (>24h).`);
+    if (now - updatedAt > oneHour) {
+      console.log(`[GetChatHistory] Conversation ${conversation.id} expired (>1h).`);
       // Optionally mark as closed in DB
       await supabase
         .from('support_conversations')
