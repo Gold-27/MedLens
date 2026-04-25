@@ -66,7 +66,7 @@ const SettingsScreen: React.FC = () => {
   };
 
   const handleSignUp = () => {
-    navigation.reset({ index: 0, routes: [{ name: 'Onboarding' }] });
+    navigation.navigate('SignUp');
   };
 
   const handleUpdateProfile = async () => {
