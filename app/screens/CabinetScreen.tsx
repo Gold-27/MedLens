@@ -106,10 +106,19 @@ const CabinetScreen: React.FC = () => {
       await LocalStorageService.setCachedResult(item.drug_name, response);
       
       setIsModalVisible(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch drug summary:', error);
       setViewingItem(null); // Clear on error since modal won't show
-      Alert.alert('Error', 'Failed to load medication details. Please check your connection.');
+      
+      const isNotFound = error.status === 404 || error.message?.includes('404');
+      if (isNotFound) {
+        Alert.alert(
+          'Information Unavailable',
+          'We do not have enough reliable information for this medication.'
+        );
+      } else {
+        Alert.alert('Error', 'Failed to load medication details. Please check your connection.');
+      }
     }
   };
 
