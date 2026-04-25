@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   messageContent: {
-    flex: 1,
+    flexShrink: 1,
   },
   bubble: {
     paddingHorizontal: 14,

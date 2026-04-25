@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme, ThemeContextType } from '../theme/ThemeProvider';
 import { useAuth } from '../context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as api from '../services/api';
 import { CabinetItem } from '../services/api';
 import { LocalStorageService } from '../services/storage';
@@ -228,10 +228,9 @@ const CabinetScreen: React.FC = () => {
     
     return (
       <View style={styles.ctaSection}>
-        <View style={[styles.ctaDivider, { backgroundColor: theme.colors.outlineVariant + '40' }]} />
         <View style={styles.ctaContent}>
           <View style={styles.ctaTextRow}>
-            <Ionicons name="git-compare-outline" size={18} color={theme.colors.onSurfaceVariant} />
+            <Ionicons name="shield-checkmark-outline" size={18} color={theme.colors.onSurfaceVariant} />
             <Text style={[styles.ctaText, { color: theme.colors.onSurfaceVariant }]}>
               Select 2+ medications to check for interactions
             </Text>
@@ -291,11 +290,6 @@ const CabinetScreen: React.FC = () => {
           </View>
         </TouchableOpacity>
         
-        {/* Drug icon */}
-        <View style={[styles.drugIcon, { backgroundColor: theme.colors.primaryContainer + '50' }]}>
-          <Ionicons name="medical-outline" size={16} color={theme.colors.primary} />
-        </View>
-
         {/* Info */}
         <View style={styles.medInfo}>
           <Text style={[styles.medName, { color: theme.colors.onSurface }]} numberOfLines={1}>
@@ -335,13 +329,13 @@ const CabinetScreen: React.FC = () => {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
       {/* Header */}
       <View style={[styles.topBar, { backgroundColor: theme.colors.background }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={22} color={theme.colors.onSurface} />
-        </TouchableOpacity>
-        <View>
+        <View style={styles.headerTitleRow}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+            <Ionicons name="arrow-back" size={22} color={theme.colors.onSurface} />
+          </TouchableOpacity>
           <Text style={[styles.title, { color: theme.colors.onSurface }]}>My Cabinet</Text>
-          <Text style={[styles.subtitle, { color: theme.colors.outline }]}>Your saved medications</Text>
         </View>
+        <Text style={[styles.subtitle, { color: theme.colors.outline }]}>Your saved medications</Text>
       </View>
 
       <FlatList
@@ -420,11 +414,13 @@ const styles = StyleSheet.create({
 
   // ── Top Bar ──
   topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 8,
     paddingBottom: 16,
+  },
+  headerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   backBtn: {
     width: 36,
@@ -442,15 +438,16 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 13,
-    fontWeight: '500',
+    fontWeight: '400',
     fontFamily: 'Outfit',
-    marginTop: 1,
+    marginTop: 4,
+    marginLeft: 48,
   },
 
   // ── List Content ──
   listContent: {
     paddingHorizontal: 20,
-    paddingTop: 4,
+    paddingTop: 16,
     paddingBottom: 40,
   },
 
@@ -460,8 +457,8 @@ const styles = StyleSheet.create({
   },
   statsRow: {
     flexDirection: 'row',
-    gap: 8,
-    marginBottom: 20,
+    gap: 12,
+    marginBottom: 24,
   },
   statPill: {
     flexDirection: 'row',
@@ -473,12 +470,12 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '600',
     fontFamily: 'Outfit',
   },
   statLabel: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '400',
     fontFamily: 'Outfit',
     opacity: 0.8,
   },
@@ -491,8 +488,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   sectionLabel: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '600',
     fontFamily: 'Outfit',
     letterSpacing: -0.2,
   },
@@ -527,7 +524,7 @@ const styles = StyleSheet.create({
   drugIcon: {
     width: 32,
     height: 32,
-    borderRadius: 10,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 8,
@@ -535,19 +532,20 @@ const styles = StyleSheet.create({
   },
   medInfo: {
     flex: 1,
+    marginLeft: 12,
     marginRight: 8,
   },
   medName: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
     fontFamily: 'Outfit',
     letterSpacing: -0.2,
   },
   medDesc: {
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: '400',
     fontFamily: 'Outfit',
-    marginTop: 1,
+    marginTop: 2,
   },
   moreBtn: {
     width: 32,
@@ -559,7 +557,7 @@ const styles = StyleSheet.create({
 
   // ── Interaction CTA ──
   ctaSection: {
-    marginTop: 16,
+    marginTop: 20,
     paddingBottom: 8,
   },
   ctaDivider: {
@@ -575,8 +573,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   ctaText: {
-    fontSize: 13,
-    fontWeight: '500',
+    fontSize: 12,
+    fontWeight: '400',
     fontFamily: 'Outfit',
     flex: 1,
   },
