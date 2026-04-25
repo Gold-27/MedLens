@@ -111,6 +111,21 @@ export const SupportService = {
     });
 
     if (!response.ok) throw new Error('Failed to fetch conversation messages');
-    return await response.json() as SupportMessage[];
-  }
-};
+     return await response.json() as SupportMessage[];
+   },
+ 
+   async clearSupportHistory() {
+     const token = await getValidToken();
+     if (!token) throw new Error('Not authenticated');
+ 
+     const response = await fetch(`${Config.API_BASE_URL}/api/support/history`, {
+       method: 'DELETE',
+       headers: {
+         'Authorization': `Bearer ${token}`
+       }
+     });
+ 
+     if (!response.ok) throw new Error('Failed to clear support history');
+     return await response.json() as { success: boolean };
+   }
+ };

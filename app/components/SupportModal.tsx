@@ -59,6 +59,30 @@ const SupportModal: React.FC<SupportModalProps> = ({ visible, onClose }) => {
     }
   }, [user]);
 
+  const handleClearHistory = () => {
+    Alert.alert(
+      'Clear Chat History',
+      'Are you sure you want to clear your chat history?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Clear', 
+          style: 'destructive', 
+          onPress: async () => {
+            try {
+              await SupportService.clearSupportHistory();
+            } catch (err) {
+              console.error('[Support] Failed to clear history:', err);
+            }
+            setHistory([]);
+            setViewingHistoryItem(null);
+            setViewingMessages([]);
+          }
+        }
+      ]
+    );
+  };
+
   useEffect(() => {
     if (visible) {
       fetchHistory();
@@ -232,7 +256,17 @@ const SupportModal: React.FC<SupportModalProps> = ({ visible, onClose }) => {
                 autoFocus={chatAutoFocus}
               />
             ) : (
-              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+              <View style={{ flex: 1 }}>
+                {history.length > 0 && !viewingHistoryItem && !isLoadingHistory && (
+                  <TouchableOpacity 
+                    style={[styles.clearHistoryBtn, { backgroundColor: theme.colors.surfaceContainerHigh }]} 
+                    onPress={handleClearHistory}
+                  >
+                    <Ionicons name="trash-outline" size={16} color={theme.colors.error} />
+                    <Text style={[styles.clearHistoryBtnText, { color: theme.colors.error }]}>Clear History</Text>
+                  </TouchableOpacity>
+                )}
+                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
                 {isLoadingHistory ? (
                   <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={theme.colors.primary} />

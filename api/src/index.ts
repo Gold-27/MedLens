@@ -12,7 +12,7 @@ import cors from 'cors';
 import { searchMedication, generateELI12, autocomplete, transcribeAudio, getRecentSearches, saveRecentSearch, syncRecentSearches } from './controllers/search.controller';
 import { getCabinetItems, saveCabinetItem, deleteCabinetItem } from './controllers/cabinet.controller';
 import { deleteAccount } from './controllers/auth.controller';
-import { handleSupportChat, getChatHistory, getSupportHistory, getConversationMessages } from './controllers/support.controller';
+import { handleSupportChat, getChatHistory, getSupportHistory, getConversationMessages, clearSupportHistory } from './controllers/support.controller';
 import { requireAuth } from './middleware/auth.middleware';
 import { rateLimiter } from './middleware/rate-limiter.middleware';
 import OpenFDAService from './services/openfda.service';
@@ -70,6 +70,7 @@ app.post('/api/support/chat', rateLimiter(60000, 15), requireAuth, handleSupport
 app.get('/api/support/chat/history', requireAuth, getChatHistory);
 app.get('/api/support/history', requireAuth, getSupportHistory);
 app.get('/api/support/conversations/:conversationId/messages', requireAuth, getConversationMessages);
+app.delete('/api/support/history', requireAuth, clearSupportHistory);
 
 // ── Interaction Checker ──────────────────────────────────────────────────────
 app.post('/api/interactions', rateLimiter(60000, 20), async (req, res) => {

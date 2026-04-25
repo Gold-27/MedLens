@@ -289,10 +289,49 @@ export const getConversationMessages = async (req: Request, res: Response) => {
       .order('created_at', { ascending: true });
 
     if (msgsError) throw msgsError;
-
-    res.json(messages);
-  } catch (error: any) {
-    console.error('[GetConversationMessages] Error:', error.message);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-};
+ 
+     res.json(messages);
+   } catch (error: any) {
+     console.error('[GetConversationMessages] Error:', error.message);
+     res.status(500).json({ error: 'Internal server error' });
+   }
+ };
+ 
+ export const clearSupportHistory = async (req: Request, res: Response) => {
+   const userId = (req as any).userId;
+   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+ 
+   if (!supabase) return res.status(500).json({ error: 'Database not available' });
+ 
+   try {
+     const { data: convs, error: convsError } = await supabase
+       .from('support_conversations')
+       .select('id')
+       .eq('user_id', userId);
+ 
+     if (convsError) throw convsError;
+ 
+     if (convs && convs.length > 0) {
+       const convIds = convs.map(c => c.id);
+ 
+       const { error: msgsError } = await supabase
+         .from('support_messages')
+         .delete()
+         .in('conversation_id', convIds);
+ 
+       if (msgsError) throw msgsError;
+ 
+       const { error: delConvsError } = await supabase
+         .from('support_conversations')
+         .delete()
+         .in('id', convIds);
+ 
+       if (delConvsError) throw delConvsError;
+     }
+ 
+     res.json({ success: true });
+   } catch (error: any) {
+     console.error('[ClearSupportHistory] Error:', error.message);
+     res.status(500).json({ error: 'Internal server error' });
+   }
+ };
