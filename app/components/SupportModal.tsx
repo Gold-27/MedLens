@@ -248,9 +248,11 @@ const SupportModal: React.FC<SupportModalProps> = ({ visible, onClose }) => {
           <View style={styles.modalHeader}>
             <View>
               <Text style={[styles.modalTitle, { color: theme.colors.onSurface }]}>Support</Text>
-              <Text style={[styles.modalSubtitle, { color: theme.colors.onSurfaceVariant }]}>
-                {activeTab === 'chat' ? '' : (showForm ? '' : 'Ticket Tracking')}
-              </Text>
+              {activeTab === 'tickets' && !showForm && (
+                <Text style={[styles.modalSubtitle, { color: theme.colors.onSurfaceVariant }]}>
+                  Ticket Tracking
+                </Text>
+              )}
             </View>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
               <Ionicons name="close" size={28} color={theme.colors.onSurface} />
