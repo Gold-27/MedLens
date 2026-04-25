@@ -219,14 +219,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   listContent: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
     paddingTop: 12,
     paddingBottom: 16,
   },
   messageRow: {
     flexDirection: 'row',
     marginBottom: 12,
-    maxWidth: '88%',
+    maxWidth: '94%',
   },
   userRow: {
     alignSelf: 'flex-end',
@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 8,
+    marginRight: 6,
     marginTop: 4,
   },
   messageContent: {
@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Outfit',
   },
   typingContainer: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
     marginBottom: 12,
   },
   typingBubble: {
@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
     paddingTop: 80,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 32,
+    paddingHorizontal: 24,
   },
   emptyTitle: {
     fontSize: 20,
@@ -319,9 +319,9 @@ const styles = StyleSheet.create({
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
     paddingVertical: 10,
-    gap: 8,
+    gap: 6,
   },
   input: {
     flex: 1,

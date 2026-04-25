@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: 16,
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
   },
   modalTitle: {
     fontSize: 28,
@@ -312,7 +312,7 @@ const styles = StyleSheet.create({
   tabBar: {
     flexDirection: 'row',
     marginBottom: 8,
-    paddingHorizontal: 16,
+    paddingHorizontal: 8,
   },
   tab: {
     paddingVertical: 10,
@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingBottom: 40,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
   },
   loadingContainer: {
     flex: 1,
@@ -564,7 +564,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingTop: 60,
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
   },
   emptyIconContainer: {
     width: 100,

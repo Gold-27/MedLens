@@ -134,7 +134,7 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
     }
 
     // IMMEDIATELY clear suggestions and hide dropdown if query is empty
-    if (!trimmed || !fetchSuggestions || loading) {
+    if (!trimmed || !fetchSuggestions) {
       setSuggestions([]);
       setShowSuggestions(false);
       setIsSuggestionsLoading(false);
@@ -275,9 +275,11 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
   };
 
   const handleSubmit = () => {
-    if (query.trim() && !loading) {
+    if (query.trim()) {
       onSubmit(query.trim(), eli12Enabled);
+      setQuery('');
       setShowSuggestions(false);
+      Keyboard.dismiss();
     }
   };
 
@@ -293,13 +295,13 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
     if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
     
     // 2. Sync input value
-    setQuery(drugName);
+    setQuery('');
     
     // 3. Dismiss keyboard
     Keyboard.dismiss();
     
     // 4. Trigger search instantly in parent (behaving like 'send')
-    if (drugName && !loading) {
+    if (drugName) {
       onSubmit(drugName, eli12Enabled);
     }
   };
@@ -369,7 +371,7 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
             onFocus={handleFocus}
             onBlur={handleBlur}
             onSubmitEditing={handleSubmit}
-            editable={!loading}
+            editable={true}
             returnKeyType="search"
             autoFocus={autoFocus}
           />
@@ -377,7 +379,7 @@ const InputBar = React.forwardRef<InputBarHandle, InputBarProps>(({
             <TouchableOpacity 
               style={[styles.micButton, isListening && { backgroundColor: theme.colors.primaryContainer + '40', borderRadius: 20 }]} 
               onPress={query.trim().length > 0 ? handleSubmit : toggleListening}
-              disabled={loading || isTranscribing}
+              disabled={isTranscribing}
             >
               <Animated.View style={{ transform: [{ scale: micScale }] }}>
                 {isTranscribing ? (

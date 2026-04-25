@@ -183,8 +183,6 @@ const HomeScreen: React.FC = () => {
       
       const message = error.message || '';
       setState(message.includes('not found') || message.includes('404') ? 'notFound' : 'error');
-    } finally {
-      inputBarRef.current?.clear();
     }
   }, [prefetchELI12]);
 
