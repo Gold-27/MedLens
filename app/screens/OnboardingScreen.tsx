@@ -195,9 +195,11 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
-        <Text style={[styles.skipText, { color: theme.colors.onSurfaceVariant }]}>Skip</Text>
-      </TouchableOpacity>
+      {currentIndex < slides.length - 1 && (
+        <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
+          <Text style={[styles.skipText, { color: theme.colors.onSurfaceVariant }]}>Skip</Text>
+        </TouchableOpacity>
+      )}
 
       <FlatList
         ref={flatListRef}

@@ -324,7 +324,7 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 12,
   },
-  headerTitle: { fontSize: 28, fontWeight: 'bold' },
+  headerTitle: { fontSize: 28, fontWeight: 'bold', fontFamily: 'Outfit', letterSpacing: -0.5 },
   backButton: { marginRight: 12 },
   centeredProfile: {
     alignItems: 'center',
@@ -366,7 +366,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   upgradeText: { fontSize: 13, fontWeight: '700' },
-  contentPadding: { paddingHorizontal: 24 },
+  contentPadding: { paddingHorizontal: 16 },
   section: { marginBottom: 32 },
   sectionTitle: {
     fontSize: 13,
@@ -391,7 +391,7 @@ const styles = StyleSheet.create({
   accordionContent: { paddingHorizontal: 20, paddingBottom: 20, marginTop: -10 },
   accordionText: { fontSize: 14, lineHeight: 22 },
   disclaimerContainer: {
-    marginHorizontal: 24,
+    marginHorizontal: 16,
     marginVertical: 40,
     padding: 20,
     borderRadius: 24,
