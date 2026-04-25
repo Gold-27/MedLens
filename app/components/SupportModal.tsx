@@ -249,7 +249,7 @@ const SupportModal: React.FC<SupportModalProps> = ({ visible, onClose }) => {
             <View>
               <Text style={[styles.modalTitle, { color: theme.colors.onSurface }]}>Support</Text>
               <Text style={[styles.modalSubtitle, { color: theme.colors.onSurfaceVariant }]}>
-                {showForm ? 'Send us a message' : 'Ticket Tracking'}
+                {activeTab === 'chat' ? 'AI Assistant' : (showForm ? '' : 'Ticket Tracking')}
               </Text>
             </View>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
@@ -336,10 +336,8 @@ const styles = StyleSheet.create({
   },
   tabBar: {
     flexDirection: 'row',
-    borderBottomWidth: 1,
-    marginBottom: 12,
-    marginHorizontal: -24,
-    paddingHorizontal: 24,
+    marginBottom: 16,
+    paddingHorizontal: 0,
   },
   tab: {
     paddingVertical: 12,
@@ -354,7 +352,6 @@ const styles = StyleSheet.create({
   },
   contentArea: {
     flex: 1,
-    marginHorizontal: -24,
   },
   scrollContent: {
     flexGrow: 1,
@@ -372,7 +369,8 @@ const styles = StyleSheet.create({
     fontFamily: 'Outfit',
   },
   formContainer: {
-    gap: 24,
+    gap: 20,
+    paddingTop: 8,
   },
   trackingContainer: {
     gap: 20,
@@ -448,9 +446,10 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
     marginLeft: 4,
     fontFamily: 'Outfit',
+    marginBottom: 2,
   },
   input: {
     height: 56,
@@ -466,12 +465,12 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   submitButton: {
-    height: 60,
+    height: 56,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
-    marginTop: 8,
+    marginTop: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
