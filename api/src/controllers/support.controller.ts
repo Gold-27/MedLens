@@ -52,7 +52,7 @@ export const handleSupportChat = async (req: Request, res: Response) => {
       // Verify that this conversation belongs to the user
       const { data: existingConv, error: checkError } = await supabase
         .from('support_conversations')
-        .select('user_id')
+        .select('user_id, updated_at, created_at')
         .eq('id', currentConversationId)
         .single();
 
@@ -64,6 +64,26 @@ export const handleSupportChat = async (req: Request, res: Response) => {
       if (existingConv.user_id !== userId) {
         console.warn(`[SupportChat] Security Violation: User ${userId} tried to access Conversation ${currentConversationId} belonging to ${existingConv.user_id}`);
         return res.status(403).json({ error: 'Access denied to this conversation' });
+      }
+
+      // Check if expired (>1h)
+      const updatedAt = new Date(existingConv.updated_at || existingConv.created_at).getTime();
+      const now = Date.now();
+      const oneHour = 60 * 60 * 1000;
+
+      if (now - updatedAt > oneHour) {
+        console.log(`[SupportChat] Conversation ${currentConversationId} expired (>1h). Creating new support conversation...`);
+        const { data: conv, error: convError } = await supabase
+          .from('support_conversations')
+          .insert({ user_id: userId, status: 'active' })
+          .select()
+          .single();
+
+        if (convError) {
+          console.error('[SupportChat] Failed to create new conversation:', convError.message);
+          throw convError;
+        }
+        currentConversationId = conv.id;
       }
     }
 
