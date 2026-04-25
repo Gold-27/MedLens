@@ -8,6 +8,7 @@ import { Config } from '../config';
 import { Platform, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LocalStorageService } from '../services/storage';
+import * as api from '../services/api';
 
 if (Platform.OS === 'web') {
   WebBrowser.maybeCompleteAuthSession();
@@ -55,6 +56,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Persisting guest state across restarts is no longer desired per PRD logic
   };
 
+  const syncGuestSearches = async (token: string) => {
+    const guestSearches = await LocalStorageService.getGuestSearchesAndClear();
+    if (guestSearches.length > 0) {
+      try {
+        await api.syncRecentSearches(guestSearches, token);
+        console.log('[Auth] Synced guest searches to account');
+      } catch (err) {
+        console.error('[Auth] Failed to sync guest searches', err);
+      }
+    }
+  };
+
   useEffect(() => {
     // Check active sessions and subscribe to auth changes
     const checkSession = async () => {
@@ -95,7 +108,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setGuestState(false);
         await LocalStorageService.setHasAuthenticatedBefore();
         // Migrate guest searches to account
-        await LocalStorageService.migrateRecentSearches(currentSession.user.id);
+        await syncGuestSearches(currentSession.access_token);
       }
       setLoading(false);
     });
@@ -113,7 +126,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         await setGuestState(false);
         await LocalStorageService.setOnboardingCompleted();
         await LocalStorageService.setHasAuthenticatedBefore();
-        await LocalStorageService.migrateRecentSearches(newSession.user.id);
+        await syncGuestSearches(newSession.access_token);
       }
       return { error };
     } catch (error) {
@@ -165,14 +178,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           await setGuestState(false);
           await LocalStorageService.setOnboardingCompleted();
           await LocalStorageService.setHasAuthenticatedBefore();
-          await LocalStorageService.migrateRecentSearches(refreshedSession.user.id);
+          await syncGuestSearches(refreshedSession.access_token);
         } else if (signUpData.session) {
           console.log('[Auth] Using initial session from signUp');
           setSession(signUpData.session);
           await setGuestState(false);
           await LocalStorageService.setOnboardingCompleted();
           await LocalStorageService.setHasAuthenticatedBefore();
-          await LocalStorageService.migrateRecentSearches(signUpData.session.user.id);
+          await syncGuestSearches(signUpData.session.access_token);
         } else {
           console.log('[Auth] No immediate session (normal if email confirmation enabled)');
           return { error: null, needsEmailConfirmation: true };
@@ -290,7 +303,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               await LocalStorageService.setHasAuthenticatedBefore();
               const { data: { user: googleUser } } = await supabase.auth.getUser(access_token);
               if (googleUser) {
-                await LocalStorageService.migrateRecentSearches(googleUser.id);
+                await syncGuestSearches(access_token);
               }
             } else {
               console.warn('[GoogleAuth] No tokens found in redirect URL params');

@@ -1,4 +1,6 @@
 import { Request, Response } from 'express';
+import { createClient } from '@supabase/supabase-js';
+import { AuthenticatedRequest } from '../middleware/auth.middleware';
 import openFDAService from '../services/openfda.service';
 import deepseekService, { AISummary } from '../services/deepseek.service';
 import geminiService from '../services/gemini.service';
@@ -231,5 +233,90 @@ export const transcribeAudio = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('[Transcription] Error:', error.message);
     res.status(500).json({ error: 'Audio transcription failed' });
+  }
+};
+
+const getUserScopedClient = (userToken: string) => {
+  const url = process.env.SUPABASE_URL!;
+  const key = process.env.SUPABASE_ANON_KEY!;
+  return createClient(url, key, {
+    db: { schema: 'public' },
+    global: { headers: { Authorization: `Bearer ${userToken}` } },
+  });
+};
+
+export const getRecentSearches = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const supabase = getUserScopedClient(req.userToken!);
+    const { data, error } = await supabase
+      .from('recent_searches')
+      .select('query')
+      .eq('user_id', req.userId)
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    if (error) throw error;
+    res.json(data.map(item => item.query));
+  } catch (error: any) {
+    console.error('[Search] getRecentSearches error:', error.message);
+    res.status(500).json({ error: 'Failed to fetch recent searches' });
+  }
+};
+
+export const saveRecentSearch = async (req: AuthenticatedRequest, res: Response) => {
+  const { query } = req.body;
+  if (!query || typeof query !== 'string') return res.status(400).json({ error: 'Query is required' });
+
+  try {
+    const supabase = getUserScopedClient(req.userToken!);
+    // Upsert query for user
+    const { error } = await supabase
+      .from('recent_searches')
+      .upsert({ user_id: req.userId, query, created_at: new Date().toISOString() }, { onConflict: 'user_id, query' });
+    
+    if (error) throw error;
+
+    // Fetch updated list to return
+    const { data } = await supabase
+      .from('recent_searches')
+      .select('query')
+      .eq('user_id', req.userId)
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    res.json(data ? data.map(item => item.query) : []);
+  } catch (error: any) {
+    console.error('[Search] saveRecentSearch error:', error.message);
+    res.status(500).json({ error: 'Failed to save recent search' });
+  }
+};
+
+export const syncRecentSearches = async (req: AuthenticatedRequest, res: Response) => {
+  const { queries } = req.body;
+  if (!queries || !Array.isArray(queries)) return res.status(400).json({ error: 'Queries array is required' });
+
+  try {
+    const supabase = getUserScopedClient(req.userToken!);
+    
+    // Insert each one with slightly decreasing timestamps to maintain order
+    const now = Date.now();
+    const rows = queries.map((query, index) => ({
+      user_id: req.userId,
+      query,
+      created_at: new Date(now - index * 1000).toISOString()
+    }));
+
+    if (rows.length > 0) {
+      const { error } = await supabase
+        .from('recent_searches')
+        .upsert(rows, { onConflict: 'user_id, query' });
+        
+      if (error) throw error;
+    }
+
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error('[Search] syncRecentSearches error:', error.message);
+    res.status(500).json({ error: 'Failed to sync recent searches' });
   }
 };

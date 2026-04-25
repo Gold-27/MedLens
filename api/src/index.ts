@@ -9,7 +9,7 @@ dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 import express from 'express';
 import cors from 'cors';
-import { searchMedication, generateELI12, autocomplete, transcribeAudio } from './controllers/search.controller';
+import { searchMedication, generateELI12, autocomplete, transcribeAudio, getRecentSearches, saveRecentSearch, syncRecentSearches } from './controllers/search.controller';
 import { getCabinetItems, saveCabinetItem, deleteCabinetItem } from './controllers/cabinet.controller';
 import { deleteAccount } from './controllers/auth.controller';
 import { handleSupportChat, getChatHistory, getSupportHistory, getConversationMessages } from './controllers/support.controller';
@@ -54,6 +54,9 @@ app.post('/api/search', rateLimiter(60000, 30), searchMedication);
 app.get('/api/autocomplete', autocomplete);
 app.post('/api/eli12', generateELI12);
 app.post('/api/search/transcribe', transcribeAudio);
+app.get('/api/search/recent', requireAuth, getRecentSearches);
+app.post('/api/search/recent', requireAuth, saveRecentSearch);
+app.post('/api/search/recent/sync', requireAuth, syncRecentSearches);
 
 // ── Cabinet Routes (Auth Required) ───────────────────────────────────────────
 app.get('/api/cabinet/items', requireAuth, getCabinetItems);

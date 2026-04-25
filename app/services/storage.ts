@@ -50,37 +50,20 @@ export const LocalStorageService = {
     await AsyncStorage.removeItem(key);
   },
 
-  async migrateRecentSearches(userId: string): Promise<void> {
+  async getGuestSearchesAndClear(): Promise<string[]> {
     try {
       const guestKey = `${KEYS.RECENT_SEARCHES}_guest`;
-      const userKey = `${KEYS.RECENT_SEARCHES}_${userId}`;
-
       const guestData = await AsyncStorage.getItem(guestKey);
-      if (!guestData) return;
+      if (!guestData) return [];
 
       const guestSearches: string[] = JSON.parse(guestData);
-      if (guestSearches.length === 0) return;
-
-      const userData = await AsyncStorage.getItem(userKey);
-      const userSearches: string[] = userData ? JSON.parse(userData) : [];
-
-      // Merge: newest from guest + current user searches, remove duplicates
-      const merged = [...guestSearches, ...userSearches];
-      const unique = Array.from(new Set(merged.map(s => s.toLowerCase()))).map(lower => {
-        // Find the original casing from the merged array (prefer newest/guest)
-        return merged.find(s => s.toLowerCase() === lower) || lower;
-      });
-
-      // Keep top 10
-      const final = unique.slice(0, 10);
-
-      await AsyncStorage.setItem(userKey, JSON.stringify(final));
-      
-      // Clear guest history only after success
-      await AsyncStorage.removeItem(guestKey);
-      console.log(`[Storage] Migrated ${guestSearches.length} searches from guest to user ${userId}`);
+      if (guestSearches.length > 0) {
+        await AsyncStorage.removeItem(guestKey);
+      }
+      return guestSearches;
     } catch (e) {
-      console.error('[Storage] Migration failed:', e);
+      console.error('[Storage] getGuestSearchesAndClear failed:', e);
+      return [];
     }
   },
 
