@@ -17,9 +17,10 @@ import { SupportService, SupportMessage, SupportConversation } from '../services
 
 interface ChatSupportProps {
   onEscalate: () => void;
+  autoFocus?: boolean;
 }
 
-const ChatSupport: React.FC<ChatSupportProps> = ({ onEscalate }) => {
+const ChatSupport: React.FC<ChatSupportProps> = ({ onEscalate, autoFocus }) => {
   const theme = useTheme();
   const [messages, setMessages] = useState<SupportMessage[]>([]);
   const [inputText, setInputText] = useState('');
@@ -29,6 +30,16 @@ const ChatSupport: React.FC<ChatSupportProps> = ({ onEscalate }) => {
   const [isError, setIsError] = useState(false);
   
   const flatListRef = useRef<FlatList>(null);
+  const inputRef = useRef<TextInput>(null);
+
+  useEffect(() => {
+    if (autoFocus) {
+      const timer = setTimeout(() => {
+        inputRef.current?.focus();
+      }, 500); // Small delay for modal transition
+      return () => clearTimeout(timer);
+    }
+  }, [autoFocus]);
 
   useEffect(() => {
     loadHistory();
@@ -187,6 +198,7 @@ const ChatSupport: React.FC<ChatSupportProps> = ({ onEscalate }) => {
 
       <View style={[styles.inputWrapper, { borderTopColor: theme.colors.outlineVariant, backgroundColor: theme.colors.background }]}>
         <TextInput
+          ref={inputRef}
           style={[styles.input, { 
             backgroundColor: theme.colors.surfaceContainerLow, 
             color: theme.colors.onSurface,

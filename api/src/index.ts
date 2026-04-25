@@ -12,7 +12,7 @@ import cors from 'cors';
 import { searchMedication, generateELI12, autocomplete, transcribeAudio } from './controllers/search.controller';
 import { getCabinetItems, saveCabinetItem, deleteCabinetItem } from './controllers/cabinet.controller';
 import { deleteAccount } from './controllers/auth.controller';
-import { handleSupportChat, getChatHistory } from './controllers/support.controller';
+import { handleSupportChat, getChatHistory, getSupportHistory, getConversationMessages } from './controllers/support.controller';
 import { requireAuth } from './middleware/auth.middleware';
 import OpenFDAService from './services/openfda.service';
 import DeepSeekService from './services/deepseek.service';
@@ -62,9 +62,10 @@ app.delete('/api/cabinet/items/:id', requireAuth, deleteCabinetItem);
 // ── Auth Management ──────────────────────────────────────────────────────────
 app.delete('/api/auth/account', requireAuth, deleteAccount);
 
-// Support Chat
 app.post('/api/support/chat', requireAuth, handleSupportChat);
 app.get('/api/support/chat/history', requireAuth, getChatHistory);
+app.get('/api/support/history', requireAuth, getSupportHistory);
+app.get('/api/support/conversations/:conversationId/messages', requireAuth, getConversationMessages);
 
 // ── Interaction Checker ──────────────────────────────────────────────────────
 app.post('/api/interactions', async (req, res) => {

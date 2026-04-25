@@ -117,5 +117,35 @@ export const SupportService = {
       console.error('[Support] JSON Parse Error:', e, 'Raw content:', responseText);
       throw new Error('Received invalid response from server');
     }
+  },
+
+  async getSupportHistory() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const response = await fetch(`${Config.API_BASE_URL}/api/support/history`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`
+      }
+    });
+
+    if (!response.ok) throw new Error('Failed to fetch support history');
+    return await response.json() as (SupportTicket & { type: 'ticket' | 'ai_chat', is_ai: boolean })[];
+  },
+
+  async getConversationMessages(conversationId: string) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const response = await fetch(`${Config.API_BASE_URL}/api/support/conversations/${conversationId}/messages`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`
+      }
+    });
+
+    if (!response.ok) throw new Error('Failed to fetch conversation messages');
+    return await response.json() as SupportMessage[];
   }
 };
