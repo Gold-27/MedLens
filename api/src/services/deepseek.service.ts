@@ -288,6 +288,7 @@ export class DeepSeekService {
     ];
 
     try {
+      console.log(`[DeepSeekService] Sending ${fullMessages.length} messages to DeepSeek API...`);
       const response = await axios.post(
         this.baseUrl,
         {
@@ -303,9 +304,19 @@ export class DeepSeekService {
         }
       );
 
+      if (!response.data || !response.data.choices || response.data.choices.length === 0) {
+        console.error('[DeepSeekService] Invalid API response structure:', JSON.stringify(response.data));
+        throw new Error('Invalid response from AI service');
+      }
+
+      console.log('[DeepSeekService] API call successful.');
       return response.data.choices[0].message.content;
     } catch (error: any) {
-      console.error('DeepSeek Chat error:', error.message);
+      if (error.response) {
+        console.error('[DeepSeekService] API Error Response:', error.response.status, JSON.stringify(error.response.data));
+      } else {
+        console.error('[DeepSeekService] API Error:', error.message);
+      }
       throw new Error('AI support is temporarily unavailable. Please try again later.');
     }
   }
