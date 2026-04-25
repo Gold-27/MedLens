@@ -133,7 +133,9 @@ async function apiRequest<T>(endpoint: string, options: (RequestInit & { timeout
 
     return data;
   } catch (error: any) {
-    console.error(`[API] Request failed for URL: ${endpoint}`, error);
+    if (error.status !== 404) {
+      console.error(`[API] Request failed for URL: ${endpoint}`, error);
+    }
     if (error.status) throw error;
     if (error.name === 'AbortError') throw error;
     

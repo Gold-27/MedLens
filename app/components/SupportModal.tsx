@@ -297,6 +297,7 @@ const SupportModal: React.FC<SupportModalProps> = ({ visible, onClose }) => {
                   )
                 )}
               </ScrollView>
+              </View>
             )}
           </View>
         </View>
@@ -629,6 +630,23 @@ const styles = StyleSheet.create({
   startChatBtnText: {
     color: '#FFF',
     fontSize: 16,
+    fontWeight: '700',
+    fontFamily: 'Outfit',
+  },
+  clearHistoryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    marginHorizontal: 12,
+    marginBottom: 12,
+    gap: 6,
+    alignSelf: 'flex-end',
+  },
+  clearHistoryBtnText: {
+    fontSize: 14,
     fontWeight: '700',
     fontFamily: 'Outfit',
   },

@@ -176,8 +176,8 @@ const SettingsScreen: React.FC = () => {
         {/* Profile Section (Centered) */}
         {!isGuest && user && (
           <View style={styles.centeredProfile}>
-            <View style={[styles.avatarCircle, { backgroundColor: theme.colors.primary }]}>
-              <Text style={styles.avatarText}>
+            <View style={[styles.avatarCircle, { backgroundColor: theme.colors.onSurfaceVariant }]}>
+              <Text style={[styles.avatarText, { color: theme.colors.surface }]}>
                 {(() => {
                   const name = user.user_metadata?.full_name;
                   if (name) {
