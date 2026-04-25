@@ -2,18 +2,35 @@ import { Request, Response } from 'express';
 import { createClient } from '@supabase/supabase-js';
 import DeepSeekService from '../services/deepseek.service';
 
-const supabaseUrl = process.env.SUPABASE_URL || '';
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+let supabaseInstance: any = null;
 
-// Use service role to bypass RLS for backend-managed support flows
-const supabase = supabaseUrl && supabaseServiceRoleKey 
-  ? createClient(supabaseUrl, supabaseServiceRoleKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    })
-  : null;
+const getSupabaseClient = () => {
+  if (supabaseInstance) return supabaseInstance;
+
+  // Debug: Log what's in process.env
+  const supabaseKeys = Object.keys(process.env).filter(k => k.toLowerCase().includes('supabase'));
+  console.log(`[SupportController] Available Supabase Keys in process.env:`, supabaseKeys);
+
+  const supabaseUrl = process.env.SUPABASE_URL || '';
+  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+
+  console.log(`[SupportController] URL check: ${supabaseUrl ? 'FOUND' : 'MISSING'}`);
+  console.log(`[SupportController] Service Role Key check: ${supabaseServiceRoleKey ? 'FOUND' : 'MISSING'}`);
+
+  if (!supabaseUrl || !supabaseServiceRoleKey) {
+    console.warn('[SupportController] FAILED initialization - missing config.');
+    return null;
+  }
+
+  supabaseInstance = createClient(supabaseUrl, supabaseServiceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  });
+
+  return supabaseInstance;
+};
 
 export const handleSupportChat = async (req: Request, res: Response) => {
   const userId = (req as any).userId;
@@ -22,9 +39,9 @@ export const handleSupportChat = async (req: Request, res: Response) => {
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
   if (!message || !message.trim()) return res.status(400).json({ error: 'Message is required' });
 
+  const supabase = getSupabaseClient();
   if (!supabase) {
-    console.error('[SupportChat] Supabase client not initialized. Missing SUPABASE_SERVICE_ROLE_KEY?');
-    return res.status(500).json({ error: 'Support service is currently unavailable due to server configuration.' });
+    return res.status(500).json({ error: 'Support service is currently unavailable due to server configuration (v2).' });
   }
 
   console.log(`[SupportChat] Request received from user ${userId}. Message length: ${message.length}`);
@@ -125,6 +142,7 @@ export const getChatHistory = async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
+  const supabase = getSupabaseClient();
   if (!supabase) {
     return res.json({ conversation: null, messages: [] });
   }
@@ -182,6 +200,7 @@ export const getSupportHistory = async (req: Request, res: Response) => {
   const userId = (req as any).userId;
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
+  const supabase = getSupabaseClient();
   if (!supabase) {
     return res.json([]);
   }
@@ -244,6 +263,7 @@ export const getConversationMessages = async (req: Request, res: Response) => {
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
   if (!conversationId) return res.status(400).json({ error: 'Conversation ID is required' });
 
+  const supabase = getSupabaseClient();
   if (!supabase) return res.status(500).json({ error: 'Database not available' });
 
   try {
