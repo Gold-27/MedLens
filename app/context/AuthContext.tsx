@@ -19,7 +19,7 @@ interface AuthContextType {
   isGuest: boolean;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
-  signUp: (email: string, password: string, displayName?: string) => Promise<{ error: AuthError | null }>;
+  signUp: (email: string, password: string, displayName?: string) => Promise<{ error: AuthError | null, needsEmailConfirmation?: boolean }>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   continueAsGuest: () => Promise<void>;
@@ -175,6 +175,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           await LocalStorageService.migrateRecentSearches(signUpData.session.user.id);
         } else {
           console.log('[Auth] No immediate session (normal if email confirmation enabled)');
+          return { error: null, needsEmailConfirmation: true };
         }
       }
 
@@ -234,11 +235,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signInWithGoogle = async () => {
     try {
-      console.log('Starting Google Auth...');
+      console.log('[GoogleAuth] Starting Google Auth...');
+
+      // Generate redirect URI using AuthSession (Expo Go compatible)
       const redirectUrl = AuthSession.makeRedirectUri({
         scheme: 'medquire',
       });
-      console.log('AuthSession Redirect URL:', redirectUrl);
+      console.log('[GoogleAuth] Redirect URL:', redirectUrl);
+      console.log('[GoogleAuth] Platform:', Platform.OS);
 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -248,22 +252,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
 
       if (error) {
-        console.error('Supabase OAuth Error:', error);
+        console.error('[GoogleAuth] Supabase OAuth Error:', error);
         return { error };
       }
 
+      console.log('[GoogleAuth] OAuth URL received:', data?.url ? 'YES' : 'NO');
+
       if (data?.url) {
-        console.log('Opening browser for Google Login...');
+        console.log('[GoogleAuth] Opening browser for Google Login...');
         const res = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
-        console.log('WebBrowser result:', res.type);
+        console.log('[GoogleAuth] WebBrowser result type:', res.type);
 
         if (res.type === 'success' && res.url) {
-          console.log('Login successful, parsing tokens...');
+          console.log('[GoogleAuth] Success! Callback URL received:', res.url.substring(0, 80) + '...');
           const paramsStr = res.url.split('#')[1] || res.url.split('?')[1];
           if (paramsStr) {
             const searchParams = new URLSearchParams(paramsStr.replace(/\?/g, '&'));
             const access_token = searchParams.get('access_token');
             const refresh_token = searchParams.get('refresh_token');
+
+            console.log('[GoogleAuth] Tokens found:', {
+              access_token: access_token ? `${access_token.substring(0, 10)}...` : 'MISSING',
+              refresh_token: refresh_token ? `${refresh_token.substring(0, 10)}...` : 'MISSING',
+            });
 
             if (access_token && refresh_token) {
               const { error: sessionError } = await supabase.auth.setSession({
@@ -271,26 +282,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 refresh_token,
               });
               if (sessionError) {
-                console.error('Session setting error:', sessionError);
+                console.error('[GoogleAuth] Session setting error:', sessionError);
                 return { error: sessionError };
               }
-              console.log('Session established successfully!');
+              console.log('[GoogleAuth] Session established successfully!');
               await LocalStorageService.setOnboardingCompleted();
               await LocalStorageService.setHasAuthenticatedBefore();
               const { data: { user: googleUser } } = await supabase.auth.getUser(access_token);
               if (googleUser) {
                 await LocalStorageService.migrateRecentSearches(googleUser.id);
               }
+            } else {
+              console.warn('[GoogleAuth] No tokens found in redirect URL params');
+              return { error: new Error('Authentication failed: no tokens received') };
             }
+          } else {
+            console.warn('[GoogleAuth] No params string found in callback URL');
+            return { error: new Error('Authentication failed: invalid redirect') };
           }
         } else if (res.type === 'cancel' || res.type === 'dismiss') {
-          console.log('User cancelled the sign-in flow.');
+          console.log('[GoogleAuth] User cancelled the sign-in flow.');
           return { error: new Error('User cancelled sign-in') };
+        } else {
+          console.log('[GoogleAuth] Unexpected browser result:', JSON.stringify(res));
         }
       }
       return { error: null };
     } catch (error) {
-      console.error('Global Google sign in error:', error);
+      console.error('[GoogleAuth] Unexpected error:', error);
       return { error: error instanceof Error ? error : new Error('Unknown error') };
     }
   };

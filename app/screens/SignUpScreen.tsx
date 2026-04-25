@@ -95,10 +95,16 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
     if (!hasErrors && isComplete && isPassValid) {
       setLoading(true);
       try {
-        const { error } = await signUp(form.email, form.password, form.name);
+        const { error, needsEmailConfirmation } = await signUp(form.email, form.password, form.name);
         
         if (error) {
           Alert.alert('Sign Up Failed', error.message);
+        } else if (needsEmailConfirmation) {
+          Alert.alert(
+            'Check your email',
+            'We have sent you an email with a confirmation link. Please verify your email before logging in.',
+            [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
+          );
         } else {
           // Success! Mark as success and wait for useEffect to navigate
           setSignUpSuccess(true);
@@ -130,11 +136,12 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
     if (error && error.message !== 'User cancelled sign-in') {
       Alert.alert('Authentication Failed', error.message);
     } else if (!error) {
-      navigation.replace('Home');
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Home' }],
+      });
     }
   };
-
-
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top', 'left', 'right']}>

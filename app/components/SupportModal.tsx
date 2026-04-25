@@ -281,7 +281,7 @@ const styles = StyleSheet.create({
     height: '85%',
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
-    padding: 24,
+    paddingTop: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.1,
@@ -292,7 +292,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 24,
+    marginBottom: 16,
+    paddingHorizontal: 20,
   },
   modalTitle: {
     fontSize: 28,
@@ -310,12 +311,12 @@ const styles = StyleSheet.create({
   },
   tabBar: {
     flexDirection: 'row',
-    marginBottom: 16,
-    paddingHorizontal: 0,
+    marginBottom: 8,
+    paddingHorizontal: 16,
   },
   tab: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
     borderBottomWidth: 2,
     borderBottomColor: 'transparent',
   },
@@ -330,6 +331,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingBottom: 40,
+    paddingHorizontal: 16,
   },
   loadingContainer: {
     flex: 1,
@@ -479,14 +481,14 @@ const styles = StyleSheet.create({
     fontFamily: 'Outfit',
   },
   historyList: {
-    gap: 16,
-    paddingTop: 8,
+    gap: 12,
+    paddingTop: 4,
   },
   historyItem: {
-    padding: 16,
-    borderRadius: 20,
+    padding: 14,
+    borderRadius: 16,
     borderWidth: 1,
-    gap: 8,
+    gap: 6,
   },
   historyItemHeader: {
     flexDirection: 'row',

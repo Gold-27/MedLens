@@ -118,7 +118,10 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
     if (error && error.message !== 'User cancelled sign-in') {
       Alert.alert('Authentication Failed', error.message);
     } else if (!error) {
-       navigation.replace('Home');
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Home' }],
+      });
     }
   };
 
