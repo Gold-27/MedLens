@@ -249,7 +249,7 @@ const SupportModal: React.FC<SupportModalProps> = ({ visible, onClose }) => {
             <View>
               <Text style={[styles.modalTitle, { color: theme.colors.onSurface }]}>Support</Text>
               <Text style={[styles.modalSubtitle, { color: theme.colors.onSurfaceVariant }]}>
-                {activeTab === 'chat' ? 'AI Assistant' : (showForm ? '' : 'Ticket Tracking')}
+                {activeTab === 'chat' ? '' : (showForm ? '' : 'Ticket Tracking')}
               </Text>
             </View>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
@@ -369,7 +369,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Outfit',
   },
   formContainer: {
-    gap: 20,
+    gap: 16,
     paddingTop: 8,
   },
   trackingContainer: {
@@ -449,7 +449,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginLeft: 4,
     fontFamily: 'Outfit',
-    marginBottom: 2,
   },
   input: {
     height: 56,
@@ -470,7 +469,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
-    marginTop: 12,
+    marginTop: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
