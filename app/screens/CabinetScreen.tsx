@@ -329,13 +329,13 @@ const CabinetScreen: React.FC = () => {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
       {/* Header */}
       <View style={[styles.topBar, { backgroundColor: theme.colors.background }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color={theme.colors.onSurface} />
-        </TouchableOpacity>
-        <View style={{ flex: 1 }}>
+        <View style={styles.headerTitleRow}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+            <Ionicons name="arrow-back" size={24} color={theme.colors.onSurface} />
+          </TouchableOpacity>
           <Text style={[styles.title, { color: theme.colors.onSurface }]}>My Cabinet</Text>
-          <Text style={[styles.subtitle, { color: theme.colors.outline }]}>Your saved medications</Text>
         </View>
+        <Text style={[styles.subtitle, { color: theme.colors.outline }]}>Your saved medications</Text>
       </View>
 
       <FlatList
@@ -414,11 +414,13 @@ const styles = StyleSheet.create({
 
   // ── Top Bar ──
   topBar: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 12,
+  },
+  headerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   backBtn: {
     marginRight: 12,
@@ -434,6 +436,7 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     fontFamily: 'Outfit',
     marginTop: 4,
+    marginLeft: 36,
   },
 
   // ── List Content ──
