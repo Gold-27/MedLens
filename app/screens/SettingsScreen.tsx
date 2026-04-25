@@ -213,7 +213,7 @@ const SettingsScreen: React.FC = () => {
         )}
 
         {/* Content Sections */}
-        <View style={styles.contentPadding}>
+        <View style={[styles.contentPadding, isGuest && { paddingTop: 24 }]}>
           {sections.map((section, sIndex) => (
             <View key={sIndex} style={styles.section}>
               {section.title ? (
