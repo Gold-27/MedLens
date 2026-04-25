@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions, TextInput, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, Image, BackHandler, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons, FontAwesome } from '@expo/vector-icons';
+import { SvgXml } from 'react-native-svg';
+import { GOOGLE_SVG } from '../assets/google_svg';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
@@ -255,11 +257,10 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
                 <ActivityIndicator color={theme.colors.primary} />
               ) : (
                 <>
-                  <Image 
-                    source={require('../assets/google_g_logo.png')} 
-                    style={styles.googleIcon} 
-                    fadeDuration={0}
-                    resizeMode="contain"
+                  <SvgXml 
+                    xml={GOOGLE_SVG} 
+                    width={24} 
+                    height={24} 
                   />
                   <Text style={[styles.socialButtonText, { color: theme.colors.primary }]}>Continue with Google</Text>
                 </>
