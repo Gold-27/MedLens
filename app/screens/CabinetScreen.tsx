@@ -357,7 +357,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingTop: 8,
     paddingBottom: 40,
   },
   headerContainer: {
@@ -385,7 +386,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 16,
-    marginBottom: 24,
+    marginBottom: 36,
     lineHeight: 22,
   },
   statsRow: {
