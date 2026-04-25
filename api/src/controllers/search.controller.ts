@@ -9,8 +9,12 @@ const searchCache = new Map<string, any>();
 export const searchMedication = async (req: Request, res: Response) => {
   const { query, eli12 } = req.body;
 
-  if (!query) {
-    return res.status(400).json({ error: 'Query is required' });
+  if (!query || typeof query !== 'string') {
+    return res.status(400).json({ error: 'Valid search query string is required' });
+  }
+
+  if (query.trim().length > 100) {
+    return res.status(400).json({ error: 'Search query exceeds the maximum allowed length (100 characters)' });
   }
 
   try {

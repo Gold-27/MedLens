@@ -48,6 +48,23 @@ export const handleSupportChat = async (req: Request, res: Response) => {
       }
       currentConversationId = conv.id;
       console.log('[SupportChat] New conversation created:', currentConversationId);
+    } else {
+      // Verify that this conversation belongs to the user
+      const { data: existingConv, error: checkError } = await supabase
+        .from('support_conversations')
+        .select('user_id')
+        .eq('id', currentConversationId)
+        .single();
+
+      if (checkError || !existingConv) {
+        console.warn(`[SupportChat] Conversation ${currentConversationId} not found or error:`, checkError?.message);
+        return res.status(404).json({ error: 'Conversation not found' });
+      }
+
+      if (existingConv.user_id !== userId) {
+        console.warn(`[SupportChat] Security Violation: User ${userId} tried to access Conversation ${currentConversationId} belonging to ${existingConv.user_id}`);
+        return res.status(403).json({ error: 'Access denied to this conversation' });
+      }
     }
 
     // 2. Save user message
