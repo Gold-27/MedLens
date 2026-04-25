@@ -1,7 +1,7 @@
 const axios = require('axios');
 
 async function testAPI() {
-  console.log('Testing MedLens API endpoints...\n');
+  console.log('Testing MedQuire API endpoints...\n');
   
   // Test health endpoint
   try {

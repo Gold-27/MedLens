@@ -93,7 +93,7 @@ export const searchMedication = async (req: Request, res: Response) => {
         enabled: false,
         content: null,
       },
-      disclaimer: 'MedLens simplifies medical information for understanding. It does not replace professional medical advice.',
+      disclaimer: 'MedQuire simplifies medical information for understanding. It does not replace professional medical advice.',
     };
 
     // Save to cache
@@ -182,7 +182,7 @@ export const generateELI12 = async (req: Request, res: Response) => {
         enabled: true,
         content: JSON.stringify(validatedSummary),
       },
-      disclaimer: 'MedLens simplifies medical information for understanding. It does not replace professional medical advice.',
+      disclaimer: 'MedQuire simplifies medical information for understanding. It does not replace professional medical advice.',
     });
 
   } catch (error: any) {

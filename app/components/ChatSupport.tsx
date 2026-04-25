@@ -169,7 +169,7 @@ const ChatSupport: React.FC<ChatSupportProps> = ({ onEscalate }) => {
               <View style={styles.typingContainer}>
                 <View style={[styles.typingBubble, { backgroundColor: theme.colors.surfaceContainerHigh }]}>
                   <ActivityIndicator size="small" color={theme.colors.primary} />
-                  <Text style={[styles.typingText, { color: theme.colors.onSurfaceVariant }]}>MedLens AI is thinking...</Text>
+                  <Text style={[styles.typingText, { color: theme.colors.onSurfaceVariant }]}>MedQuire AI is thinking...</Text>
                 </View>
               </View>
             )}

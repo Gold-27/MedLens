@@ -1,4 +1,4 @@
--- MedLens Initial Schema
+-- MedQuire Initial Schema
 -- Based on database_schema.md
 
 -- Enable UUID extension
