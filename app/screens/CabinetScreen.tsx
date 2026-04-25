@@ -329,13 +329,13 @@ const CabinetScreen: React.FC = () => {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
       {/* Header */}
       <View style={[styles.topBar, { backgroundColor: theme.colors.background }]}>
-        <View style={styles.headerTitleRow}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={22} color={theme.colors.onSurface} />
-          </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+          <Ionicons name="arrow-back" size={24} color={theme.colors.onSurface} />
+        </TouchableOpacity>
+        <View style={{ flex: 1 }}>
           <Text style={[styles.title, { color: theme.colors.onSurface }]}>My Cabinet</Text>
+          <Text style={[styles.subtitle, { color: theme.colors.outline }]}>Your saved medications</Text>
         </View>
-        <Text style={[styles.subtitle, { color: theme.colors.outline }]}>Your saved medications</Text>
       </View>
 
       <FlatList
@@ -414,34 +414,26 @@ const styles = StyleSheet.create({
 
   // ── Top Bar ──
   topBar: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 16,
-  },
-  headerTitleRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 12,
   },
   backBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
     marginRight: 12,
   },
   title: {
-    fontSize: 24,
-    fontWeight: '700',
+    fontSize: 28,
+    fontWeight: 'bold',
     fontFamily: 'Outfit',
     letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '400',
     fontFamily: 'Outfit',
     marginTop: 4,
-    marginLeft: 48,
   },
 
   // ── List Content ──
@@ -469,12 +461,12 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   statValue: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
     fontFamily: 'Outfit',
   },
   statLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '400',
     fontFamily: 'Outfit',
     opacity: 0.8,
@@ -488,7 +480,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   sectionLabel: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
     fontFamily: 'Outfit',
     letterSpacing: -0.2,
@@ -536,13 +528,13 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   medName: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
     fontFamily: 'Outfit',
     letterSpacing: -0.2,
   },
   medDesc: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '400',
     fontFamily: 'Outfit',
     marginTop: 2,
@@ -573,7 +565,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   ctaText: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '400',
     fontFamily: 'Outfit',
     flex: 1,
@@ -585,7 +577,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   ctaButtonText: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '700',
     fontFamily: 'Outfit',
   },
