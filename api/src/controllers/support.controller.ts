@@ -187,16 +187,7 @@ export const getSupportHistory = async (req: Request, res: Response) => {
   }
 
   try {
-    // 1. Fetch support_tickets
-    const { data: tickets, error: ticketsError } = await supabase
-      .from('support_tickets')
-      .select('id, subject, message, status, created_at')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
-
-    if (ticketsError) throw ticketsError;
-
-    // 2. Fetch support_conversations
+    // 1. Fetch support_conversations
     const { data: convs, error: convsError } = await supabase
       .from('support_conversations')
       .select('id, status, updated_at, created_at')
@@ -224,11 +215,8 @@ export const getSupportHistory = async (req: Request, res: Response) => {
       };
     }));
 
-    // 3. Merge and sort
-    const mergedHistory = [
-      ...tickets.map(t => ({ ...t, type: 'ticket', is_ai: false })),
-      ...conversationsWithLastMsg
-    ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    // 2. Sort
+    const mergedHistory = conversationsWithLastMsg.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
     res.json(mergedHistory);
   } catch (error: any) {

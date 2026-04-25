@@ -352,13 +352,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (!user) return { error: new Error('No user to delete') };
 
       // 1. Call backend to permanently delete user from auth.users
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
+      const token = await getToken();
+      if (token) {
         try {
           const response = await fetch(Config.ENDPOINTS.AUTH_DELETE, {
             method: 'DELETE',
             headers: {
-              'Authorization': `Bearer ${session.access_token}`,
+              'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
             }
           });

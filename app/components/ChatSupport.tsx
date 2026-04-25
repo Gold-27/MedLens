@@ -16,11 +16,10 @@ import { useTheme } from '../theme/ThemeProvider';
 import { SupportService, SupportMessage, SupportConversation } from '../services/support';
 
 interface ChatSupportProps {
-  onEscalate: () => void;
   autoFocus?: boolean;
 }
 
-const ChatSupport: React.FC<ChatSupportProps> = ({ onEscalate, autoFocus }) => {
+const ChatSupport: React.FC<ChatSupportProps> = ({ autoFocus }) => {
   const theme = useTheme();
   const [messages, setMessages] = useState<SupportMessage[]>([]);
   const [inputText, setInputText] = useState('');
@@ -110,8 +109,6 @@ const ChatSupport: React.FC<ChatSupportProps> = ({ onEscalate, autoFocus }) => {
     const isUser = item.role === 'user';
     const time = new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-    const isEscalation = !isUser && item.content.includes("require human support");
-
     return (
       <View style={[styles.messageRow, isUser ? styles.userRow : styles.assistantRow]}>
         {!isUser && (
@@ -134,16 +131,6 @@ const ChatSupport: React.FC<ChatSupportProps> = ({ onEscalate, autoFocus }) => {
             {time}
           </Text>
           
-          {isEscalation && (
-            <View style={styles.escalationButtons}>
-              <TouchableOpacity 
-                style={[styles.escalateBtn, { backgroundColor: theme.colors.primary }]}
-                onPress={onEscalate}
-              >
-                <Text style={styles.escalateBtnText}>Create Support Ticket</Text>
-              </TouchableOpacity>
-            </View>
-          )}
         </View>
       </View>
     );
@@ -354,22 +341,6 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  escalationButtons: {
-    marginTop: 12,
-    gap: 8,
-  },
-  escalateBtn: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  escalateBtnText: {
-    color: '#FFF',
-    fontSize: 14,
-    fontWeight: '700',
-    fontFamily: 'Outfit',
   },
 });
 
