@@ -22,7 +22,7 @@ import SupportModal from '../components/SupportModal';
 
 type SettingsItem = 
   | { label: string; value: string; type: 'info' }
-  | { label: string; type: 'button'; action?: () => void; content?: string; destructive?: boolean };
+  | { label: string; type: 'button'; action?: () => void; content?: string; destructive?: boolean; disabled?: boolean };
 
 type SettingsSection = {
   title: string;
@@ -63,6 +63,10 @@ const SettingsScreen: React.FC = () => {
         }
       }},
     ]);
+  };
+
+  const handleSignUp = () => {
+    navigation.reset({ index: 0, routes: [{ name: 'Onboarding' }] });
   };
 
   const handleUpdateProfile = async () => {
@@ -124,12 +128,12 @@ const SettingsScreen: React.FC = () => {
     setIsSupportModalVisible(true);
   };
 
-  const sections: SettingsSection[] = ([
+  const sections: SettingsSection[] = [
     {
       title: 'Account',
       items: [
-        { label: 'Status', value: isPro ? 'Pro' : 'Free', type: 'info' },
-        { label: 'Email', value: user?.email || 'Not signed in', type: 'info' },
+        { label: 'Status', value: isGuest ? 'Guest' : (isPro ? 'Pro' : 'Free'), type: 'info' },
+        { label: 'Email', value: isGuest ? 'Not signed in' : (user?.email || 'Not signed in'), type: 'info' },
       ],
     },
     {
@@ -146,16 +150,16 @@ const SettingsScreen: React.FC = () => {
           type: 'button', 
           content: 'MedQuire simplifies complex medical data for educational purposes. It is not a clinical tool and does not replace professional medical advice, diagnosis, or treatment. Always consult with a licensed healthcare provider.' 
         },
-        { label: 'Support', type: 'button', action: handleSupport },
+        { label: 'Support', type: 'button', action: isGuest ? undefined : handleSupport, disabled: isGuest },
       ],
     },
     {
       title: '',
       items: [
-        { label: 'Sign Out', type: 'button', action: handleSignOut, destructive: true },
+        { label: isGuest ? 'Sign Up' : 'Sign Out', type: 'button', action: isGuest ? handleSignUp : handleSignOut, destructive: !isGuest },
       ],
     },
-  ] as SettingsSection[]).filter(s => (isGuest && s.title !== '') ? false : true);
+  ];
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
@@ -225,7 +229,11 @@ const SettingsScreen: React.FC = () => {
                       </View>
                     ) : (
                       <View>
-                        <TouchableOpacity style={styles.buttonRow} onPress={() => item.content ? toggleAccordion(item.label) : item.action?.()}>
+                        <TouchableOpacity 
+                          style={[styles.buttonRow, item.disabled && { opacity: 0.5 }]} 
+                          onPress={() => item.content ? toggleAccordion(item.label) : item.action?.()}
+                          disabled={item.disabled}
+                        >
                           <View style={[styles.buttonRowContent, item.destructive && { justifyContent: 'center' }]}>
                             <Text style={[styles.buttonLabel, { color: item.destructive ? theme.colors.error : theme.colors.primary }]}>
                               {item.label}
