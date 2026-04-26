@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions, TextInput, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, Image, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons, FontAwesome } from '@expo/vector-icons';
+import { SvgXml } from 'react-native-svg';
+import { GOOGLE_SVG } from '../assets/google_svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useTheme, ThemeContextType } from '../theme/ThemeProvider';
@@ -95,10 +97,16 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
     if (!hasErrors && isComplete && isPassValid) {
       setLoading(true);
       try {
-        const { error } = await signUp(form.email, form.password, form.name);
+        const { error, needsEmailConfirmation } = await signUp(form.email, form.password, form.name);
         
         if (error) {
           Alert.alert('Sign Up Failed', error.message);
+        } else if (needsEmailConfirmation) {
+          Alert.alert(
+            'Check your email',
+            'We have sent you an email with a confirmation link. Please verify your email before logging in.',
+            [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
+          );
         } else {
           // Success! Mark as success and wait for useEffect to navigate
           setSignUpSuccess(true);
@@ -130,11 +138,12 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
     if (error && error.message !== 'User cancelled sign-in') {
       Alert.alert('Authentication Failed', error.message);
     } else if (!error) {
-      navigation.replace('Home');
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Home' }],
+      });
     }
   };
-
-
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top', 'left', 'right']}>
@@ -279,11 +288,10 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
                 <ActivityIndicator color={theme.colors.primary} />
               ) : (
                 <>
-                  <Image
-                    source={require('../assets/google_g_logo.png')}
-                    style={styles.googleIcon}
-                    fadeDuration={0}
-                    resizeMode="contain"
+                  <SvgXml 
+                    xml={GOOGLE_SVG} 
+                    width={24} 
+                    height={24} 
                   />
                   <Text style={[styles.socialButtonText, { color: theme.colors.primary }]}>Continue with Google</Text>
                 </>

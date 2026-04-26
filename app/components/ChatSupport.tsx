@@ -16,11 +16,10 @@ import { useTheme } from '../theme/ThemeProvider';
 import { SupportService, SupportMessage, SupportConversation } from '../services/support';
 
 interface ChatSupportProps {
-  onEscalate: () => void;
   autoFocus?: boolean;
 }
 
-const ChatSupport: React.FC<ChatSupportProps> = ({ onEscalate, autoFocus }) => {
+const ChatSupport: React.FC<ChatSupportProps> = ({ autoFocus }) => {
   const theme = useTheme();
   const [messages, setMessages] = useState<SupportMessage[]>([]);
   const [inputText, setInputText] = useState('');
@@ -110,8 +109,6 @@ const ChatSupport: React.FC<ChatSupportProps> = ({ onEscalate, autoFocus }) => {
     const isUser = item.role === 'user';
     const time = new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-    const isEscalation = !isUser && item.content.includes("require human support");
-
     return (
       <View style={[styles.messageRow, isUser ? styles.userRow : styles.assistantRow]}>
         {!isUser && (
@@ -134,16 +131,6 @@ const ChatSupport: React.FC<ChatSupportProps> = ({ onEscalate, autoFocus }) => {
             {time}
           </Text>
           
-          {isEscalation && (
-            <View style={styles.escalationButtons}>
-              <TouchableOpacity 
-                style={[styles.escalateBtn, { backgroundColor: theme.colors.primary }]}
-                onPress={onEscalate}
-              >
-                <Text style={styles.escalateBtnText}>Create Support Ticket</Text>
-              </TouchableOpacity>
-            </View>
-          )}
         </View>
       </View>
     );
@@ -232,14 +219,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   listContent: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 24,
+    paddingHorizontal: 8,
+    paddingTop: 12,
+    paddingBottom: 16,
   },
   messageRow: {
     flexDirection: 'row',
-    marginBottom: 16,
-    maxWidth: '85%',
+    marginBottom: 12,
+    maxWidth: '94%',
   },
   userRow: {
     alignSelf: 'flex-end',
@@ -253,20 +240,20 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 8,
+    marginRight: 6,
     marginTop: 4,
   },
   messageContent: {
-    flex: 1,
+    flexShrink: 1,
   },
   bubble: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 18,
   },
   messageText: {
-    fontSize: 16,
-    lineHeight: 22,
+    fontSize: 15,
+    lineHeight: 21,
     fontFamily: 'Outfit',
   },
   timestamp: {
@@ -276,8 +263,8 @@ const styles = StyleSheet.create({
     fontFamily: 'Outfit',
   },
   typingContainer: {
-    paddingHorizontal: 16,
-    marginBottom: 16,
+    paddingHorizontal: 8,
+    marginBottom: 12,
   },
   typingBubble: {
     flexDirection: 'row',
@@ -311,10 +298,10 @@ const styles = StyleSheet.create({
     fontFamily: 'Outfit',
   },
   emptyState: {
-    paddingTop: 100,
+    paddingTop: 80,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 40,
+    paddingHorizontal: 24,
   },
   emptyTitle: {
     fontSize: 20,
@@ -332,44 +319,30 @@ const styles = StyleSheet.create({
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 12,
+    paddingHorizontal: 12,
+    paddingTop: 12,
+    paddingBottom: 24,
+    gap: 8,
   },
   input: {
     flex: 1,
-    minHeight: 48,
+    minHeight: 44,
     maxHeight: 120,
-    borderRadius: 24,
+    borderRadius: 22,
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 12,
-    fontSize: 16,
+    fontSize: 15,
     borderWidth: 1,
     fontFamily: 'Outfit',
   },
   sendBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  escalationButtons: {
-    marginTop: 12,
-    gap: 8,
-  },
-  escalateBtn: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  escalateBtnText: {
-    color: '#FFF',
-    fontSize: 14,
-    fontWeight: '700',
-    fontFamily: 'Outfit',
+    marginBottom: 0,
   },
 });
 

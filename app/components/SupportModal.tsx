@@ -15,7 +15,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeProvider';
 import { useAuth } from '../context/AuthContext';
-import { SupportService, SupportTicket } from '../services/support';
+import { SupportService } from '../services/support';
 import ChatSupport from './ChatSupport';
 
 interface SupportModalProps {
@@ -25,25 +25,19 @@ interface SupportModalProps {
 
 interface HistoryItem {
   id?: string;
-  type: 'ticket' | 'ai_chat';
+  type: 'ai_chat';
   subject: string;
   message: string;
   status: string;
   created_at: string;
-  is_ai: boolean;
 }
 
 const SupportModal: React.FC<SupportModalProps> = ({ visible, onClose }) => {
   const theme = useTheme();
   const { user } = useAuth();
   
-  const [subject, setSubject] = useState('');
-  const [message, setMessage] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [latestTicket, setLatestTicket] = useState<SupportTicket | null>(null);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
-  const [activeTab, setActiveTab] = useState<'chat' | 'tickets'>('chat');
-  const [showForm, setShowForm] = useState(false);
+  const [activeTab, setActiveTab] = useState<'chat' | 'history'>('chat');
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [viewingHistoryItem, setViewingHistoryItem] = useState<HistoryItem | null>(null);
   const [viewingMessages, setViewingMessages] = useState<any[]>([]);
@@ -57,9 +51,7 @@ const SupportModal: React.FC<SupportModalProps> = ({ visible, onClose }) => {
     try {
       const data = await SupportService.getSupportHistory();
       setHistory(data as any as HistoryItem[]);
-      if (data.length > 0) {
-        setLatestTicket(data.find(i => i.type === 'ticket') || null);
-      }
+
     } catch (error) {
       console.error('[Support] Failed to fetch history:', error);
     } finally {
@@ -67,88 +59,49 @@ const SupportModal: React.FC<SupportModalProps> = ({ visible, onClose }) => {
     }
   }, [user]);
 
+  const handleClearHistory = () => {
+    Alert.alert(
+      'Clear Chat History',
+      'Are you sure you want to clear your chat history?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Clear', 
+          style: 'destructive', 
+          onPress: async () => {
+            try {
+              await SupportService.clearSupportHistory();
+            } catch (err) {
+              console.error('[Support] Failed to clear history:', err);
+            }
+            setHistory([]);
+            setViewingHistoryItem(null);
+            setViewingMessages([]);
+          }
+        }
+      ]
+    );
+  };
+
   useEffect(() => {
     if (visible) {
       fetchHistory();
-      setSubject('');
-      setMessage('');
+
     }
   }, [visible, fetchHistory]);
 
-  const handleSubmit = async () => {
-    if (!subject.trim() || !message.trim()) {
-      Alert.alert('Required Fields', 'Please provide both a subject and a message.');
-      return;
-    }
 
-    if (!user) {
-      Alert.alert('Authentication Error', 'You must be signed in to submit a support ticket.');
-      return;
-    }
 
-    setIsSubmitting(true);
-    
-    try {
-      const { data, error } = await SupportService.createTicket({
-        user_id: user.id,
-        email: user.email || '',
-        subject: subject.trim(),
-        message: message.trim(),
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      if (data) {
-        setLatestTicket(data as SupportTicket);
-        setShowForm(false);
-      }
-    } catch (error: any) {
-      console.error('[Support] Submission failed:', error);
-      Alert.alert('Submission Error', error.message || 'Failed to send support ticket. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const getStatusColor = (status: SupportTicket['status']) => {
-    switch (status) {
-      case 'open': return theme.colors.primary;
-      case 'in-review': return theme.colors.accent;
-      case 'viewed': return theme.colors.tertiary;
-      case 'resolved': return theme.colors.success;
-      case 'closed': return theme.colors.outline;
-      default: return theme.colors.outline;
-    }
-  };
-
-  const getStatusText = (status: SupportTicket['status']) => {
-    switch (status) {
-      case 'open': return 'Open';
-      case 'in-review': return 'In Review';
-      case 'viewed': return 'Viewed';
-      case 'resolved': return 'Resolved';
-      case 'closed': return 'Closed';
-      default: return status;
-    }
-  };
-
-  const renderStatusBadge = (status: string, isAi?: boolean) => {
+  const renderStatusBadge = (status: string) => {
     let color: any = theme.colors.outline;
     let text = status;
 
-    if (isAi) {
-      switch (status) {
-        case 'active': color = theme.colors.primary; text = 'Active'; break;
-        case 'resolved': color = theme.colors.success; text = 'Resolved'; break;
-        case 'closed': color = theme.colors.outline; text = 'Ended'; break;
-        case 'escalated': color = theme.colors.error; text = 'Escalated'; break;
-        default: color = theme.colors.outline; text = status;
-      }
-    } else {
-      color = getStatusColor(status as any);
-      text = getStatusText(status as any);
+    switch (status) {
+      case 'active': color = theme.colors.primary; text = 'Active'; break;
+      case 'resolved': color = theme.colors.success; text = 'Resolved'; break;
+      case 'closed': color = theme.colors.outline; text = 'Ended'; break;
+      case 'escalated': color = theme.colors.error; text = 'Escalated'; break;
+      default: color = theme.colors.outline; text = status;
     }
 
     return (
@@ -159,62 +112,7 @@ const SupportModal: React.FC<SupportModalProps> = ({ visible, onClose }) => {
     );
   };
 
-  const renderForm = () => (
-    <View style={styles.formContainer}>
-      <View style={styles.inputGroup}>
-        <Text style={[styles.inputLabel, { color: theme.colors.onSurfaceVariant }]}>Subject</Text>
-        <TextInput
-          style={[styles.input, { color: theme.colors.onSurface, borderColor: theme.colors.outlineVariant, backgroundColor: theme.colors.surfaceContainerLow }]}
-          value={subject}
-          onChangeText={setSubject}
-          placeholder="What do you need help with?"
-          placeholderTextColor={theme.colors.outlineVariant}
-        />
-      </View>
 
-      <View style={styles.inputGroup}>
-        <Text style={[styles.inputLabel, { color: theme.colors.onSurfaceVariant }]}>Message</Text>
-        <TextInput
-          style={[
-            styles.input,
-            styles.textArea,
-            { color: theme.colors.onSurface, borderColor: theme.colors.outlineVariant, backgroundColor: theme.colors.surfaceContainerLow }
-          ]}
-          value={message}
-          onChangeText={setMessage}
-          placeholder="Tell us more about your issue..."
-          placeholderTextColor={theme.colors.outlineVariant}
-          multiline
-          numberOfLines={6}
-          textAlignVertical="top"
-        />
-      </View>
-
-      <TouchableOpacity
-        style={[styles.submitButton, { backgroundColor: theme.colors.primary }]}
-        onPress={handleSubmit}
-        disabled={isSubmitting}
-      >
-        {isSubmitting ? (
-          <ActivityIndicator color="#FFF" />
-        ) : (
-          <>
-            <Ionicons name="send" size={18} color="#FFF" style={{ marginRight: 8 }} />
-            <Text style={styles.submitButtonText}>Send Support Ticket</Text>
-          </>
-        )}
-      </TouchableOpacity>
-      
-      {latestTicket && (
-        <TouchableOpacity 
-          style={styles.cancelButton}
-          onPress={() => setShowForm(false)}
-        >
-          <Text style={[styles.cancelButtonText, { color: theme.colors.primary }]}>Cancel</Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
 
   const handleViewHistoryItem = async (item: any) => {
     setViewingHistoryItem(item);
@@ -253,29 +151,25 @@ const SupportModal: React.FC<SupportModalProps> = ({ visible, onClose }) => {
 
         <View style={[styles.ticketCard, { backgroundColor: theme.colors.surfaceContainerLow, borderColor: theme.colors.outlineVariant }]}>
           <View style={styles.ticketCardHeader}>
-            {renderStatusBadge(viewingHistoryItem.status, viewingHistoryItem.is_ai)}
+            {renderStatusBadge(viewingHistoryItem.status)}
             <Text style={[styles.ticketDate, { color: theme.colors.onSurfaceVariant }]}>{date}</Text>
           </View>
           <Text style={[styles.ticketSubject, { color: theme.colors.onSurface }]}>{viewingHistoryItem.subject}</Text>
           <View style={[styles.ticketDivider, { backgroundColor: theme.colors.outlineVariant }]} />
           
-          {viewingHistoryItem.type === 'ticket' ? (
-            <Text style={[styles.ticketMessage, { color: theme.colors.onSurfaceVariant }]}>{viewingHistoryItem.message}</Text>
-          ) : (
-            <View style={styles.chatPreviewList}>
-              {isLoadingMessages ? (
-                <ActivityIndicator color={theme.colors.primary} />
-              ) : (
-                viewingMessages.map((m, i) => (
-                  <View key={m.id || i} style={[styles.miniMessage, m.role === 'user' ? styles.miniUser : styles.miniAssistant]}>
-                    <Text style={[styles.miniMessageText, { color: m.role === 'user' ? theme.colors.onPrimary : theme.colors.onSurface }]}>
-                      {m.content}
-                    </Text>
-                  </View>
-                ))
-              )}
-            </View>
-          )}
+          <View style={styles.chatPreviewList}>
+            {isLoadingMessages ? (
+              <ActivityIndicator color={theme.colors.primary} />
+            ) : (
+              viewingMessages.map((m, i) => (
+                <View key={m.id || i} style={[styles.miniMessage, m.role === 'user' ? styles.miniUser : styles.miniAssistant]}>
+                  <Text style={[styles.miniMessageText, { color: m.role === 'user' ? theme.colors.onPrimary : theme.colors.onSurface }]}>
+                    {m.content}
+                  </Text>
+                </View>
+              ))
+            )}
+          </View>
         </View>
       </View>
     );
@@ -292,9 +186,9 @@ const SupportModal: React.FC<SupportModalProps> = ({ visible, onClose }) => {
           <View style={styles.historyItemHeader}>
             <View style={styles.historyTypeIcon}>
               <Ionicons 
-                name={item.is_ai ? "sparkles" : "receipt"} 
+                name="sparkles" 
                 size={16} 
-                color={item.is_ai ? theme.colors.primary : theme.colors.tertiary} 
+                color={theme.colors.primary} 
               />
             </View>
             <Text style={[styles.historyDate, { color: theme.colors.onSurfaceVariant }]}>
@@ -310,19 +204,11 @@ const SupportModal: React.FC<SupportModalProps> = ({ visible, onClose }) => {
           </Text>
           
           <View style={styles.historyItemFooter}>
-            {renderStatusBadge(item.status, item.is_ai)}
+            {renderStatusBadge(item.status)}
             <Ionicons name="chevron-forward" size={16} color={theme.colors.outline} />
           </View>
         </TouchableOpacity>
       ))}
-      
-      <TouchableOpacity
-        style={[styles.sendAnotherButton, { borderColor: theme.colors.primary, borderWidth: 1, borderStyle: 'dashed' }]}
-        onPress={() => setShowForm(true)}
-      >
-        <Ionicons name="add-circle-outline" size={20} color={theme.colors.primary} style={{ marginRight: 8 }} />
-        <Text style={[styles.sendAnotherButtonText, { color: theme.colors.primary }]}>New Support Request</Text>
-      </TouchableOpacity>
     </View>
   );
 
@@ -354,13 +240,13 @@ const SupportModal: React.FC<SupportModalProps> = ({ visible, onClose }) => {
               <Text style={[styles.tabText, { color: activeTab === 'chat' ? theme.colors.primary : theme.colors.onSurfaceVariant }]}>AI Support</Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={[styles.tab, activeTab === 'tickets' && { borderBottomColor: theme.colors.primary }]}
+              style={[styles.tab, activeTab === 'history' && { borderBottomColor: theme.colors.primary }]}
               onPress={() => {
-                setActiveTab('tickets');
+                setActiveTab('history');
                 setChatAutoFocus(false);
               }}
             >
-              <Text style={[styles.tabText, { color: activeTab === 'tickets' ? theme.colors.primary : theme.colors.onSurfaceVariant }]}>Ticket History</Text>
+              <Text style={[styles.tabText, { color: activeTab === 'history' ? theme.colors.primary : theme.colors.onSurfaceVariant }]}>Chat History</Text>
             </TouchableOpacity>
           </View>
 
@@ -368,45 +254,50 @@ const SupportModal: React.FC<SupportModalProps> = ({ visible, onClose }) => {
             {activeTab === 'chat' ? (
               <ChatSupport 
                 autoFocus={chatAutoFocus}
-                onEscalate={() => {
-                  setActiveTab('tickets');
-                  setShowForm(true);
-                }} 
               />
             ) : (
-              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+              <View style={{ flex: 1 }}>
+                {history.length > 0 && !viewingHistoryItem && !isLoadingHistory && (
+                  <TouchableOpacity 
+                    style={[styles.clearHistoryBtn, { backgroundColor: theme.colors.surfaceContainerHigh }]} 
+                    onPress={handleClearHistory}
+                  >
+                    <Ionicons name="trash-outline" size={16} color={theme.colors.error} />
+                    <Text style={[styles.clearHistoryBtnText, { color: theme.colors.error }]}>Clear History</Text>
+                  </TouchableOpacity>
+                )}
+                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
                 {isLoadingHistory ? (
                   <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={theme.colors.primary} />
                     <Text style={[styles.loadingText, { color: theme.colors.onSurfaceVariant }]}>Loading support history...</Text>
                   </View>
                 ) : (
-                  showForm ? renderForm() : (
-                    viewingHistoryItem ? renderHistoryDetail() : (
-                      history.length > 0 ? renderHistoryList() : (
-                        <View style={styles.emptyTicketsContainer}>
-                          <View style={[styles.emptyIconContainer, { backgroundColor: theme.colors.surfaceContainerHigh }]}>
-                            <Ionicons name="receipt-outline" size={48} color={theme.colors.onSurfaceVariant} />
-                          </View>
-                          <Text style={[styles.emptyTicketsTitle, { color: theme.colors.onSurface }]}>No Support History</Text>
-                          <Text style={[styles.emptyTicketsSubtitle, { color: theme.colors.onSurfaceVariant }]}>
-                            Your support requests and AI chats will appear here once you've started a conversation with our assistant.
-                          </Text>
-                          <TouchableOpacity 
-                            style={[styles.startChatBtn, { backgroundColor: theme.colors.primary }]}
-                            onPress={() => {
-                              setChatAutoFocus(true);
-                              setActiveTab('chat');
-                            }}
-                          >
-                            <Text style={styles.startChatBtnText}>Start AI Support Chat</Text>
-                          </TouchableOpacity>
+                  viewingHistoryItem ? renderHistoryDetail() : (
+                    history.length > 0 ? renderHistoryList() : (
+                      <View style={styles.emptyTicketsContainer}>
+                        <View style={[styles.emptyIconContainer, { backgroundColor: theme.colors.surfaceContainerHigh }]}>
+                          <Ionicons name="chatbubbles-outline" size={48} color={theme.colors.onSurfaceVariant} />
                         </View>
-                      )
+                        <Text style={[styles.emptyTicketsTitle, { color: theme.colors.onSurface }]}>No Chat History</Text>
+                        <Text style={[styles.emptyTicketsSubtitle, { color: theme.colors.onSurfaceVariant }]}>
+                          Your past AI chats will appear here once you've started a conversation with our assistant.
+                        </Text>
+                        <TouchableOpacity 
+                          style={[styles.startChatBtn, { backgroundColor: theme.colors.primary }]}
+                          onPress={() => {
+                            setChatAutoFocus(true);
+                            setActiveTab('chat');
+                          }}
+                        >
+                          <Text style={styles.startChatBtnText}>Start AI Support Chat</Text>
+                        </TouchableOpacity>
+                      </View>
                     )
                   )
                 )}
               </ScrollView>
+              </View>
             )}
           </View>
         </View>
@@ -425,7 +316,7 @@ const styles = StyleSheet.create({
     height: '85%',
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
-    padding: 24,
+    paddingTop: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.1,
@@ -436,7 +327,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 24,
+    marginBottom: 16,
+    paddingHorizontal: 16,
   },
   modalTitle: {
     fontSize: 28,
@@ -454,12 +346,12 @@ const styles = StyleSheet.create({
   },
   tabBar: {
     flexDirection: 'row',
-    marginBottom: 16,
-    paddingHorizontal: 0,
+    marginBottom: 8,
+    paddingHorizontal: 8,
   },
   tab: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
     borderBottomWidth: 2,
     borderBottomColor: 'transparent',
   },
@@ -474,6 +366,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingBottom: 40,
+    paddingHorizontal: 12,
   },
   loadingContainer: {
     flex: 1,
@@ -623,14 +516,14 @@ const styles = StyleSheet.create({
     fontFamily: 'Outfit',
   },
   historyList: {
-    gap: 16,
-    paddingTop: 8,
+    gap: 12,
+    paddingTop: 4,
   },
   historyItem: {
-    padding: 16,
-    borderRadius: 20,
+    padding: 14,
+    borderRadius: 16,
     borderWidth: 1,
-    gap: 8,
+    gap: 6,
   },
   historyItemHeader: {
     flexDirection: 'row',
@@ -706,7 +599,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingTop: 60,
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
   },
   emptyIconContainer: {
     width: 100,
@@ -737,6 +630,23 @@ const styles = StyleSheet.create({
   startChatBtnText: {
     color: '#FFF',
     fontSize: 16,
+    fontWeight: '700',
+    fontFamily: 'Outfit',
+  },
+  clearHistoryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    marginHorizontal: 12,
+    marginBottom: 12,
+    gap: 6,
+    alignSelf: 'flex-end',
+  },
+  clearHistoryBtnText: {
+    fontSize: 14,
     fontWeight: '700',
     fontFamily: 'Outfit',
   },

@@ -21,9 +21,14 @@ export class OpenFDAService {
       const trimmedQuery = query.trim().toLowerCase();
       const encodedQuery = encodeURIComponent(trimmedQuery);
       
-      // Use a more specific search to prioritize exact matches on brand or generic name
-      // We search for the query in both fields and limit to the best match
-      const url = `${this.baseUrl}?search=(openfda.brand_name:"${encodedQuery}"+OR+openfda.generic_name:"${encodedQuery}"+OR+openfda.brand_name:${encodedQuery}*+OR+openfda.generic_name:${encodedQuery}*)&limit=5${this.apiKey ? `&api_key=${this.apiKey}` : ''}`;
+      const hasSpaces = trimmedQuery.includes(' ');
+      let searchStr = `openfda.brand_name:"${encodedQuery}"+OR+openfda.generic_name:"${encodedQuery}"`;
+      
+      if (!hasSpaces) {
+        searchStr = `openfda.brand_name:"${encodedQuery}"+OR+openfda.generic_name:"${encodedQuery}"+OR+openfda.brand_name:${encodedQuery}*+OR+openfda.generic_name:${encodedQuery}*`;
+      }
+      
+      const url = `${this.baseUrl}?search=(${searchStr})&limit=5${this.apiKey ? `&api_key=${this.apiKey}` : ''}`;
       
       const response = await axios.get(url);
       

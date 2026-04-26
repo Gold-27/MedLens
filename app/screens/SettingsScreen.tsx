@@ -22,7 +22,7 @@ import SupportModal from '../components/SupportModal';
 
 type SettingsItem = 
   | { label: string; value: string; type: 'info' }
-  | { label: string; type: 'button'; action?: () => void; content?: string; destructive?: boolean };
+  | { label: string; type: 'button'; action?: () => void; content?: string; destructive?: boolean; disabled?: boolean };
 
 type SettingsSection = {
   title: string;
@@ -63,6 +63,10 @@ const SettingsScreen: React.FC = () => {
         }
       }},
     ]);
+  };
+
+  const handleSignUp = () => {
+    navigation.navigate('SignUp');
   };
 
   const handleUpdateProfile = async () => {
@@ -124,12 +128,12 @@ const SettingsScreen: React.FC = () => {
     setIsSupportModalVisible(true);
   };
 
-  const sections: SettingsSection[] = ([
+  const sections: SettingsSection[] = [
     {
       title: 'Account',
       items: [
-        { label: 'Status', value: isPro ? 'Pro' : 'Free', type: 'info' },
-        { label: 'Email', value: user?.email || 'Not signed in', type: 'info' },
+        { label: 'Status', value: isGuest ? 'Guest' : (isPro ? 'Pro' : 'Free'), type: 'info' },
+        { label: 'Email', value: isGuest ? 'Not signed in' : (user?.email || 'Not signed in'), type: 'info' },
       ],
     },
     {
@@ -146,16 +150,16 @@ const SettingsScreen: React.FC = () => {
           type: 'button', 
           content: 'MedQuire simplifies complex medical data for educational purposes. It is not a clinical tool and does not replace professional medical advice, diagnosis, or treatment. Always consult with a licensed healthcare provider.' 
         },
-        { label: 'Support', type: 'button', action: handleSupport },
+        { label: 'Support', type: 'button', action: isGuest ? undefined : handleSupport, disabled: isGuest },
       ],
     },
     {
       title: '',
       items: [
-        { label: 'Sign Out', type: 'button', action: handleSignOut, destructive: true },
+        { label: isGuest ? 'Sign Up' : 'Sign Out', type: 'button', action: isGuest ? handleSignUp : handleSignOut, destructive: !isGuest },
       ],
     },
-  ] as SettingsSection[]).filter(s => (isGuest && s.title !== '') ? false : true);
+  ];
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
@@ -172,8 +176,8 @@ const SettingsScreen: React.FC = () => {
         {/* Profile Section (Centered) */}
         {!isGuest && user && (
           <View style={styles.centeredProfile}>
-            <View style={[styles.avatarCircle, { backgroundColor: theme.colors.primary }]}>
-              <Text style={styles.avatarText}>
+            <View style={[styles.avatarCircle, { backgroundColor: theme.colors.onSurfaceVariant }]}>
+              <Text style={[styles.avatarText, { color: theme.colors.surface }]}>
                 {(() => {
                   const name = user.user_metadata?.full_name;
                   if (name) {
@@ -209,7 +213,7 @@ const SettingsScreen: React.FC = () => {
         )}
 
         {/* Content Sections */}
-        <View style={styles.contentPadding}>
+        <View style={[styles.contentPadding, isGuest && { paddingTop: 24 }]}>
           {sections.map((section, sIndex) => (
             <View key={sIndex} style={styles.section}>
               {section.title ? (
@@ -225,7 +229,11 @@ const SettingsScreen: React.FC = () => {
                       </View>
                     ) : (
                       <View>
-                        <TouchableOpacity style={styles.buttonRow} onPress={() => item.content ? toggleAccordion(item.label) : item.action?.()}>
+                        <TouchableOpacity 
+                          style={[styles.buttonRow, item.disabled && { opacity: 0.5 }]} 
+                          onPress={() => item.content ? toggleAccordion(item.label) : item.action?.()}
+                          disabled={item.disabled}
+                        >
                           <View style={[styles.buttonRowContent, item.destructive && { justifyContent: 'center' }]}>
                             <Text style={[styles.buttonLabel, { color: item.destructive ? theme.colors.error : theme.colors.primary }]}>
                               {item.label}
@@ -316,7 +324,7 @@ const SettingsScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, paddingTop: 16 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -324,7 +332,7 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 12,
   },
-  headerTitle: { fontSize: 28, fontWeight: 'bold' },
+  headerTitle: { fontSize: 28, fontWeight: 'bold', fontFamily: 'Outfit', letterSpacing: -0.5 },
   backButton: { marginRight: 12 },
   centeredProfile: {
     alignItems: 'center',
@@ -366,7 +374,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   upgradeText: { fontSize: 13, fontWeight: '700' },
-  contentPadding: { paddingHorizontal: 24 },
+  contentPadding: { paddingHorizontal: 16 },
   section: { marginBottom: 32 },
   sectionTitle: {
     fontSize: 13,
@@ -391,7 +399,7 @@ const styles = StyleSheet.create({
   accordionContent: { paddingHorizontal: 20, paddingBottom: 20, marginTop: -10 },
   accordionText: { fontSize: 14, lineHeight: 22 },
   disclaimerContainer: {
-    marginHorizontal: 24,
+    marginHorizontal: 16,
     marginVertical: 40,
     padding: 20,
     borderRadius: 24,

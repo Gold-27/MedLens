@@ -50,6 +50,23 @@ export const LocalStorageService = {
     await AsyncStorage.removeItem(key);
   },
 
+  async getGuestSearchesAndClear(): Promise<string[]> {
+    try {
+      const guestKey = `${KEYS.RECENT_SEARCHES}_guest`;
+      const guestData = await AsyncStorage.getItem(guestKey);
+      if (!guestData) return [];
+
+      const guestSearches: string[] = JSON.parse(guestData);
+      if (guestSearches.length > 0) {
+        await AsyncStorage.removeItem(guestKey);
+      }
+      return guestSearches;
+    } catch (e) {
+      console.error('[Storage] getGuestSearchesAndClear failed:', e);
+      return [];
+    }
+  },
+
   // Search Result Caching
   async getCachedResult(drugName: string): Promise<SearchResponse | null> {
     try {

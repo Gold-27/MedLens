@@ -65,6 +65,43 @@ export const handleSupportChat = async (req: Request, res: Response) => {
       }
       currentConversationId = conv.id;
       console.log('[SupportChat] New conversation created:', currentConversationId);
+    } else {
+      // Verify that this conversation belongs to the user
+      const { data: existingConv, error: checkError } = await supabase
+        .from('support_conversations')
+        .select('user_id, updated_at, created_at')
+        .eq('id', currentConversationId)
+        .single();
+
+      if (checkError || !existingConv) {
+        console.warn(`[SupportChat] Conversation ${currentConversationId} not found or error:`, checkError?.message);
+        return res.status(404).json({ error: 'Conversation not found' });
+      }
+
+      if (existingConv.user_id !== userId) {
+        console.warn(`[SupportChat] Security Violation: User ${userId} tried to access Conversation ${currentConversationId} belonging to ${existingConv.user_id}`);
+        return res.status(403).json({ error: 'Access denied to this conversation' });
+      }
+
+      // Check if expired (>1h)
+      const updatedAt = new Date(existingConv.updated_at || existingConv.created_at).getTime();
+      const now = Date.now();
+      const oneHour = 60 * 60 * 1000;
+
+      if (now - updatedAt > oneHour) {
+        console.log(`[SupportChat] Conversation ${currentConversationId} expired (>1h). Creating new support conversation...`);
+        const { data: conv, error: convError } = await supabase
+          .from('support_conversations')
+          .insert({ user_id: userId, status: 'active' })
+          .select()
+          .single();
+
+        if (convError) {
+          console.error('[SupportChat] Failed to create new conversation:', convError.message);
+          throw convError;
+        }
+        currentConversationId = conv.id;
+      }
     }
 
     // 2. Save user message
@@ -161,13 +198,13 @@ export const getChatHistory = async (req: Request, res: Response) => {
 
     const conversation = conv[0];
 
-    // Check if conversation is older than 24 hours
+    // Check if conversation is older than 1 hour
     const updatedAt = new Date(conversation.updated_at || conversation.created_at).getTime();
     const now = Date.now();
-    const twentyFourHours = 24 * 60 * 60 * 1000;
+    const oneHour = 60 * 60 * 1000;
 
-    if (now - updatedAt > twentyFourHours) {
-      console.log(`[GetChatHistory] Conversation ${conversation.id} expired (>24h).`);
+    if (now - updatedAt > oneHour) {
+      console.log(`[GetChatHistory] Conversation ${conversation.id} expired (>1h).`);
       // Optionally mark as closed in DB
       await supabase
         .from('support_conversations')
@@ -206,16 +243,7 @@ export const getSupportHistory = async (req: Request, res: Response) => {
   }
 
   try {
-    // 1. Fetch support_tickets
-    const { data: tickets, error: ticketsError } = await supabase
-      .from('support_tickets')
-      .select('id, subject, message, status, created_at')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
-
-    if (ticketsError) throw ticketsError;
-
-    // 2. Fetch support_conversations
+    // 1. Fetch support_conversations
     const { data: convs, error: convsError } = await supabase
       .from('support_conversations')
       .select('id, status, updated_at, created_at')
@@ -243,11 +271,8 @@ export const getSupportHistory = async (req: Request, res: Response) => {
       };
     }));
 
-    // 3. Merge and sort
-    const mergedHistory = [
-      ...tickets.map(t => ({ ...t, type: 'ticket', is_ai: false })),
-      ...conversationsWithLastMsg
-    ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    // 2. Sort
+    const mergedHistory = conversationsWithLastMsg.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
     res.json(mergedHistory);
   } catch (error: any) {
@@ -284,10 +309,49 @@ export const getConversationMessages = async (req: Request, res: Response) => {
       .order('created_at', { ascending: true });
 
     if (msgsError) throw msgsError;
-
-    res.json(messages);
-  } catch (error: any) {
-    console.error('[GetConversationMessages] Error:', error.message);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-};
+ 
+     res.json(messages);
+   } catch (error: any) {
+     console.error('[GetConversationMessages] Error:', error.message);
+     res.status(500).json({ error: 'Internal server error' });
+   }
+ };
+ 
+ export const clearSupportHistory = async (req: Request, res: Response) => {
+   const userId = (req as any).userId;
+   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+ 
+   if (!supabase) return res.status(500).json({ error: 'Database not available' });
+ 
+   try {
+     const { data: convs, error: convsError } = await supabase
+       .from('support_conversations')
+       .select('id')
+       .eq('user_id', userId);
+ 
+     if (convsError) throw convsError;
+ 
+     if (convs && convs.length > 0) {
+       const convIds = convs.map(c => c.id);
+ 
+       const { error: msgsError } = await supabase
+         .from('support_messages')
+         .delete()
+         .in('conversation_id', convIds);
+ 
+       if (msgsError) throw msgsError;
+ 
+       const { error: delConvsError } = await supabase
+         .from('support_conversations')
+         .delete()
+         .in('id', convIds);
+ 
+       if (delConvsError) throw delConvsError;
+     }
+ 
+     res.json({ success: true });
+   } catch (error: any) {
+     console.error('[ClearSupportHistory] Error:', error.message);
+     res.status(500).json({ error: 'Internal server error' });
+   }
+ };

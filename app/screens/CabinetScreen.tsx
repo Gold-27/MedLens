@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme, ThemeContextType } from '../theme/ThemeProvider';
 import { useAuth } from '../context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as api from '../services/api';
 import { CabinetItem } from '../services/api';
 import { LocalStorageService } from '../services/storage';
@@ -15,26 +15,26 @@ import { PDFService } from '../services/pdf';
 import { useCabinet } from '../context/CabinetContext';
 
 const DRUG_DESCRIPTIONS: Record<string, string> = {
-  'advil': 'For pain and fever',
-  'tylenol': 'Pain reliever and fever reducer',
-  'motrin': 'Pain reliever and fever reducer',
-  'aspirin': 'Pain reliever and heart health',
+  'advil': 'Pain & fever relief',
+  'tylenol': 'Pain & fever reducer',
+  'motrin': 'Pain & fever reducer',
+  'aspirin': 'Pain relief & heart health',
   'metformin': 'Blood sugar management',
-  'lisinopril': 'Blood pressure management',
-  'levothyroxine': 'Thyroid hormone replacement',
+  'lisinopril': 'Blood pressure control',
+  'levothyroxine': 'Thyroid hormone',
   'atorvastatin': 'Cholesterol management',
-  'amlodipine': 'Blood pressure management',
-  'metoprolol': 'Heart rate and blood pressure',
-  'albuterol': 'Rescue inhaler for asthma',
-  'omeprazole': 'Acid reflux and heartburn',
-  'losartan': 'Blood pressure management',
-  'gabapentin': 'Nerve pain and seizures',
+  'amlodipine': 'Blood pressure control',
+  'metoprolol': 'Heart rate & BP',
+  'albuterol': 'Rescue inhaler',
+  'omeprazole': 'Acid reflux & heartburn',
+  'losartan': 'Blood pressure control',
+  'gabapentin': 'Nerve pain & seizures',
   'simvastatin': 'Cholesterol management',
   'zyrtec': 'Allergy relief',
-  'benadryl': 'Allergy and sleep aid',
+  'benadryl': 'Allergy & sleep aid',
   'lipitor': 'Cholesterol management',
-  'amoxicillin': 'Antibiotic for infections',
-  'xanax': 'Anxiety and panic disorders',
+  'amoxicillin': 'Antibiotic',
+  'xanax': 'Anxiety management',
 };
 
 const getDrugDescription = (name: string): string => {
@@ -42,7 +42,7 @@ const getDrugDescription = (name: string): string => {
   for (const [key, desc] of Object.entries(DRUG_DESCRIPTIONS)) {
     if (lowerName.includes(key)) return desc;
   }
-  return 'Commonly used medication';
+  return 'Saved medication';
 };
 
 const CabinetScreen: React.FC = () => {
@@ -81,7 +81,7 @@ const CabinetScreen: React.FC = () => {
     });
   };
 
-  const handleCheckNow = () => {
+  const handleCheckInteractions = () => {
     const selectedKeys = Array.from(selectedItems);
     navigation.navigate('Interaction', { drugKeys: selectedKeys });
   };
@@ -106,10 +106,19 @@ const CabinetScreen: React.FC = () => {
       await LocalStorageService.setCachedResult(item.drug_name, response);
       
       setIsModalVisible(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch drug summary:', error);
       setViewingItem(null); // Clear on error since modal won't show
-      Alert.alert('Error', 'Failed to load medication details. Please check your connection.');
+      
+      const isNotFound = error.status === 404 || error.message?.includes('404');
+      if (isNotFound) {
+        Alert.alert(
+          'Information Unavailable',
+          'We do not have enough reliable information for this medication.'
+        );
+      } else {
+        Alert.alert('Error', 'Failed to load medication details. Please check your connection.');
+      }
     }
   };
 
@@ -188,82 +197,123 @@ const CabinetScreen: React.FC = () => {
   };
 
   const renderHeader = () => (
-    <View style={styles.headerContainer}>
-      <Text style={[styles.subtitle, { color: theme.colors.outline }]}>
-        Your saved medications, always at your fingertips.
-      </Text>
-
+    <View style={styles.headerContent}>
+      {/* Inline stats row */}
       <View style={styles.statsRow}>
-        <View style={[styles.statsCard, { backgroundColor: theme.colors.surfaceContainerHigh }]}>
-          <Text style={[styles.statsValue, { color: theme.colors.primary }]}>{items.length}</Text>
-          <Text style={[styles.statsLabel, { color: theme.colors.onSurfaceVariant }]}>Medications saved</Text>
+        <View style={[styles.statPill, { backgroundColor: theme.colors.primary + '0C' }]}>
+          <Text style={[styles.statValue, { color: theme.colors.primary }]}>{items.length}</Text>
+          <Text style={[styles.statLabel, { color: theme.colors.primary }]}>saved</Text>
         </View>
-        <View style={[styles.statsCard, { backgroundColor: theme.colors.surfaceContainerHigh }]}>
-          <Text style={[styles.statsValue, { color: theme.colors.tertiary }]}>{interactionCount}</Text>
-          <Text style={[styles.statsLabel, { color: theme.colors.onSurfaceVariant }]}>Interactions checked</Text>
+        <View style={[styles.statPill, { backgroundColor: theme.colors.tertiary + '0C' }]}>
+          <Text style={[styles.statValue, { color: theme.colors.tertiary }]}>{interactionCount}</Text>
+          <Text style={[styles.statLabel, { color: theme.colors.tertiary }]}>checks</Text>
         </View>
+      </View>
+
+      {/* Section label */}
+      <View style={styles.sectionHeader}>
+        <Text style={[styles.sectionLabel, { color: theme.colors.onSurface }]}>Medications</Text>
+        {selectedItems.size > 0 && (
+          <Text style={[styles.selectionCount, { color: theme.colors.primary }]}>
+            {selectedItems.size} selected
+          </Text>
+        )}
       </View>
     </View>
   );
 
-  const renderFooter = () => (
-    <View style={[styles.interactionCard, { backgroundColor: theme.colors.secondaryContainer }]}>
-      <Text style={[styles.interactionTitle, { color: theme.colors.onSecondaryContainer }]}>Check for interactions</Text>
-      <Text style={[styles.interactionText, { color: theme.colors.onSecondaryContainer }]}>
-        Select two or more medications to see if there are known interactions.
-      </Text>
-      <TouchableOpacity
-        style={[
-          styles.checkButton,
-          { 
-            backgroundColor: selectedItems.size >= 2 ? theme.colors.secondary : theme.colors.outlineVariant,
-            opacity: selectedItems.size >= 2 ? 1 : 0.6 
-          }
-        ]}
-        disabled={selectedItems.size < 2}
-        onPress={handleCheckNow}
-      >
-        <Text style={[styles.checkButtonText, { color: theme.colors.onSecondary }]}>Check now</Text>
-      </TouchableOpacity>
-    </View>
-  );
+  const renderInteractionCTA = () => {
+    if (items.length < 2) return null;
+    const canCheck = selectedItems.size >= 2;
+    
+    return (
+      <View style={styles.ctaSection}>
+        <View style={styles.ctaContent}>
+          <View style={styles.ctaTextRow}>
+            <Ionicons name="shield-checkmark-outline" size={18} color={theme.colors.onSurfaceVariant} />
+            <Text style={[styles.ctaText, { color: theme.colors.onSurfaceVariant }]}>
+              Select 2+ medications to check for interactions
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={[
+              styles.ctaButton,
+              { 
+                backgroundColor: canCheck ? theme.colors.primary : theme.colors.surfaceContainerHigh,
+              }
+            ]}
+            disabled={!canCheck}
+            onPress={handleCheckInteractions}
+          >
+            <Text style={[
+              styles.ctaButtonText, 
+              { color: canCheck ? theme.colors.onPrimary : theme.colors.outline }
+            ]}>
+              Check Interactions
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
 
   const renderItem = ({ item }: { item: CabinetItem }) => {
     const isSelected = selectedItems.has(item.drug_key);
     return (
-      <View style={[styles.itemCard, { backgroundColor: theme.colors.surface }]}>
+      <TouchableOpacity 
+        style={[
+          styles.medCard,
+          { 
+            backgroundColor: isSelected ? theme.colors.primary + '08' : theme.colors.surface,
+            borderColor: isSelected ? theme.colors.primary + '25' : theme.colors.outlineVariant + '30',
+          }
+        ]}
+        onPress={() => handleViewDrug(item)}
+        activeOpacity={0.7}
+      >
+        {/* Checkbox */}
         <TouchableOpacity 
-          style={styles.checkboxArea} 
+          style={styles.checkboxHit} 
           onPress={() => toggleSelection(item.drug_key)}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           <View style={[
-            styles.customCheckbox, 
-            { borderColor: isSelected ? theme.colors.secondary : theme.colors.outline },
-            isSelected && { backgroundColor: theme.colors.secondary }
+            styles.checkbox, 
+            { 
+              borderColor: isSelected ? theme.colors.primary : theme.colors.outlineVariant,
+            },
+            isSelected && { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary }
           ]}>
             {isSelected && (
-              <Ionicons name="checkmark" size={16} color={theme.colors.onSecondary} />
+              <Ionicons name="checkmark" size={13} color={theme.colors.onPrimary} />
             )}
           </View>
         </TouchableOpacity>
         
-        <View style={styles.itemInfo}>
-          <Text style={[styles.itemName, { color: theme.colors.onSurface }]}>{item.drug_name}</Text>
-          <Text style={[styles.itemDesc, { color: theme.colors.outline }]}>{getDrugDescription(item.drug_name)}</Text>
+        {/* Info */}
+        <View style={styles.medInfo}>
+          <Text style={[styles.medName, { color: theme.colors.onSurface }]} numberOfLines={1}>
+            {item.drug_name}
+          </Text>
+          <Text style={[styles.medDesc, { color: theme.colors.outline }]} numberOfLines={1}>
+            {getDrugDescription(item.drug_name)}
+          </Text>
         </View>
 
+        {/* Action */}
         <TouchableOpacity 
-          style={styles.menuButton}
+          style={styles.moreBtn}
           onPress={() => showActionMenu(item)}
           disabled={viewingItem !== null}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           {viewingItem?.id === item.id ? (
             <ActivityIndicator size="small" color={theme.colors.primary} />
           ) : (
-            <Ionicons name="ellipsis-vertical" size={22} color={theme.colors.outline} />
+            <Ionicons name="ellipsis-horizontal" size={18} color={theme.colors.outline} />
           )}
         </TouchableOpacity>
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -277,12 +327,15 @@ const CabinetScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      {/* Fixed Sticky Header */}
-      <View style={[styles.stickyHeader, { backgroundColor: theme.colors.background }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={theme.colors.onSurface} />
-        </TouchableOpacity>
-        <Text style={[styles.title, { color: theme.colors.onSurface }]}>My Cabinet</Text>
+      {/* Header */}
+      <View style={[styles.topBar, { backgroundColor: theme.colors.background }]}>
+        <View style={styles.headerTitleRow}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+            <Ionicons name="arrow-back" size={24} color={theme.colors.onSurface} />
+          </TouchableOpacity>
+          <Text style={[styles.title, { color: theme.colors.onSurface }]}>My Cabinet</Text>
+        </View>
+        <Text style={[styles.subtitle, { color: theme.colors.outline }]}>Your saved medications</Text>
       </View>
 
       <FlatList
@@ -290,11 +343,13 @@ const CabinetScreen: React.FC = () => {
         renderItem={renderItem}
         keyExtractor={item => item.id}
         ListHeaderComponent={renderHeader}
-        ListFooterComponent={items.length > 0 ? renderFooter : null}
-        contentContainerStyle={styles.scrollContent}
+        ListFooterComponent={renderInteractionCTA}
+        contentContainerStyle={styles.listContent}
         ListEmptyComponent={<EmptyState type="empty_cabinet" title="No medications saved" subtitle="Search and save drugs to populate your cabinet." />}
+        showsVerticalScrollIndicator={false}
       />
 
+      {/* Drug Summary Modal */}
       <Modal
         visible={isModalVisible}
         transparent={true}
@@ -311,9 +366,9 @@ const CabinetScreen: React.FC = () => {
                   setSelectedDrugSummary(null); 
                   setViewingItem(null); 
                 }}
-                style={styles.closeButton}
+                style={styles.closeBtn}
               >
-                <Ionicons name="close" size={28} color={theme.colors.onSurface} />
+                <Ionicons name="close" size={24} color={theme.colors.onSurfaceVariant} />
               </TouchableOpacity>
             </View>
 
@@ -339,7 +394,7 @@ const CabinetScreen: React.FC = () => {
               ) : (
                 <View style={styles.modalLoading}>
                   <ActivityIndicator size="large" color={theme.colors.primary} />
-                  <Text style={[styles.loadingText, { color: theme.colors.outline }]}>Preparing medication summary...</Text>
+                  <Text style={[styles.loadingText, { color: theme.colors.outline }]}>Preparing summary…</Text>
                 </View>
               )}
               contentContainerStyle={styles.modalScrollContent}
@@ -355,135 +410,192 @@ const CabinetScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingTop: 16,
   },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 40,
-  },
-  headerContainer: {
-    paddingBottom: 24,
-  },
-  stickyHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+
+  // ── Top Bar ──
+  topBar: {
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 12,
-    zIndex: 10,
   },
-  topRow: {
+  headerTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
   },
-  backButton: {
+  backBtn: {
     marginRight: 12,
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
+    fontFamily: 'Outfit',
+    letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: 16,
-    marginBottom: 36,
-    lineHeight: 22,
+    fontSize: 14,
+    fontWeight: '400',
+    fontFamily: 'Outfit',
+    marginTop: 4,
+    marginLeft: 36,
+  },
+
+  // ── List Content ──
+  listContent: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 40,
+  },
+
+  // ── Header / Stats ──
+  headerContent: {
+    paddingBottom: 8,
   },
   statsRow: {
     flexDirection: 'row',
     gap: 12,
+    marginBottom: 24,
   },
-  statsCard: {
-    flex: 1,
-    padding: 16,
-    borderRadius: 16,
-    alignItems: 'flex-start',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  statsValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  statsLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  itemCard: {
+  statPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 5,
+  },
+  statValue: {
+    fontSize: 17,
+    fontWeight: '600',
+    fontFamily: 'Outfit',
+  },
+  statLabel: {
+    fontSize: 14,
+    fontWeight: '400',
+    fontFamily: 'Outfit',
+    opacity: 0.8,
+  },
+
+  // ── Section Label ──
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
     marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
   },
-  checkboxArea: {
-    paddingRight: 16,
+  sectionLabel: {
+    fontSize: 17,
+    fontWeight: '600',
+    fontFamily: 'Outfit',
+    letterSpacing: -0.2,
   },
-  customCheckbox: {
-    width: 24,
-    height: 24,
+  selectionCount: {
+    fontSize: 12,
+    fontWeight: '600',
+    fontFamily: 'Outfit',
+  },
+
+  // ── Medication Card ──
+  medCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingLeft: 10,
+    paddingRight: 12,
+    borderRadius: 14,
+    marginBottom: 6,
+    borderWidth: 1,
+  },
+  checkboxHit: {
+    padding: 4,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
     borderRadius: 6,
-    borderWidth: 2,
+    borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  itemInfo: {
-    flex: 1,
-  },
-  itemName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 2,
-  },
-  itemDesc: {
-    fontSize: 14,
-  },
-  menuButton: {
-    padding: 8,
-    marginRight: -4,
-  },
-  interactionCard: {
-    marginTop: 24,
-    padding: 24,
-    borderRadius: 24,
-    gap: 12,
-  },
-  interactionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  interactionText: {
-    fontSize: 15,
-    lineHeight: 22,
-    marginBottom: 12,
-  },
-  checkButton: {
-    paddingVertical: 14,
+  drugIcon: {
+    width: 32,
+    height: 32,
     borderRadius: 16,
     alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 8,
+    marginRight: 10,
   },
-  checkButtonText: {
+  medInfo: {
+    flex: 1,
+    marginLeft: 12,
+    marginRight: 8,
+  },
+  medName: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
+    fontFamily: 'Outfit',
+    letterSpacing: -0.2,
   },
+  medDesc: {
+    fontSize: 14,
+    fontWeight: '400',
+    fontFamily: 'Outfit',
+    marginTop: 2,
+  },
+  moreBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // ── Interaction CTA ──
+  ctaSection: {
+    marginTop: 20,
+    paddingBottom: 8,
+  },
+  ctaDivider: {
+    height: 1,
+    marginBottom: 16,
+  },
+  ctaContent: {
+    gap: 12,
+  },
+  ctaTextRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  ctaText: {
+    fontSize: 14,
+    fontWeight: '400',
+    fontFamily: 'Outfit',
+    flex: 1,
+  },
+  ctaButton: {
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ctaButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    fontFamily: 'Outfit',
+  },
+
+  // ── Modal ──
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
     justifyContent: 'flex-end',
   },
   modalContent: {
     height: '92%',
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
     paddingTop: 20,
   },
   modalHeader: {
@@ -491,21 +603,27 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 24,
-    paddingBottom: 20,
+    paddingBottom: 16,
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 18,
+    fontWeight: '700',
+    fontFamily: 'Outfit',
+    letterSpacing: -0.3,
   },
-  closeButton: {
-    padding: 4,
+  closeBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   modalScrollContent: {
     paddingHorizontal: 20,
     paddingBottom: 40,
   },
   cardWrapper: {
-    paddingTop: 8,
+    paddingTop: 4,
   },
   modalLoading: {
     flex: 1,
@@ -515,8 +633,9 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: 12,
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
+    fontFamily: 'Outfit',
   },
 });
 

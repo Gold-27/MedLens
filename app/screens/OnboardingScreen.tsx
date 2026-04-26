@@ -94,13 +94,13 @@ const SlideView = ({ item, theme }: { item: Slide; theme: any }) => {
     <Animated.View style={[styles.slide, { width, opacity }]}>
       {item.image ? (
         typeof item.image === 'string' ? (
-          <Animated.View style={[styles.image, { transform: [{ scale }], justifyContent: 'center', alignItems: 'center' }]}>
+          <Animated.View style={[styles.image, { transform: [{ scale }], justifyContent: 'center', alignItems: 'center' }, item.id === '2' && { marginTop: 40, marginBottom: 12 }]}>
             <SvgXml xml={item.image} width="100%" height="100%" />
           </Animated.View>
         ) : (
           <Animated.Image
             source={item.image}
-            style={[styles.image, { transform: [{ scale }] }]}
+            style={[styles.image, { transform: [{ scale }] }, item.id === '2' && { marginTop: 40, marginBottom: 12 }]}
             resizeMode="contain"
             fadeDuration={0}
           />
@@ -195,9 +195,11 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
-        <Text style={[styles.skipText, { color: theme.colors.onSurfaceVariant }]}>Skip</Text>
-      </TouchableOpacity>
+      {currentIndex < slides.length - 1 && (
+        <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
+          <Text style={[styles.skipText, { color: theme.colors.onSurfaceVariant }]}>Skip</Text>
+        </TouchableOpacity>
+      )}
 
       <FlatList
         ref={flatListRef}

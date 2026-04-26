@@ -151,7 +151,18 @@ const HomeScreen: React.FC = () => {
       
       // Async persistence
       LocalStorageService.setCachedResult(cleanQuery, response);
-      LocalStorageService.addRecentSearch(searchQuery.trim(), user?.id).then(updated => setRecentSearches(updated));
+      if (user) {
+        getToken().then(token => {
+          if (token) {
+            api.saveRecentSearch(searchQuery.trim(), token)
+              .then(updated => setRecentSearches(updated))
+              .catch(err => console.error('Failed to save recent search', err));
+          }
+        });
+      } else {
+        LocalStorageService.addRecentSearch(searchQuery.trim(), null)
+          .then(updated => setRecentSearches(updated));
+      }
 
     } catch (error: any) {
       if (error.name === 'AbortError') return;
@@ -183,8 +194,6 @@ const HomeScreen: React.FC = () => {
       
       const message = error.message || '';
       setState(message.includes('not found') || message.includes('404') ? 'notFound' : 'error');
-    } finally {
-      inputBarRef.current?.clear();
     }
   }, [prefetchELI12]);
 
@@ -214,15 +223,25 @@ const HomeScreen: React.FC = () => {
   }, [route.params?.searchQuery, handleSearch, navigation]);
 
   useEffect(() => {
-    // Load local data on mount
-    const loadLocalData = async () => {
-      const [recent] = await Promise.all([
-        LocalStorageService.getRecentSearches(user?.id),
-      ]);
-      setRecentSearches(recent);
+    // Load local data on mount or user change
+    const loadData = async () => {
+      if (user) {
+        const token = await getToken();
+        if (token) {
+          try {
+            const recent = await api.getRecentSearches(token);
+            setRecentSearches(recent);
+          } catch (err) {
+            console.error('Failed to load recent searches from API', err);
+          }
+        }
+      } else {
+        const recent = await LocalStorageService.getRecentSearches(null);
+        setRecentSearches(recent);
+      }
     };
-    loadLocalData();
-  }, []);
+    loadData();
+  }, [user]);
 
 
   const handleSave = useCallback(async () => {

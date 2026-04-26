@@ -6,6 +6,7 @@ import { createDrawerNavigator, DrawerContentScrollView, DrawerItemList, DrawerC
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme, ThemeContextType } from '../theme/ThemeProvider';
 import { LocalStorageService } from '../services/storage';
+import * as api from '../services/api';
 import { useNavigation } from '@react-navigation/native';
 import {
   SplashScreen,
@@ -59,14 +60,29 @@ import { LOGO_SVG } from '../assets/logo_svg';
 const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
   const theme = useTheme();
   const navigation = useNavigation();
-  const { signOut, isGuest, user } = useAuth();
+  const { signOut, isGuest, user, getToken } = useAuth();
   const [history, setHistory] = React.useState<string[] | null>(drawerHistoryCache);
   const [isLoading, setIsLoading] = React.useState(drawerHistoryCache === null);
   const drawerStatus = useDrawerStatus();
 
   const loadHistory = React.useCallback(async () => {
     try {
-      const searches = await LocalStorageService.getRecentSearches(user?.id);
+      let searches: string[] = [];
+      if (user) {
+        const token = await getToken();
+        if (token) {
+          try {
+            searches = await api.getRecentSearches(token);
+          } catch (apiErr) {
+            console.warn('Drawer failed to fetch searches from API, falling back to cache:', apiErr);
+            searches = await LocalStorageService.getRecentSearches(user.id);
+          }
+        } else {
+          searches = await LocalStorageService.getRecentSearches(user.id);
+        }
+      } else {
+        searches = await LocalStorageService.getRecentSearches(null);
+      }
       setHistory(searches);
       drawerHistoryCache = searches;
     } catch (error) {
@@ -74,7 +90,7 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
     } finally {
       setIsLoading(false);
     }
-  }, [user?.id]);
+  }, [user, getToken]);
 
   // Update history whenever drawer status changes (opening/open)
   React.useEffect(() => {

@@ -9,11 +9,12 @@ dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 import express from 'express';
 import cors from 'cors';
-import { searchMedication, generateELI12, autocomplete, transcribeAudio } from './controllers/search.controller';
+import { searchMedication, generateELI12, autocomplete, transcribeAudio, getRecentSearches, saveRecentSearch, syncRecentSearches } from './controllers/search.controller';
 import { getCabinetItems, saveCabinetItem, deleteCabinetItem } from './controllers/cabinet.controller';
 import { deleteAccount } from './controllers/auth.controller';
-import { handleSupportChat, getChatHistory, getSupportHistory, getConversationMessages } from './controllers/support.controller';
+import { handleSupportChat, getChatHistory, getSupportHistory, getConversationMessages, clearSupportHistory } from './controllers/support.controller';
 import { requireAuth } from './middleware/auth.middleware';
+import { rateLimiter } from './middleware/rate-limiter.middleware';
 import OpenFDAService from './services/openfda.service';
 import DeepSeekService from './services/deepseek.service';
 
@@ -49,10 +50,13 @@ app.get('/health', (req, res) => {
 });
 
 // ── Search Routes ────────────────────────────────────────────────────────────
-app.post('/api/search', searchMedication);
+app.post('/api/search', rateLimiter(60000, 30), searchMedication);
 app.get('/api/autocomplete', autocomplete);
 app.post('/api/eli12', generateELI12);
 app.post('/api/search/transcribe', transcribeAudio);
+app.get('/api/search/recent', requireAuth, getRecentSearches);
+app.post('/api/search/recent', requireAuth, saveRecentSearch);
+app.post('/api/search/recent/sync', requireAuth, syncRecentSearches);
 
 // ── Cabinet Routes (Auth Required) ───────────────────────────────────────────
 app.get('/api/cabinet/items', requireAuth, getCabinetItems);
@@ -62,13 +66,14 @@ app.delete('/api/cabinet/items/:id', requireAuth, deleteCabinetItem);
 // ── Auth Management ──────────────────────────────────────────────────────────
 app.delete('/api/auth/account', requireAuth, deleteAccount);
 
-app.post('/api/support/chat', requireAuth, handleSupportChat);
+app.post('/api/support/chat', rateLimiter(60000, 15), requireAuth, handleSupportChat);
 app.get('/api/support/chat/history', requireAuth, getChatHistory);
 app.get('/api/support/history', requireAuth, getSupportHistory);
 app.get('/api/support/conversations/:conversationId/messages', requireAuth, getConversationMessages);
+app.delete('/api/support/history', requireAuth, clearSupportHistory);
 
 // ── Interaction Checker ──────────────────────────────────────────────────────
-app.post('/api/interactions', async (req, res) => {
+app.post('/api/interactions', rateLimiter(60000, 20), async (req, res) => {
   const { drug_keys } = req.body;
 
   if (!drug_keys || !Array.isArray(drug_keys) || drug_keys.length < 2) {

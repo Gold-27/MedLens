@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabase, getValidToken } from './supabase';
 import { Config } from '../config';
 
 export interface SupportMessage {
@@ -14,58 +14,19 @@ export interface SupportConversation {
   updated_at: string;
 }
 
-export interface SupportTicket {
-  id?: string;
-  user_id: string;
-  email: string;
-  subject: string;
-  message: string;
-  status: 'open' | 'in-review' | 'viewed' | 'resolved' | 'closed';
-  created_at?: string;
-}
-
 export const SupportService = {
-  /**
-   * Create a new support ticket in the support_table
-   */
-  async createTicket(ticket: Omit<SupportTicket, 'id' | 'created_at' | 'status'>) {
-    const { data, error } = await supabase
-      .from('support_tickets')
-      .insert([
-        {
-          ...ticket,
-          status: 'open',
-        }
-      ])
-      .select();
-
-    return { data: data ? data[0] : null, error };
-  },
-
-  /**
-   * Fetch tickets for the authenticated user
-   */
-  async getMyTickets() {
-    const { data, error } = await supabase
-      .from('support_tickets')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    return { data, error };
-  },
-
   /**
    * AI Chat Support
    */
   async sendChatMessage(message: string, conversationId?: string) {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw new Error('Not authenticated');
+    const token = await getValidToken();
+    if (!token) throw new Error('Not authenticated');
 
     const response = await fetch(`${Config.API_BASE_URL}/api/support/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`
+        'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({ message, conversationId })
     });
@@ -90,13 +51,13 @@ export const SupportService = {
   },
 
   async getChatHistory() {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw new Error('Not authenticated');
+    const token = await getValidToken();
+    if (!token) throw new Error('Not authenticated');
 
     const response = await fetch(`${Config.API_BASE_URL}/api/support/chat/history`, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${session.access_token}`
+        'Authorization': `Bearer ${token}`
       }
     });
 
@@ -120,32 +81,51 @@ export const SupportService = {
   },
 
   async getSupportHistory() {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw new Error('Not authenticated');
+    const token = await getValidToken();
+    if (!token) throw new Error('Not authenticated');
 
     const response = await fetch(`${Config.API_BASE_URL}/api/support/history`, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${session.access_token}`
+        'Authorization': `Bearer ${token}`
       }
     });
 
-    if (!response.ok) throw new Error('Failed to fetch support history');
-    return await response.json() as (SupportTicket & { type: 'ticket' | 'ai_chat', is_ai: boolean })[];
+    const responseText = await response.text();
+    if (!response.ok) {
+      console.error('[SupportService] Failed to fetch history. Status:', response.status, 'Response:', responseText);
+      throw new Error(`Failed to fetch support history: ${responseText.substring(0, 100)}`);
+    }
+    return JSON.parse(responseText) as { id: string; type: 'ai_chat'; subject: string; message: string; status: string; created_at: string; is_ai: boolean }[];
   },
 
   async getConversationMessages(conversationId: string) {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw new Error('Not authenticated');
+    const token = await getValidToken();
+    if (!token) throw new Error('Not authenticated');
 
     const response = await fetch(`${Config.API_BASE_URL}/api/support/conversations/${conversationId}/messages`, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${session.access_token}`
+        'Authorization': `Bearer ${token}`
       }
     });
 
     if (!response.ok) throw new Error('Failed to fetch conversation messages');
-    return await response.json() as SupportMessage[];
-  }
-};
+     return await response.json() as SupportMessage[];
+   },
+ 
+   async clearSupportHistory() {
+     const token = await getValidToken();
+     if (!token) throw new Error('Not authenticated');
+ 
+     const response = await fetch(`${Config.API_BASE_URL}/api/support/history`, {
+       method: 'DELETE',
+       headers: {
+         'Authorization': `Bearer ${token}`
+       }
+     });
+ 
+     if (!response.ok) throw new Error('Failed to clear support history');
+     return await response.json() as { success: boolean };
+   }
+ };

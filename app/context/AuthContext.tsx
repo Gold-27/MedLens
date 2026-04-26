@@ -8,6 +8,7 @@ import { Config } from '../config';
 import { Platform, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LocalStorageService } from '../services/storage';
+import * as api from '../services/api';
 
 if (Platform.OS === 'web') {
   WebBrowser.maybeCompleteAuthSession();
@@ -19,7 +20,7 @@ interface AuthContextType {
   isGuest: boolean;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
-  signUp: (email: string, password: string, displayName?: string) => Promise<{ error: AuthError | null }>;
+  signUp: (email: string, password: string, displayName?: string) => Promise<{ error: AuthError | null, needsEmailConfirmation?: boolean }>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   continueAsGuest: () => Promise<void>;
@@ -53,6 +54,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const setGuestState = async (value: boolean) => {
     setIsGuest(value);
     // Persisting guest state across restarts is no longer desired per PRD logic
+  };
+
+  const syncGuestSearches = async (token: string) => {
+    const guestSearches = await LocalStorageService.getGuestSearchesAndClear();
+    if (guestSearches.length > 0) {
+      try {
+        await api.syncRecentSearches(guestSearches, token);
+        console.log('[Auth] Synced guest searches to account');
+      } catch (err) {
+        console.error('[Auth] Failed to sync guest searches', err);
+      }
+    }
   };
 
   useEffect(() => {
@@ -94,6 +107,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (currentSession?.user) {
         setGuestState(false);
         await LocalStorageService.setHasAuthenticatedBefore();
+        // Migrate guest searches to account
+        await syncGuestSearches(currentSession.access_token);
       }
       setLoading(false);
     });
@@ -111,6 +126,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         await setGuestState(false);
         await LocalStorageService.setOnboardingCompleted();
         await LocalStorageService.setHasAuthenticatedBefore();
+        await syncGuestSearches(newSession.access_token);
       }
       return { error };
     } catch (error) {
@@ -162,14 +178,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           await setGuestState(false);
           await LocalStorageService.setOnboardingCompleted();
           await LocalStorageService.setHasAuthenticatedBefore();
+          await syncGuestSearches(refreshedSession.access_token);
         } else if (signUpData.session) {
           console.log('[Auth] Using initial session from signUp');
           setSession(signUpData.session);
           await setGuestState(false);
           await LocalStorageService.setOnboardingCompleted();
           await LocalStorageService.setHasAuthenticatedBefore();
+          await syncGuestSearches(signUpData.session.access_token);
         } else {
           console.log('[Auth] No immediate session (normal if email confirmation enabled)');
+          return { error: null, needsEmailConfirmation: true };
         }
       }
 
@@ -229,11 +248,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signInWithGoogle = async () => {
     try {
-      console.log('Starting Google Auth...');
+      console.log('[GoogleAuth] Starting Google Auth...');
+
+      // Generate redirect URI using AuthSession (Expo Go compatible)
       const redirectUrl = AuthSession.makeRedirectUri({
         scheme: 'medquire',
       });
-      console.log('AuthSession Redirect URL:', redirectUrl);
+      console.log('[GoogleAuth] Redirect URL:', redirectUrl);
+      console.log('[GoogleAuth] Platform:', Platform.OS);
 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -243,22 +265,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
 
       if (error) {
-        console.error('Supabase OAuth Error:', error);
+        console.error('[GoogleAuth] Supabase OAuth Error:', error);
         return { error };
       }
 
+      console.log('[GoogleAuth] OAuth URL received:', data?.url ? 'YES' : 'NO');
+
       if (data?.url) {
-        console.log('Opening browser for Google Login...');
+        console.log('[GoogleAuth] Opening browser for Google Login...');
         const res = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
-        console.log('WebBrowser result:', res.type);
+        console.log('[GoogleAuth] WebBrowser result type:', res.type);
 
         if (res.type === 'success' && res.url) {
-          console.log('Login successful, parsing tokens...');
+          console.log('[GoogleAuth] Success! Callback URL received:', res.url.substring(0, 80) + '...');
           const paramsStr = res.url.split('#')[1] || res.url.split('?')[1];
           if (paramsStr) {
             const searchParams = new URLSearchParams(paramsStr.replace(/\?/g, '&'));
             const access_token = searchParams.get('access_token');
             const refresh_token = searchParams.get('refresh_token');
+
+            console.log('[GoogleAuth] Tokens found:', {
+              access_token: access_token ? `${access_token.substring(0, 10)}...` : 'MISSING',
+              refresh_token: refresh_token ? `${refresh_token.substring(0, 10)}...` : 'MISSING',
+            });
 
             if (access_token && refresh_token) {
               const { error: sessionError } = await supabase.auth.setSession({
@@ -266,22 +295,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 refresh_token,
               });
               if (sessionError) {
-                console.error('Session setting error:', sessionError);
+                console.error('[GoogleAuth] Session setting error:', sessionError);
                 return { error: sessionError };
               }
-              console.log('Session established successfully!');
+              console.log('[GoogleAuth] Session established successfully!');
               await LocalStorageService.setOnboardingCompleted();
               await LocalStorageService.setHasAuthenticatedBefore();
+              const { data: { user: googleUser } } = await supabase.auth.getUser(access_token);
+              if (googleUser) {
+                await syncGuestSearches(access_token);
+              }
+            } else {
+              console.warn('[GoogleAuth] No tokens found in redirect URL params');
+              return { error: new Error('Authentication failed: no tokens received') };
             }
+          } else {
+            console.warn('[GoogleAuth] No params string found in callback URL');
+            return { error: new Error('Authentication failed: invalid redirect') };
           }
         } else if (res.type === 'cancel' || res.type === 'dismiss') {
-          console.log('User cancelled the sign-in flow.');
+          console.log('[GoogleAuth] User cancelled the sign-in flow.');
           return { error: new Error('User cancelled sign-in') };
+        } else {
+          console.log('[GoogleAuth] Unexpected browser result:', JSON.stringify(res));
         }
       }
       return { error: null };
     } catch (error) {
-      console.error('Global Google sign in error:', error);
+      console.error('[GoogleAuth] Unexpected error:', error);
       return { error: error instanceof Error ? error : new Error('Unknown error') };
     }
   };
@@ -343,13 +384,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (!user) return { error: new Error('No user to delete') };
 
       // 1. Call backend to permanently delete user from auth.users
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
+      const token = await getToken();
+      if (token) {
         try {
           const response = await fetch(Config.ENDPOINTS.AUTH_DELETE, {
             method: 'DELETE',
             headers: {
-              'Authorization': `Bearer ${session.access_token}`,
+              'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
             }
           });

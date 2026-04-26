@@ -133,6 +133,9 @@ async function apiRequest<T>(endpoint: string, options: (RequestInit & { timeout
 
     return data;
   } catch (error: any) {
+    if (error.status !== 404) {
+      console.error(`[API] Request failed for URL: ${endpoint}`, error);
+    }
     if (error.status) throw error;
     if (error.name === 'AbortError') throw error;
     
@@ -258,5 +261,29 @@ export async function transcribeAudio(audioBase64: string, mimeType: string = 'a
     method: 'POST',
     body: JSON.stringify({ audio: audioBase64, mimeType }),
     timeout: 120000, // 2 minutes for audio + AI processing
+  });
+}
+
+// Recent Searches
+export async function getRecentSearches(token: string): Promise<string[]> {
+  return apiRequest<string[]>(Config.ENDPOINTS.RECENT_SEARCHES, {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function saveRecentSearch(query: string, token: string): Promise<string[]> {
+  return apiRequest<string[]>(Config.ENDPOINTS.RECENT_SEARCHES, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ query }),
+  });
+}
+
+export async function syncRecentSearches(queries: string[], token: string): Promise<{ success: boolean }> {
+  return apiRequest<{ success: boolean }>(Config.ENDPOINTS.SYNC_RECENT_SEARCHES, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ queries }),
   });
 }
