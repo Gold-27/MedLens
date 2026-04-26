@@ -66,26 +66,38 @@ async function startTunnel(url, label) {
   const bin = process.platform === 'win32' ? `${cloudflaredPath}.exe` : cloudflaredPath;
   
   const tunnel = spawn(bin, ['tunnel', '--url', url], { shell: true });
+  const readline = require('readline');
+  const rl = readline.createInterface({ input: tunnel.stderr });
   
   return new Promise((resolve) => {
     let capturedUrl = '';
-    tunnel.stderr.on('data', (data) => {
-      const line = data.toString();
-      const match = line.match(/https:\/\/[a-z0-9-]+\.trycloudflare\.com/);
-      if (match && !capturedUrl) {
-        capturedUrl = match[0];
-        console.log(`✅ ${label} URL: ${capturedUrl}`);
-        resolve({ url: capturedUrl, process: tunnel });
+    const timeout = setTimeout(() => {
+      if (!capturedUrl) {
+        console.error(`❌ Failed to get ${label} URL within 60s`);
+        tunnel.kill();
+        process.exit(1);
+      }
+    }, 60000);
+
+    rl.on('line', (line) => {
+      // Log progress to see what's happening
+      if (line.includes('trycloudflare.com')) {
+         const match = line.match(/https:\/\/(?!api)([a-z0-9-]{5,})\.trycloudflare\.com/);
+         if (match && !capturedUrl) {
+           capturedUrl = match[0];
+           console.log(`✅ ${label} URL: ${capturedUrl}`);
+           clearTimeout(timeout);
+           resolve({ url: capturedUrl, process: tunnel });
+         }
       }
     });
 
-    // Timeout after 30s
-    setTimeout(() => {
+    tunnel.on('exit', (code) => {
       if (!capturedUrl) {
-        console.error(`❌ Failed to get ${label} URL`);
+        console.error(`🛑 ${label} tunnel process died prematurely with code ${code}`);
         process.exit(1);
       }
-    }, 30000);
+    });
   });
 }
 

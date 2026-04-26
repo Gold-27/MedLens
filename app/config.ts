@@ -5,10 +5,6 @@ const getApiBaseUrl = (): string => {
   // 1. Use explicit environment variable if set
   const envUrl = process.env.EXPO_PUBLIC_API_BASE_URL;
   
-  if (envUrl === 'https://api.trycloudflare.com') {
-    return 'https://put-england-pray-top.trycloudflare.com';
-  }
-  
   if (envUrl && envUrl.trim() !== '') return envUrl;
 
   // 2. Development mode - try to detect host machine IP for physical device testing
