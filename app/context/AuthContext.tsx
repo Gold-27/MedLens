@@ -86,6 +86,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         if (error) {
           console.error('Session check error:', error);
+          if (error.message.includes('Refresh Token Not Found')) {
+            console.log('[Auth] Refresh Token Not Found on startup, clearing session');
+            await supabase.auth.signOut();
+          }
         }
         
         setSession(session ?? null);
@@ -331,6 +335,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const { data: { session }, error } = await supabase.auth.getSession();
       
+      // Handle the "Refresh Token Not Found" error which can happen if the session is unrecoverable
+      if (error?.message?.includes('Refresh Token Not Found')) {
+        console.error('[Auth] Terminal session error, signing out:', error.message);
+        await signOut();
+        return null;
+      }
+
       if (error || !session) {
         if (error) console.error('[Auth] getSession error:', error.message);
         return null;
@@ -346,6 +357,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         if (refreshError) {
           console.error('[Auth] Token refresh failed:', refreshError.message);
+          
+          // Handle the "Refresh Token Not Found" error during manual refresh
+          if (refreshError.message.includes('Refresh Token Not Found')) {
+            console.log('[Auth] Refresh token missing during refresh call, signing out...');
+            await signOut();
+          }
+          
           return null;
         }
         
@@ -357,7 +375,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.error('[Auth] Get token error:', error.message);
       return null;
     }
-  }, []);
+  }, [signOut]);
 
   const updateProfile = async (data: { full_name?: string; email?: string }) => {
     try {
