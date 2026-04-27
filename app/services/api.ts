@@ -14,7 +14,12 @@ export interface SearchResponse {
   ai_provider?: string;
   eli12: {
     enabled: boolean;
-    content: string | null;
+    content: string | {
+      what_it_does: string;
+      how_to_take: string;
+      warnings: string;
+      side_effects: string;
+    } | null;
   };
 }
 
@@ -60,7 +65,7 @@ export interface DrugData {
   [key: string]: unknown;
 }
 
-const DEFAULT_TIMEOUT = 60000; // 60 seconds - allowed for AI and multi-modal generation
+const DEFAULT_TIMEOUT = 90000; // Increased to 90s for dual-summary generation // 60 seconds - allowed for AI and multi-modal generation
 const MAX_RETRIES = 2;
 
 async function fetchWithRetry(url: string, options: RequestInit, retries = MAX_RETRIES, timeout = DEFAULT_TIMEOUT): Promise<Response> {
@@ -285,5 +290,11 @@ export async function syncRecentSearches(queries: string[], token: string): Prom
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
     body: JSON.stringify({ queries }),
+  });
+}
+export async function clearRecentSearches(token: string): Promise<{ success: boolean }> {
+  return apiRequest<{ success: boolean }>(Config.ENDPOINTS.RECENT_SEARCHES, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
   });
 }

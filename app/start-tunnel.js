@@ -105,8 +105,12 @@ async function startTunnel(url, label) {
 function updateEnv(apiUrl) {
   console.log(`📝 Updating .env: EXPO_PUBLIC_API_BASE_URL=${apiUrl}`);
   let content = fs.readFileSync(ENV_PATH, 'utf8');
-  content = content.replace(/EXPO_PUBLIC_API_BASE_URL=.*/g, `EXPO_PUBLIC_API_BASE_URL=${apiUrl}`);
-  fs.writeFileSync(ENV_PATH, content);
+  if (content.includes('EXPO_PUBLIC_API_BASE_URL=')) {
+    content = content.replace(/EXPO_PUBLIC_API_BASE_URL=[^\r\n]*/g, `EXPO_PUBLIC_API_BASE_URL=${apiUrl}`);
+  } else {
+    content += `\nEXPO_PUBLIC_API_BASE_URL=${apiUrl}\n`;
+  }
+  fs.writeFileSync(ENV_PATH, content, 'utf8');
 }
 
 // --- Main Execution ---

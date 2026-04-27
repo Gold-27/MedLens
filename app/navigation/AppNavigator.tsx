@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, ActivityIndicator, DeviceEventEmitter } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItemList, DrawerContentComponentProps, useDrawerStatus } from '@react-navigation/drawer';
@@ -65,50 +65,64 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
   const [isLoading, setIsLoading] = React.useState(drawerHistoryCache === null);
   const drawerStatus = useDrawerStatus();
 
-  const loadHistory = React.useCallback(async () => {
-    try {
-      let searches: string[] = [];
-      if (user) {
-        const token = await getToken();
-        if (token) {
-          try {
-            searches = await api.getRecentSearches(token);
-          } catch (apiErr) {
-            console.warn('Drawer failed to fetch searches from API, falling back to cache:', apiErr);
-            searches = await LocalStorageService.getRecentSearches(user.id);
-          }
-        } else {
-          searches = await LocalStorageService.getRecentSearches(user.id);
-        }
-      } else {
-        searches = await LocalStorageService.getRecentSearches(null);
-      }
+  const loadHistory = React.useCallback(async (isRetry = false) => {
+    // If not authenticated or in guest mode, don't attempt API call
+    if (!user || isGuest) {
+      const searches = await LocalStorageService.getRecentSearches(null);
       setHistory(searches);
       drawerHistoryCache = searches;
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      console.log(`[Drawer] Refreshing history for ${user ? (isGuest ? 'Guest' : user.id) : 'Unauthenticated'}`);
+      let serverSearches: string[] = [];
+      let localSearches: string[] = await LocalStorageService.getRecentSearches(isGuest ? null : user?.id);
+      
+      // Start with local searches for instant feedback
+      setHistory(localSearches);
+      setIsLoading(true);
+
+      const token = await getToken();
+      if (token && !isGuest) {
+        try {
+          serverSearches = await api.getRecentSearches(token);
+          console.log(`[Drawer] API fetch success: ${serverSearches.length} items`);
+          
+          // Merge server and local, prioritizing server but keeping unique items
+          const combined = Array.from(new Set([...serverSearches, ...localSearches])).slice(0, 10);
+          setHistory(combined);
+          drawerHistoryCache = combined;
+        } catch (apiErr: any) {
+          if (apiErr.status === 401 && !isRetry) {
+            console.warn('[Drawer] 401 detected, attempting token refresh and retry...');
+            return loadHistory(true);
+          }
+          console.warn('[Drawer] API fetch failed, staying with local data');
+        }
+      } else {
+        // Just local searches for Guest
+        setHistory(localSearches);
+        drawerHistoryCache = localSearches;
+      }
     } catch (error) {
-      console.error('Failed to load history in drawer:', error);
+      console.error('[Drawer] Failed to load history:', error);
     } finally {
       setIsLoading(false);
     }
-  }, [user, getToken]);
+  }, [user, isGuest, getToken]);
 
-  // Update history whenever drawer status changes (opening/open)
+  // Update history whenever drawer opens or state changes
   React.useEffect(() => {
-    if (drawerStatus !== 'closed') {
-      loadHistory();
-    }
-  }, [drawerStatus, loadHistory]);
-
-  React.useEffect(() => {
-    // Refresh history when drawer opens explicitly
-    const unsubscribe = props.navigation.addListener('drawerOpen', loadHistory);
-    // Also refresh on generic state change for maximum reactivity
-    const unsubscribeState = props.navigation.addListener('state', loadHistory);
+    // We only want to refresh when it actually opens to avoid spamming the API
+    const unsubscribe = props.navigation.addListener('drawerOpen', () => loadHistory());
     
-    loadHistory();
+    const historySub = DeviceEventEmitter.addListener('history_updated', () => loadHistory());
+    
     return () => {
       unsubscribe();
-      unsubscribeState();
+      historySub.remove();
     };
   }, [props.navigation, loadHistory]);
 
@@ -118,9 +132,21 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
   };
 
   const clearHistory = async () => {
-    await LocalStorageService.clearRecentSearches(user?.id);
-    setHistory([]);
-    drawerHistoryCache = [];
+    try {
+      // 1. Clear local storage instantly
+      await LocalStorageService.clearRecentSearches(user?.id);
+      setHistory([]);
+      drawerHistoryCache = [];
+
+      // 2. Clear server if authenticated
+      const token = await getToken();
+      if (token && !isGuest) {
+        await api.clearRecentSearches(token);
+        console.log('[Drawer] Server history cleared');
+      }
+    } catch (error) {
+      console.error('[Drawer] Failed to clear history:', error);
+    }
   };
 
   const handleLogout = () => {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, KeyboardAvoidingView, Platform, Keyboard, DeviceEventEmitter } from 'react-native';
 import * as Sharing from 'expo-sharing';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -36,6 +36,7 @@ const HomeScreen: React.FC = () => {
   const [query, setQuery] = useState('');
   const inputBarRef = useRef<InputBarHandle>(null);
   const [state, setState] = useState<AppState>('empty');
+  const [exportLoading, setExportLoading] = useState(false);
   const [pendingAction, setPendingAction] = useState<string>('');
   const { savedDrugNames, addItem: addToCabinet } = useCabinet();
   const [baseResult, setBaseResult] = useState<api.SearchResponse | null>(null);
@@ -52,10 +53,20 @@ const HomeScreen: React.FC = () => {
 
   const prefetchELI12 = useCallback(async (data: any, summary: any) => {
     if (!data || !summary) return;
+    
+    // 1. If we already have the ELI12 result from the initial search, skip the call
+    if (baseResult?.eli12?.enabled && baseResult.eli12.content) {
+      console.log('[Perf] Using pre-generated ELI12 content');
+      const content = baseResult.eli12.content;
+      setEli12Result(typeof content === 'string' ? JSON.parse(content) : content);
+      return;
+    }
+
     try {
       const response = await api.getELI12(data, summary);
       if (response.eli12.content) {
-        setEli12Result(JSON.parse(response.eli12.content));
+        const content = response.eli12.content;
+        setEli12Result(typeof content === 'string' ? JSON.parse(content) : content);
       }
     } catch (error) {
       // Don't log abort or common timeout errors as failures for background tasks
@@ -64,7 +75,7 @@ const HomeScreen: React.FC = () => {
       
       console.warn('Background ELI12 prefetch failed (will retry on manual toggle):', error);
     }
-  }, []);
+  }, [baseResult]);
 
   const handleToggleELI12 = useCallback(async (enabled: boolean) => {
     setIsELI12(enabled);
@@ -117,7 +128,7 @@ const HomeScreen: React.FC = () => {
 
       // 4. API Fetch with Timeout handling
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('TIMEOUT')), 30000) // Raised to 30s
+        setTimeout(() => reject(new Error('TIMEOUT')), 60000) // Increased to 60s
       );
       
       const slowIndicatorPromise = new Promise((resolve) => 
@@ -144,24 +155,48 @@ const HomeScreen: React.FC = () => {
 
       sessionCache.current.set(cleanQuery, response);
       setBaseResult(response);
+      
+      // 5. If ELI12 was pre-generated, set it immediately
+      if (response.eli12?.enabled && response.eli12.content) {
+        console.log('[Perf] Instant ELI12 loaded from initial search');
+        const content = response.eli12.content;
+        setEli12Result(typeof content === 'string' ? JSON.parse(content) : content);
+      } else {
+        // No auto-prefetch here anymore to avoid background timeout errors
+        // We only fetch ELI12 if the initial dual-generation failed AND the user clicks the button
+        console.log('[Search] ELI12 not included in initial response, will fetch on demand');
+      }
+
       setState('success');
 
-      // Proactive background pre-fetch (ELI12)
-      prefetchELI12(response.data, response.summary);
-      
       // Async persistence
       LocalStorageService.setCachedResult(cleanQuery, response);
+      
+      const queryToSave = searchQuery.trim();
+      // Save to local storage for instant availability in the drawer
+      LocalStorageService.addRecentSearch(queryToSave, user?.id)
+        .then(updated => {
+          console.log(`[History] Local saved, updated count: ${updated.length}`);
+          if (!user) {
+            setRecentSearches(updated);
+            DeviceEventEmitter.emit('history_updated');
+          }
+        });
+
+      // Synchronize with server if authenticated
       if (user) {
         getToken().then(token => {
           if (token) {
-            api.saveRecentSearch(searchQuery.trim(), token)
-              .then(updated => setRecentSearches(updated))
-              .catch(err => console.error('Failed to save recent search', err));
+            console.log(`[History] Syncing search with server: ${queryToSave}`);
+            api.saveRecentSearch(queryToSave, token)
+              .then(updated => {
+                console.log(`[History] Server sync success, count: ${updated.length}`);
+                setRecentSearches(updated);
+                DeviceEventEmitter.emit('history_updated');
+              })
+              .catch(err => console.error('[History] Server sync failed:', err));
           }
         });
-      } else {
-        LocalStorageService.addRecentSearch(searchQuery.trim(), null)
-          .then(updated => setRecentSearches(updated));
       }
 
     } catch (error: any) {
@@ -290,7 +325,7 @@ const HomeScreen: React.FC = () => {
     const currentSummary = isELI12 && eli12Result ? eli12Result : baseResult.summary;
     
     try { 
-      setState('loading');
+      setExportLoading(true);
       
       const uri = await PDFService.generateMedicationReport({
         drugName: baseResult.drug_name,
@@ -309,19 +344,14 @@ const HomeScreen: React.FC = () => {
         dialogTitle: `Medication Report: ${baseResult.drug_name}`,
         UTI: 'com.adobe.pdf'
       });
-      
-      // Reset state after export
-      setState('empty');
-      setBaseResult(null);
-      setEli12Result(null);
-      setQuery('');
     }
     catch (error: any) { 
       console.error('PDF export failed:', error); 
       Alert.alert('Export Failed', 'We could not generate the medical report PDF. Please try again.');
-      setState('success');
+    } finally {
+      setExportLoading(false);
     }
-  }, [baseResult, isELI12, eli12Result, isGuest]);
+  }, [baseResult, isELI12, eli12Result, isGuest, query, navigation]);
 
   // Restore pending search context after Auth transition
   useEffect(() => {
@@ -518,7 +548,6 @@ const HomeScreen: React.FC = () => {
           />
         </View>
     </SafeAreaView>
-
 
     </KeyboardAvoidingView>
   );

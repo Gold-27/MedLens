@@ -14,38 +14,51 @@ export const requireAuth = async (
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    console.warn(`[Auth] Missing or invalid Authorization header for ${req.url}`);
     return res.status(401).json({ error: 'Authentication required. Please sign in.' });
   }
 
-  const token = authHeader.split(' ')[1];
+  const token = authHeader.split(/\s+/)[1];
+
+  if (!token) {
+    console.warn(`[Auth] Token missing from Authorization header for ${req.url}`);
+    return res.status(401).json({ error: 'Invalid authentication token.' });
+  }
 
   try {
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_ANON_KEY;
 
     if (!supabaseUrl || !supabaseKey) {
-      console.error('[Auth] Supabase not configured — cannot validate token');
+      console.error('[Auth] Supabase configuration missing from environment variables');
       return res.status(503).json({ error: 'Authentication service unavailable' });
     }
 
-    // Create a user-scoped client to validate the JWT
+    // Create a singleton-style client for verification
     const supabase = createClient(supabaseUrl, supabaseKey, {
-      global: { headers: { Authorization: `Bearer ${token}` } },
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
     });
 
+    // Validate the token specifically
     const { data: { user }, error } = await supabase.auth.getUser(token);
 
     if (error || !user) {
-      console.error('[Auth] Invalid token or session error:', error?.message);
-      return res.status(401).json({ error: 'Invalid or expired session. Please sign in again.' });
+      console.error(`[Auth] Token validation failed for ${req.url}:`, error?.message || 'No user found');
+      return res.status(401).json({ 
+        error: 'Invalid or expired session. Please sign in again.',
+        details: error?.message
+      });
     }
 
-    console.log(`[Auth] User validated: ${user.id} (${user.email || 'no email'})`);
+    console.log(`[Auth] Success: ${user.id} accessed ${req.url}`);
     req.userId = user.id;
     req.userToken = token;
     next();
   } catch (error: any) {
-    console.error('[Auth] Middleware error:', error.message);
+    console.error('[Auth] Internal middleware error:', error.message);
     return res.status(500).json({ error: 'Authentication check failed' });
   }
 };

@@ -6,6 +6,12 @@ export interface AISummary {
   how_to_take: string;
   warnings: string;
   side_effects: string;
+  eli12?: {
+    what_it_does: string;
+    how_to_take: string;
+    warnings: string;
+    side_effects: string;
+  };
 }
 
 export class GeminiService {
@@ -21,25 +27,26 @@ export class GeminiService {
     }
 
     const prompt = `
-      You are MedQuire, an AI assistant specialized in translating complex medical jargon into clear, simplified medical language (Health Literacy focus).
+      You are MedQuire, an AI assistant specialized in medical simplification.
+      Your task is to generate TWO versions of a medication summary based on FDA label data:
+      1. BASE: Clear, plain-language for an average adult.
+      2. ELI12: Extreme simplification for a 12-year-old child (use metaphors, simple words, short sentences).
       
       RULES:
-      1. Use ALL provided raw fields to construct a complete summary. For example, if "Indications" is sparse, look into "Warnings" or "Dosage" to explain what the drug does.
-      2. If a section is missing from the explicit JSON fields but the medication is well-known (like Aspirin, Tylenol, etc.), use the provided context to infer the missing info safely.
-      3. NEVER return "No information available" or "Information not provided" if there is ANY data in the raw fields. Your job is to extract and simplify, not just report missing keys.
-      4. NEVER provide medical advice or tell the user what they "should" do.
-      5. Use clear, plain language that an average adult can easily understand.
-      
-      OUTPUT FORMAT:
-      You must return a JSON object with exactly these four keys: what_it_does, how_to_take, warnings, side_effects.
+      - Use ALL provided raw fields. 
+      - NEVER return "No info available" if any data exists. Infer safely for common drugs.
+      - NEVER provide medical advice.
+      - Output exactly in JSON format.
 
       Medication: ${data.drug_name}
-      Indications (What it does): ${data.indications || 'Extract information from dosage or warnings if needed'}
-      Dosage (How to take): ${data.dosage || 'N/A'}
+      Indications: ${data.indications || 'Extract information from dosage or warnings if needed'}
+      Dosage: ${data.dosage || 'N/A'}
       Warnings: ${data.warnings || 'N/A'}
       Side Effects: ${data.side_effects || 'N/A'}
 
-      JSON Output:
+      Return a JSON object with:
+      - what_it_does, how_to_take, warnings, side_effects (for BASE)
+      - eli12: { what_it_does, how_to_take, warnings, side_effects } (for ELI12 version)
     `;
 
     try {
@@ -58,7 +65,8 @@ export class GeminiService {
         {
           headers: {
             'Content-Type': 'application/json'
-          }
+          },
+          timeout: 45000
         }
       );
 

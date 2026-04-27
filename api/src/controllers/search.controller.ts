@@ -79,13 +79,20 @@ export const searchMedication = async (req: Request, res: Response) => {
       throw new Error('Summary generation failed in all stages');
     }
 
-    // Stage 3: Validate AI output — ensure all required keys are present
+    // Stage 3: Validate AI output and include ELI12 if present
     const validatedSummary: AISummary = {
       what_it_does: layer1.what_it_does || 'We do not have enough reliable information for this section.',
       how_to_take: layer1.how_to_take || 'We do not have enough reliable information for this section.',
       warnings: layer1.warnings || 'We do not have enough reliable information for this section.',
       side_effects: layer1.side_effects || 'We do not have enough reliable information for this section.',
     };
+
+    const eli12Content = layer1.eli12 ? {
+      what_it_does: layer1.eli12.what_it_does || validatedSummary.what_it_does,
+      how_to_take: layer1.eli12.how_to_take || validatedSummary.how_to_take,
+      warnings: layer1.eli12.warnings || validatedSummary.warnings,
+      side_effects: layer1.eli12.side_effects || validatedSummary.side_effects,
+    } : null;
 
     // Stage 4: Return structured response (including normalized data for ELI12 re-use)
     console.log('[Search] Returning success response');
@@ -96,8 +103,8 @@ export const searchMedication = async (req: Request, res: Response) => {
       data: fdaData,
       summary: validatedSummary,
       eli12: {
-        enabled: false,
-        content: null,
+        enabled: !!eli12Content,
+        content: eli12Content,
       },
       disclaimer: 'MedQuire simplifies medical information for understanding. It does not replace professional medical advice.',
     };
@@ -336,5 +343,28 @@ export const syncRecentSearches = async (req: AuthenticatedRequest, res: Respons
   } catch (error: any) {
     console.error('[Search] syncRecentSearches error:', error.message);
     res.status(500).json({ error: 'Failed to sync recent searches' });
+  }
+};
+
+export const clearRecentSearches = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const supabase = getUserScopedClient(req.userToken!);
+    const { error } = await supabase
+      .from('recent_searches')
+      .delete()
+      .eq('user_id', req.userId);
+
+    if (error) {
+      if (error.code === 'PGRST205' || error.message?.includes('relation "public.recent_searches" does not exist')) {
+        console.warn('[Search] recent_searches table does not exist yet. Returning success.');
+        return res.json({ success: true });
+      }
+      throw error;
+    }
+
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error('[Search] clearRecentSearches error:', error.message);
+    res.status(500).json({ error: 'Failed to clear recent searches' });
   }
 };

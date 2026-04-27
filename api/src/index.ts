@@ -7,9 +7,9 @@ dotenv.config();
 dotenv.config({ path: path.join(__dirname, '../.env') });
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import { searchMedication, generateELI12, autocomplete, transcribeAudio, getRecentSearches, saveRecentSearch, syncRecentSearches } from './controllers/search.controller';
+import { searchMedication, generateELI12, autocomplete, transcribeAudio, getRecentSearches, saveRecentSearch, syncRecentSearches, clearRecentSearches } from './controllers/search.controller';
 import { getCabinetItems, saveCabinetItem, deleteCabinetItem } from './controllers/cabinet.controller';
 import { deleteAccount } from './controllers/auth.controller';
 import { handleSupportChat, getChatHistory, getSupportHistory, getConversationMessages, clearSupportHistory } from './controllers/support.controller';
@@ -50,12 +50,13 @@ app.get('/health', (req, res) => {
 });
 
 // ── Search Routes ────────────────────────────────────────────────────────────
-app.post('/api/search', rateLimiter(60000, 30), searchMedication);
+app.post('/api/search', searchMedication);
 app.get('/api/autocomplete', autocomplete);
 app.post('/api/eli12', generateELI12);
 app.post('/api/search/transcribe', transcribeAudio);
 app.get('/api/search/recent', requireAuth, getRecentSearches);
 app.post('/api/search/recent', requireAuth, saveRecentSearch);
+app.delete('/api/search/recent', requireAuth, clearRecentSearches);
 app.post('/api/search/recent/sync', requireAuth, syncRecentSearches);
 
 // ── Cabinet Routes (Auth Required) ───────────────────────────────────────────
@@ -143,6 +144,17 @@ app.use((req, res) => {
       'POST /api/interactions',
       'GET /health'
     ]
+  });
+});
+
+// Global Error Handler
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  console.error('[Global Error Handler]:', err);
+  const status = err.status || 500;
+  res.status(status).json({
+    error: 'Internal Server Error',
+    message: err.message || 'An unexpected error occurred on the server.',
+    details: process.env.NODE_ENV === 'development' ? err.stack : undefined
   });
 });
 

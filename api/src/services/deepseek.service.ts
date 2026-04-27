@@ -6,6 +6,12 @@ export interface AISummary {
   how_to_take: string;
   warnings: string;
   side_effects: string;
+  eli12?: {
+    what_it_does: string;
+    how_to_take: string;
+    warnings: string;
+    side_effects: string;
+  };
 }
 
 export class DeepSeekService {
@@ -29,29 +35,35 @@ export class DeepSeekService {
     }
 
     const systemPrompt = `
-      You are MedQuire, an AI assistant specialized in translating complex medical jargon into clear, simplified medical language (Health Literacy focus).
+      You are MedQuire, an AI assistant. You MUST return a JSON object containing TWO versions of medication info.
+      
+      REQUIRED JSON STRUCTURE:
+      {
+        "what_it_does": "Normal explanation",
+        "how_to_take": "Normal explanation",
+        "warnings": "Normal explanation",
+        "side_effects": "Normal explanation",
+        "eli12": {
+          "what_it_does": "Simple child-friendly metaphor",
+          "how_to_take": "Very simple steps",
+          "warnings": "Simple 'be careful' talk",
+          "side_effects": "Simple 'how you might feel' talk"
+        }
+      }
       
       RULES:
-      1. Use ALL provided raw fields to construct a complete summary. For example, if "Indications" is sparse, look into "Warnings" or "Dosage" to explain what the drug does.
-      2. If a section is missing from the explicit JSON fields but the medication is well-known (like Aspirin, Tylenol, etc.), use the provided context to infer the missing info safely.
-      3. NEVER return "No information available" or "Information not provided" if there is ANY data in the raw fields. Your job is to extract and simplify, not just report missing keys.
-      4. NEVER provide medical advice or tell the user what they "should" do.
-      5. Always maintain a calm, helpful, and non-alarmist tone.
-      6. Use clear, plain language that an average adult can easily understand.
-      
-      OUTPUT FORMAT:
-      You must return a JSON object with exactly these four keys: what_it_does, how_to_take, warnings, side_effects.
+      - BASE version: Clear plain English for adults.
+      - ELI12 version: Extremely simple (12-year-old level).
+      - NEVER provide medical advice.
+      - ALWAYS include the "eli12" object.
     `;
 
     const userPrompt = `
       Medication: ${data.drug_name}
-      
-      Indications (What it does): ${this.trimInput(data.indications)}
-      Dosage (How to take): ${this.trimInput(data.dosage)}
+      Indications: ${this.trimInput(data.indications)}
+      Dosage: ${this.trimInput(data.dosage)}
       Warnings: ${this.trimInput(data.warnings)}
       Side Effects: ${this.trimInput(data.side_effects)}
-      
-      Generate the simplified medical summary.
     `;
 
     try {
@@ -70,7 +82,7 @@ export class DeepSeekService {
             'Authorization': `Bearer ${this.apiKey}`,
             'Content-Type': 'application/json'
           },
-          timeout: 25000
+          timeout: 60000 // 60s for AI to respond
         }
       );
 
