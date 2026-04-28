@@ -115,19 +115,20 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
 
   // Update history whenever drawer opens or state changes
   React.useEffect(() => {
-    // We only want to refresh when it actually opens to avoid spamming the API
-    const unsubscribe = props.navigation.addListener('drawerOpen', () => loadHistory());
-    
+    if (drawerStatus === 'open') {
+      loadHistory();
+    }
+  }, [drawerStatus, loadHistory]);
+
+  React.useEffect(() => {
     const historySub = DeviceEventEmitter.addListener('history_updated', () => loadHistory());
-    
     return () => {
-      unsubscribe();
       historySub.remove();
     };
-  }, [props.navigation, loadHistory]);
+  }, [loadHistory]);
 
   const handleHistoryPress = (query: string) => {
-    (navigation as any).navigate('HomeDrawer', { searchQuery: query });
+    props.navigation.navigate('HomeDrawer', { searchQuery: query });
     props.navigation.closeDrawer();
   };
 

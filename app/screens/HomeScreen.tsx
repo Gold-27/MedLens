@@ -110,6 +110,12 @@ const HomeScreen: React.FC = () => {
       if (sessionCache.current.has(cleanQuery)) {
         const cached = sessionCache.current.get(cleanQuery)!;
         setBaseResult(cached);
+        
+        if (cached.eli12?.enabled && cached.eli12.content) {
+          const content = cached.eli12.content;
+          setEli12Result(typeof content === 'string' ? JSON.parse(content) : content);
+        }
+        
         setState('success');
         console.log(`[Perf] Memory cache hit for: ${cleanQuery}`);
         return;
@@ -120,15 +126,22 @@ const HomeScreen: React.FC = () => {
       if (diskCached) {
         sessionCache.current.set(cleanQuery, diskCached);
         setBaseResult(diskCached);
+        
+        if (diskCached.eli12?.enabled && diskCached.eli12.content) {
+          const content = diskCached.eli12.content;
+          setEli12Result(typeof content === 'string' ? JSON.parse(content) : content);
+        } else {
+          prefetchELI12(diskCached.data, diskCached.summary);
+        }
+        
         setState('success');
-        prefetchELI12(diskCached.data, diskCached.summary);
         console.log(`[Perf] Disk cache hit for: ${cleanQuery}`);
         return;
       }
 
       // 4. API Fetch with Timeout handling
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('TIMEOUT')), 60000) // Increased to 60s
+        setTimeout(() => reject(new Error('TIMEOUT')), 60000) // Increased to 60s to allow deep AI response time
       );
       
       const slowIndicatorPromise = new Promise((resolve) => 
