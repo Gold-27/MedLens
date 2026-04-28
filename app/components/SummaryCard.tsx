@@ -127,27 +127,24 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
     <View style={styles.card}>
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.headerMain}>
-          <View style={styles.titleContainer}>
+        <View style={{ flexDirection: 'column', marginBottom: 12 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <MaterialCommunityIcons name="pill" size={28} color={theme.colors.primary} style={styles.drugIcon} />
-            <View>
-              <Text style={styles.drugName}>{drugName}</Text>
-              <View style={styles.sourceRow}>
-                <Ionicons name="shield-checkmark" size={14} color={theme.colors.success} />
-                <Text style={styles.sourceText}>Trusted source: {source}</Text>
-              </View>
-            </View>
+            <Text style={[styles.drugName, { flex: 1 }]}>{drugName}</Text>
+            {onClose && !isExporting && (
+              <TouchableOpacity 
+                style={styles.closeButton} 
+                onPress={onClose}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Ionicons name="close-circle" size={26} color={theme.colors.outlineVariant} />
+              </TouchableOpacity>
+            )}
           </View>
-          
-          {onClose && !isExporting && (
-            <TouchableOpacity 
-              style={styles.closeButton} 
-              onPress={onClose}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Ionicons name="close-circle" size={26} color={theme.colors.outlineVariant} />
-            </TouchableOpacity>
-          )}
+          <View style={[styles.sourceRow, { marginLeft: 40 }]}>
+            <Ionicons name="shield-checkmark" size={14} color={theme.colors.success} />
+            <Text style={styles.sourceText}>Trusted source: {source}</Text>
+          </View>
         </View>
 
         {eli12Enabled && (
