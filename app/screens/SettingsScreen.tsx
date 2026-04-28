@@ -333,7 +333,10 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   headerTitle: { fontSize: 28, fontWeight: 'bold', fontFamily: 'Outfit', letterSpacing: -0.5 },
-  backButton: { marginRight: 12 },
+  backButton: { 
+    marginRight: 16,
+    marginLeft: -4,
+  },
   centeredProfile: {
     alignItems: 'center',
     paddingBottom: 40,
