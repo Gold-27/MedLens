@@ -29,6 +29,57 @@ export const deleteAccount = async (req: Request, res: Response) => {
   try {
     console.log(`[Auth] Attempting to permanently delete user: ${userId}`);
 
+    // 0. Cleanup user data from public tables first to avoid constraint violations
+    try {
+      console.log(`[Auth] Pre-deleting user data from tables for: ${userId}`);
+      
+      // Delete from profiles
+      const { error: profileError } = await adminClient
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
+      if (profileError) console.warn('[Auth] Failed to delete from profiles:', profileError.message);
+
+      // Delete from cabinet_items
+      const { error: cabinetError } = await adminClient
+        .from('cabinet_items')
+        .delete()
+        .eq('user_id', userId);
+      if (cabinetError) console.warn('[Auth] Failed to delete from cabinet_items:', cabinetError.message);
+
+      // Delete from support_messages first (since cascade might be missing)
+      const { data: conversations } = await adminClient
+        .from('support_conversations')
+        .select('id')
+        .eq('user_id', userId);
+      
+      if (conversations && conversations.length > 0) {
+        const convIds = conversations.map(c => c.id);
+        const { error: messagesError } = await adminClient
+          .from('support_messages')
+          .delete()
+          .in('conversation_id', convIds);
+        if (messagesError) console.warn('[Auth] Failed to delete from support_messages:', messagesError.message);
+      }
+
+      // Delete from support_conversations
+      const { error: supportError } = await adminClient
+        .from('support_conversations')
+        .delete()
+        .eq('user_id', userId);
+      if (supportError) console.warn('[Auth] Failed to delete from support_conversations:', supportError.message);
+
+      // Delete from recent_searches
+      const { error: searchesError } = await adminClient
+        .from('recent_searches')
+        .delete()
+        .eq('user_id', userId);
+      if (searchesError) console.warn('[Auth] Failed to delete from recent_searches:', searchesError.message);
+      
+    } catch (cleanupError: any) {
+      console.warn('[Auth] Cleanup error before user deletion:', cleanupError.message);
+    }
+
     // 1. Delete user from Supabase Auth (this is permanent and removes from auth.users)
     const { error: deleteError } = await adminClient.auth.admin.deleteUser(userId);
 

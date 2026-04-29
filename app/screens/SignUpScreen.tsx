@@ -100,7 +100,18 @@ const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
         const { error, needsEmailConfirmation } = await signUp(form.email, form.password, form.name);
         
         if (error) {
-          Alert.alert('Sign Up Failed', error.message);
+          if (error.message?.includes('already registered') || error.message?.includes('User already registered')) {
+            Alert.alert(
+              'Account Exists',
+              'An account with this email already exists. Would you like to log in?',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Log In', onPress: () => navigation.navigate('Login') }
+              ]
+            );
+          } else {
+            Alert.alert('Sign Up Failed', error.message);
+          }
         } else if (needsEmailConfirmation) {
           Alert.alert(
             'Check your email',
