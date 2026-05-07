@@ -125,6 +125,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   logoWrapper: {
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    backgroundColor: '#F0F4FF',
+    borderRadius: 8,
+    paddingHorizontal: 12,
     marginBottom: 20,
   },
   footer: {
