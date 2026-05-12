@@ -51,6 +51,13 @@ app.get('/health', (req, res) => {
 
 // ── Search Routes ────────────────────────────────────────────────────────────
 app.post('/api/search', searchMedication);
+app.get('/api/search', (req, res) => {
+  res.status(405).json({ 
+    error: 'Method Not Allowed', 
+    message: 'Please use POST to search medications.',
+    hint: 'If you are seeing this, your client might be performing a GET instead of a POST.'
+  });
+});
 app.get('/api/autocomplete', autocomplete);
 app.post('/api/eli12', generateELI12);
 app.post('/api/search/transcribe', transcribeAudio);
@@ -168,6 +175,7 @@ const server = app.listen(Number(PORT), '0.0.0.0', () => {
   console.log('--- Configuration Status ---');
   console.log(`PORT: ${PORT}`);
   console.log(`SUPABASE_URL: ${process.env.SUPABASE_URL ? 'PRESENT' : 'MISSING'}`);
+  console.log(`SUPABASE_ANON_KEY: ${process.env.SUPABASE_ANON_KEY ? `PRESENT (Prefix: ${process.env.SUPABASE_ANON_KEY.substring(0, 10)}...)` : 'MISSING'}`);
   console.log(`SUPABASE_SERVICE_ROLE_KEY: ${process.env.SUPABASE_SERVICE_ROLE_KEY ? 'PRESENT' : 'MISSING'}`);
   console.log(`OPENFDA_API_KEY: ${process.env.OPENFDA_API_KEY ? 'PRESENT' : 'MISSING'}`);
   console.log(`DEEPSEEK_API_KEY: ${process.env.DEEPSEEK_API_KEY ? 'PRESENT' : 'MISSING'}`);
@@ -189,3 +197,6 @@ const heartbeat = setInterval(() => {
 
 // ── Entry Point Confirmation ──────────────────────────────────────────────────
 console.log('🏁 Entry point initialization complete. Server is ready to receive traffic.');
+
+
+export default app;

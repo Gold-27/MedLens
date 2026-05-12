@@ -61,6 +61,10 @@ export interface CabinetItem {
   created_at: string;
 }
 
+interface ApiRequestOptions extends RequestInit {
+  timeout?: number;
+}
+
 // Helper to handle fetch with timeout
 async function fetchWithTimeout(url: string, options: RequestInit, timeout: number = DEFAULT_TIMEOUT) {
   const controller = new AbortController();
@@ -107,7 +111,8 @@ async function fetchWithRetry(url: string, options: RequestInit, retries: number
   }
 }
 
-async function apiRequest<T>(url: string, options: RequestInit = {}): Promise<T> {
+async function apiRequest<T>(url: string, options: ApiRequestOptions = {}): Promise<T> {
+  const { timeout, ...fetchOptions } = options;
   const headers = {
     'Content-Type': 'application/json',
     ...(options.headers || {}),
@@ -115,9 +120,9 @@ async function apiRequest<T>(url: string, options: RequestInit = {}): Promise<T>
 
   try {
     const response = await fetchWithRetry(url, {
-      ...options,
+      ...fetchOptions,
       headers,
-    }, MAX_RETRIES, options.timeout || DEFAULT_TIMEOUT);
+    }, MAX_RETRIES, timeout || DEFAULT_TIMEOUT);
 
     const text = await response.text();
     let data: any;
