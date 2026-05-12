@@ -1,48 +1,55 @@
 import { Config } from '../config';
-import COMMON_DRUGS from '../assets/data/common_drugs.json';
+
+const MAX_RETRIES = 3;
+const DEFAULT_TIMEOUT = 30000; // 30 seconds
 
 export interface SearchResponse {
   drug_name: string;
   source: string;
-  data?: DrugData;
-  summary: {
-    what_it_does: string | null;
-    how_to_take: string | null;
-    warnings: string | null;
-    side_effects: string | null;
-  };
-  ai_provider?: string;
+  ai_provider: string;
+  data: DrugData;
+  summary: AISummary;
   eli12: {
     enabled: boolean;
-    content: string | {
-      what_it_does: string;
-      how_to_take: string;
-      warnings: string;
-      side_effects: string;
-    } | null;
+    content: AISummary | string | null;
   };
+  disclaimer: string;
+}
+
+export interface DrugData {
+  drug_name: string;
+  indications: string;
+  dosage: string;
+  warnings: string;
+  side_effects: string;
+  active_ingredients: string[];
+  manufacturer?: string;
+  generic_name?: string;
+}
+
+export interface AISummary {
+  what_it_does: string;
+  how_to_take: string;
+  warnings: string;
+  side_effects: string;
+}
+
+export interface InteractionResponse {
+  interactions: {
+    severity: 'high' | 'moderate' | 'low';
+    description: string;
+    drugs: string[];
+  }[];
+  summary: string;
 }
 
 export interface AutocompleteResponse {
   query: string;
-  suggestions: Array<{
+  suggestions: {
     name: string;
     type: 'brand' | 'generic';
     drug_name: string;
-  }>;
-}
-
-export interface InteractionResponse {
-  status: 'safe' | 'caution' | 'risky' | 'unknown' | 'potential_interaction' | 'insufficient_data';
-  severity?: 'safe' | 'caution' | 'risky' | 'unknown';
-  message: string;
-  eli12_summary?: string;
-  details?: {
-    interactions: Array<{
-      drugKey: string;
-      interactions: string[];
-    }>;
-  };
+  }[];
 }
 
 export interface CabinetItem {
@@ -50,65 +57,64 @@ export interface CabinetItem {
   user_id: string;
   drug_name: string;
   drug_key: string;
-  source: string;
-  created_at: string;
-  updated_at: string;
-  last_accessed_at?: string;
   description?: string;
+  created_at: string;
 }
 
-export interface DrugData {
-  drug_name?: string;
-  indications_and_usage?: string[];
-  dosage_and_administration?: string[];
-  warnings?: string[];
-  adverse_reactions?: string[];
-  [key: string]: unknown;
-}
-
-const DEFAULT_TIMEOUT = 90000; // Increased to 90s for dual-summary generation // 60 seconds - allowed for AI and multi-modal generation
-const MAX_RETRIES = 2;
-
-async function fetchWithRetry(url: string, options: RequestInit, retries = MAX_RETRIES, timeout = DEFAULT_TIMEOUT): Promise<Response> {
+// Helper to handle fetch with timeout
+async function fetchWithTimeout(url: string, options: RequestInit, timeout: number = DEFAULT_TIMEOUT) {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => {
-    console.warn(`[API] Request timed out after ${timeout}ms: ${url}`);
-    controller.abort();
-  }, timeout);
+  const id = setTimeout(() => controller.abort(), timeout);
 
   try {
     const response = await fetch(url, {
       ...options,
       signal: controller.signal,
     });
-    clearTimeout(timeoutId);
-
+    clearTimeout(id);
     return response;
-  } catch (error) {
-    clearTimeout(timeoutId);
+  } catch (error: any) {
+    clearTimeout(id);
+    if (error.name === 'AbortError') {
+      throw new Error('TIMEOUT');
+    }
+    throw error;
+  }
+}
 
-    const isAbortError = error instanceof Error && error.name === 'AbortError';
-
+// Helper for exponential backoff on retryable errors
+async function fetchWithRetry(url: string, options: RequestInit, retries: number, timeout: number): Promise<Response> {
+  try {
+    const response = await fetchWithTimeout(url, options, timeout);
+    
+    // Only retry on network errors or 5xx, not on 4xx (client errors like 401)
+    if (response.status >= 500 && retries > 0) {
+        console.warn(`[API] Server error ${response.status}, retrying... (${retries} left)`);
+        await new Promise(resolve => setTimeout(resolve, 1000 * (MAX_RETRIES - retries + 1)));
+        return fetchWithRetry(url, options, retries - 1, timeout);
+    }
+    
+    return response;
+  } catch (error: any) {
+    const isAbortError = error.message === 'TIMEOUT' || error.name === 'AbortError';
+    
     if (retries > 0 && !isAbortError) {
       // Wait before retry (exponential backoff)
       await new Promise(resolve => setTimeout(resolve, 1000 * (MAX_RETRIES - retries + 1)));
       return fetchWithRetry(url, options, retries - 1, timeout);
     }
-
     throw error;
   }
 }
 
-async function apiRequest<T>(endpoint: string, options: (RequestInit & { timeout?: number }) = {}): Promise<T> {
+async function apiRequest<T>(url: string, options: RequestInit = {}): Promise<T> {
   const headers = {
     'Content-Type': 'application/json',
-    'Bypass-Tunnel-Reminder': 'true',
-    'User-Agent': 'MedQuire-App',
-    ...options.headers,
+    ...(options.headers || {}),
   };
 
   try {
-    const response = await fetchWithRetry(endpoint, {
+    const response = await fetchWithRetry(url, {
       ...options,
       headers,
     }, MAX_RETRIES, options.timeout || DEFAULT_TIMEOUT);
@@ -119,19 +125,22 @@ async function apiRequest<T>(endpoint: string, options: (RequestInit & { timeout
     try {
       data = text ? JSON.parse(text) : null;
     } catch (e) {
-      // If parsing fails, and the response is not OK, throw the raw text or status
       if (!response.ok) {
-        const error = new Error(`API Error ${response.status}: ${text.substring(0, 150) || response.statusText}`);
+        console.error(`[API] Request failed for URL: ${url} [Status: ${response.status}] [Raw text: ${text.substring(0, 200)}]`);
+        const error = new Error(`API Error ${response.status}: ${response.statusText}`);
         (error as any).status = response.status;
         (error as any).data = text;
         throw error;
       }
-      // If it's a 200 but not JSON, that's also an error in our system
       throw new Error(`Invalid JSON response: ${text.substring(0, 100)}`);
     }
 
     if (!response.ok) {
-      const error = new Error(`API Error: ${response.status}`);
+      const errorData = data || {};
+      const detailMsg = errorData.details || errorData.error || `Error ${response.status}`;
+      console.error(`[API] Request failed for URL: ${url} [Status: ${response.status}] [Details: ${detailMsg}]`);
+      
+      const error = new Error(`API Error ${response.status}: ${detailMsg}`);
       (error as any).status = response.status;
       (error as any).data = data;
       throw error;
@@ -139,43 +148,39 @@ async function apiRequest<T>(endpoint: string, options: (RequestInit & { timeout
 
     return data;
   } catch (error: any) {
-    if (error.status !== 404) {
-      console.error(`[API] Request failed for URL: ${endpoint}`, error);
+    if (error.name === 'AbortError' || error.message === 'TIMEOUT') {
+      console.error(`[API] Request timed out for URL: ${url}`);
     }
-    if (error.status) throw error;
-    if (error.name === 'AbortError') throw error;
-    
-    // Extract status code from message if possible (e.g. "HTTP 404")
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    const statusMatch = message.match(/HTTP (\d+)/);
-    const apiError = new Error(`API request failed: ${message}`);
-    if (statusMatch) {
-      (apiError as any).status = parseInt(statusMatch[1], 10);
-    }
-    throw apiError;
+    throw error;
   }
 }
 
 // Medication search
-export async function searchMedication(query: string, eli12Enabled = false): Promise<SearchResponse> {
+export async function searchMedication(query: string, eli12: boolean = false): Promise<SearchResponse> {
   return apiRequest<SearchResponse>(Config.ENDPOINTS.SEARCH, {
     method: 'POST',
-    body: JSON.stringify({ query, eli12: eli12Enabled }),
+    body: JSON.stringify({ query, eli12 }),
   });
 }
 
 // Autocomplete suggestions
 export async function getAutocomplete(query: string): Promise<AutocompleteResponse> {
-  const normalizedQuery = query.toLowerCase().trim();
-  if (!normalizedQuery) return { query, suggestions: [] };
+  // 1. Local common drug fallback (to ensure instant results even if API is slow)
+  const commonDrugs = [
+    { name: 'Advil', drug_name: 'Ibuprofen', type: 'brand' },
+    { name: 'Tylenol', drug_name: 'Acetaminophen', type: 'brand' },
+    { name: 'Allegra', drug_name: 'Fexofenadine', type: 'brand' },
+    { name: 'Zyrtec', drug_name: 'Cetirizine', type: 'brand' },
+    { name: 'Claritin', drug_name: 'Loratadine', type: 'brand' },
+    { name: 'Benadryl', drug_name: 'Diphenhydramine', type: 'brand' },
+    { name: 'Motrin', drug_name: 'Ibuprofen', type: 'brand' },
+    { name: 'Lipitor', drug_name: 'Atorvastatin', type: 'brand' },
+    { name: 'Nexium', drug_name: 'Esomeprazole', type: 'brand' },
+    { name: 'Amoxicillin', drug_name: 'Amoxicillin', type: 'generic' },
+  ];
 
-  // 1. Local Search First (Instant, Zero API Cost)
-  const localSuggestions = (COMMON_DRUGS as any[])
-    .filter(d => 
-      d.name.toLowerCase().startsWith(normalizedQuery) || 
-      d.drug_name.toLowerCase().startsWith(normalizedQuery)
-    )
-    .slice(0, 5)
+  const localSuggestions = commonDrugs
+    .filter(d => d.name.toLowerCase().includes(query.toLowerCase()))
     .map(d => ({
       name: d.name,
       drug_name: d.drug_name,
@@ -253,8 +258,8 @@ export async function getCabinetItems(token: string): Promise<{ items: CabinetIt
   });
 }
 
-export async function deleteCabinetItem(id: string, token: string): Promise<{ success: boolean; message: string }> {
-  return apiRequest<{ success: boolean; message: string }>(Config.ENDPOINTS.CABINET_DELETE(id), {
+export async function deleteCabinetItem(id: string, token: string): Promise<{ success: boolean }> {
+  return apiRequest<{ success: boolean }>(Config.ENDPOINTS.CABINET_DELETE(id), {
     method: 'DELETE',
     headers: {
       Authorization: `Bearer ${token}`,
@@ -262,26 +267,22 @@ export async function deleteCabinetItem(id: string, token: string): Promise<{ su
   });
 }
 
-export async function transcribeAudio(audioBase64: string, mimeType: string = 'audio/m4a'): Promise<{ text: string }> {
-  return apiRequest<{ text: string }>(Config.ENDPOINTS.SEARCH + '/transcribe', {
-    method: 'POST',
-    body: JSON.stringify({ audio: audioBase64, mimeType }),
-    timeout: 120000, // 2 minutes for audio + AI processing
-  });
-}
-
-// Recent Searches
+// Search History
 export async function getRecentSearches(token: string): Promise<string[]> {
   return apiRequest<string[]>(Config.ENDPOINTS.RECENT_SEARCHES, {
     method: 'GET',
-    headers: { Authorization: `Bearer ${token}` },
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
   });
 }
 
 export async function saveRecentSearch(query: string, token: string): Promise<string[]> {
   return apiRequest<string[]>(Config.ENDPOINTS.RECENT_SEARCHES, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${token}` },
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
     body: JSON.stringify({ query }),
   });
 }
@@ -289,13 +290,18 @@ export async function saveRecentSearch(query: string, token: string): Promise<st
 export async function syncRecentSearches(queries: string[], token: string): Promise<{ success: boolean }> {
   return apiRequest<{ success: boolean }>(Config.ENDPOINTS.SYNC_RECENT_SEARCHES, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${token}` },
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
     body: JSON.stringify({ queries }),
   });
 }
+
 export async function clearRecentSearches(token: string): Promise<{ success: boolean }> {
   return apiRequest<{ success: boolean }>(Config.ENDPOINTS.RECENT_SEARCHES, {
     method: 'DELETE',
-    headers: { Authorization: `Bearer ${token}` },
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
   });
 }
