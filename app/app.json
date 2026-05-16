@@ -34,7 +34,22 @@
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS"
       ],
-      "softwareKeyboardLayoutMode": "adjustResize"
+      "softwareKeyboardLayoutMode": "adjustResize",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "medquire"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -43,7 +58,8 @@
       "expo-font",
       "expo-asset",
       "expo-audio",
-      "expo-speech-recognition"
+      "expo-speech-recognition",
+      "expo-linking"
     ],
     "extra": {
       "eas": {
