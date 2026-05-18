@@ -275,7 +275,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.log('[GoogleAuth] WebBrowser result type:', res.type);
 
         if (res.type === 'success' && res.url) {
+          console.log('[GoogleAuth] Full callback URL:', res.url); // ADD THIS
           const paramsStr = res.url.split('#')[1] || res.url.split('?')[1];
+          console.log('[GoogleAuth] Params string:', paramsStr); // ADD THIS
           if (paramsStr) {
             const searchParams = new URLSearchParams(paramsStr.replace(/\?/g, '&'));
             const access_token = searchParams.get('access_token');
