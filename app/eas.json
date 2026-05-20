@@ -6,7 +6,8 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "channel": "development"
     },
     "preview": {
       "distribution": "internal",
@@ -17,14 +18,15 @@
         "EXPO_PUBLIC_API_BASE_URL": "https://medlens-production-903e.up.railway.app",
         "EXPO_PUBLIC_SUPABASE_URL": "https://hbfonqcenboolhfjlhaf.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhiZm9ucWNlbmJvb2xoZmpsaGFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyNjk5NzMsImV4cCI6MjA5MTg0NTk3M30.aeTdyvGfH0rFiz-ODbQ37PsbzyEqxhlt3Z3A_BZjH5s"
-      }
+      },
+      "channel": "preview"
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "channel": "production"
     }
   },
   "submit": {
     "production": {}
   }
 }
-
