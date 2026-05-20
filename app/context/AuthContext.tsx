@@ -254,7 +254,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       console.log('[GoogleAuth] Starting Google Auth...');
 
-      const redirectUrl = Linking.createURL('/');
+      // Use makeRedirectUri for a clean medquire:// URL (avoids triple-slash from Linking.createURL('/'))
+      const redirectUrl = AuthSession.makeRedirectUri({ scheme: 'medquire' });
       console.log('[GoogleAuth] Redirect URL:', redirectUrl);
 
       const { data, error } = await supabase.auth.signInWithOAuth({
@@ -276,35 +277,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         if (res.type === 'success' && res.url) {
           console.log('[GoogleAuth] Full callback URL:', res.url);
-          
-          // Try both # and ? for token extraction
-          const hashParams = res.url.split('#')[1];
-          const queryParams = res.url.split('?')[1];
-          const paramsStr = hashParams || queryParams;
-          
-          console.log('[GoogleAuth] Hash params:', hashParams);
-          console.log('[GoogleAuth] Query params:', queryParams);
-          
-          if (paramsStr) {
-            const searchParams = new URLSearchParams(paramsStr);
-            const access_token = searchParams.get('access_token');
-            const refresh_token = searchParams.get('refresh_token');
-            
-            console.log('[GoogleAuth] access_token found:', !!access_token);
-            console.log('[GoogleAuth] refresh_token found:', !!refresh_token);
 
-            if (access_token && refresh_token) {
-              const { error: sessionError } = await supabase.auth.setSession({
-                access_token,
-                refresh_token,
-              });
-              if (sessionError) return { error: sessionError };
-              await LocalStorageService.setOnboardingCompleted();
-              await LocalStorageService.setHasAuthenticatedBefore();
-            } else {
-              return { error: new Error('No tokens received') };
-            }
+          // Supabase v2 uses PKCE by default — the callback URL contains a `code`
+          // parameter that must be exchanged for a session, not raw tokens.
+          const { error: sessionError } = await supabase.auth.exchangeCodeForSession(res.url);
+
+          if (sessionError) {
+            console.error('[GoogleAuth] exchangeCodeForSession error:', sessionError);
+            return { error: sessionError };
           }
+
+          console.log('[GoogleAuth] Session established via PKCE exchange');
+          await LocalStorageService.setOnboardingCompleted();
+          await LocalStorageService.setHasAuthenticatedBefore();
         } else if (res.type === 'cancel' || res.type === 'dismiss') {
           return { error: new Error('User cancelled sign-in') };
         }
