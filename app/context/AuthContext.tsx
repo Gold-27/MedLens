@@ -277,6 +277,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         if (res.type === 'success' && res.url) {
           console.log('[GoogleAuth] Full callback URL:', res.url);
+          const hashParams = res.url.split('#')[1];
+          const queryParams = res.url.split('?')[1];
 
           // Supabase v2 uses PKCE by default — the callback URL contains a `code`
           // parameter that must be exchanged for a session, not raw tokens.
