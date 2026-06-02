@@ -253,45 +253,39 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signInWithGoogle = async () => {
     try {
       console.log('[GoogleAuth] Starting Google Auth...');
-
-      // Use makeRedirectUri for a clean medquire:// URL (avoids triple-slash from Linking.createURL('/'))
-      const redirectUrl = AuthSession.makeRedirectUri({ scheme: 'medquire' });
+      const redirectUrl = Linking.createURL('/');
       console.log('[GoogleAuth] Redirect URL:', redirectUrl);
-
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: redirectUrl,
           skipBrowserRedirect: true,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
         },
       });
-
-      if (error) {
-        console.error('[GoogleAuth] Supabase OAuth Error:', error);
-        return { error };
-      }
-
+      if (error) return { error };
       if (data?.url) {
-        const res = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
-        console.log('[GoogleAuth] WebBrowser result type:', res.type);
-
+        const res = await WebBrowser.openAuthSessionAsync(
+          data.url,
+          redirectUrl,
+          {
+            showInRecents: true,
+            createTask: false,
+          }
+        );
         if (res.type === 'success' && res.url) {
-          console.log('[GoogleAuth] Full callback URL:', res.url);
-          const hashParams = res.url.split('#')[1];
-          const queryParams = res.url.split('?')[1];
-
-          // Supabase v2 uses PKCE by default — the callback URL contains a `code`
-          // parameter that must be exchanged for a session, not raw tokens.
+          console.log('[GoogleAuth] Callback URL:', res.url);
           const { error: sessionError } = await supabase.auth.exchangeCodeForSession(res.url);
-
           if (sessionError) {
-            console.error('[GoogleAuth] exchangeCodeForSession error:', sessionError);
+            console.error('[GoogleAuth] Session error:', sessionError);
             return { error: sessionError };
           }
-
-          console.log('[GoogleAuth] Session established via PKCE exchange');
           await LocalStorageService.setOnboardingCompleted();
           await LocalStorageService.setHasAuthenticatedBefore();
+          return { error: null };
         } else if (res.type === 'cancel' || res.type === 'dismiss') {
           return { error: new Error('User cancelled sign-in') };
         }
