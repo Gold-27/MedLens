@@ -11,8 +11,8 @@ export const supabase = createClient(
       storage: AsyncStorage,
       persistSession: true,
       autoRefreshToken: true,
-      detectSessionInUrl: true,
-      flowType: 'pkce',
+      detectSessionInUrl: false,
+      flowType: 'implicit',
     },
   }
 );
@@ -36,4 +36,25 @@ export const getValidToken = async (): Promise<string | null> => {
   }
   
   return session.access_token;
+};
+
+const redirectUrl = 'medquire://callback';
+
+export const signInWithGoogle = async () => {
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: redirectUrl,
+      skipBrowserRedirect: true,
+      scopes: 'email profile',
+    },
+  });
+
+  if (error) throw error;
+
+  // Extract session from OAuth response
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError) throw sessionError;
+
+  return { data, session };
 };
