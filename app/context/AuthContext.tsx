@@ -253,51 +253,38 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signInWithGoogle = async () => {
     try {
       console.log('[GoogleAuth] Starting Google Auth...');
-      const redirectUrl = Linking.createURL('/');
-      console.log('[GoogleAuth] Redirect URL:', redirectUrl);
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: redirectUrl,
-          skipBrowserRedirect: true,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          },
-        },
+
+      const { GoogleSignin } = require('@react-native-google-signin/google-signin');
+
+      // Configure Google Sign In
+      GoogleSignin.configure({
+        webClientId: '990313463556-ve95uh0hvtsoknbpr0s39uuvhi1uf7g7.apps.googleusercontent.com',
       });
-      if (error) return { error };
-      if (data?.url) {
-        const res = await WebBrowser.openAuthSessionAsync(
-          data.url,
-          redirectUrl,
-          {
-            showInRecents: true,
-            createTask: false,
-          }
-        );
-        if (res.type === 'success' && res.url) {
-          console.log('[GoogleAuth] Callback URL:', res.url);
-          const url = new URL(res.url);
-          const code = url.searchParams.get('code');
-          if (code) {
-            const { error: sessionError } = await supabase.auth.exchangeCodeForSession(code);
-            if (sessionError) {
-              console.error('[GoogleAuth] Session error:', sessionError);
-              return { error: sessionError };
-            }
-            await LocalStorageService.setOnboardingCompleted();
-            await LocalStorageService.setHasAuthenticatedBefore();
-            return { error: null };
-          }
-          return { error: new Error('No code received') };
-        } else if (res.type === 'cancel' || res.type === 'dismiss') {
-          return { error: new Error('User cancelled sign-in') };
-        }
+      await GoogleSignin.hasPlayServices();
+      const userInfo = await GoogleSignin.signIn();
+      const { idToken } = await GoogleSignin.getTokens();
+
+      if (!idToken) {
+        return { error: new Error('No ID token received') };
       }
+
+      // Sign in to Supabase with Google ID token
+      const { data, error } = await supabase.auth.signInWithIdToken({
+        provider: 'google',
+        token: idToken,
+      });
+
+      if (error) {
+        console.error('[GoogleAuth] Supabase error:', error);
+        return { error };
+      }
+
+      await LocalStorageService.setOnboardingCompleted();
+      await LocalStorageService.setHasAuthenticatedBefore();
+      console.log('[GoogleAuth] Success!');
       return { error: null };
-    } catch (error) {
-      console.error('[GoogleAuth] Unexpected error:', error);
+    } catch (error: any) {
+      console.error('[GoogleAuth] Error:', error);
       return { error: error instanceof Error ? error : new Error('Unknown error') };
     }
   };
