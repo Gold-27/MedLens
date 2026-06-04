@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "813110562418",
+    "project_id": "medquire-ce64a",
+    "storage_bucket": "medquire-ce64a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:813110562418:android:882eeb0c887eba6604bceb",
+        "android_client_info": {
+          "package_name": "com.medquire.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "813110562418-c94qpjrd824iaq7mjcu7rdtcncshncc0.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.medquire.app",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "813110562418-3sl1ijskralss88gueetpp5alshbii1m.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDf_aa7MTdL-XAJH_aWPTFFmxkI2kjYbsg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "813110562418-3sl1ijskralss88gueetpp5alshbii1m.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
