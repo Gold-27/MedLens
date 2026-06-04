@@ -44,7 +44,10 @@
               "scheme": "medquire"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
@@ -55,7 +58,8 @@
       "expo-font",
       "expo-asset",
       "expo-audio",
-      "expo-speech-recognition"
+      "expo-speech-recognition",
+      "@react-native-google-signin/google-signin"
     ],
     "extra": {
       "eas": {
