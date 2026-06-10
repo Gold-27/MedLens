@@ -28,24 +28,27 @@ CREATE TABLE IF NOT EXISTS cabinet_items (
 );
 
 -- Indexes for performance
-CREATE INDEX idx_cabinet_items_user_id ON cabinet_items(user_id);
-CREATE INDEX idx_cabinet_items_drug_key ON cabinet_items(drug_key);
-CREATE INDEX idx_cabinet_items_created_at ON cabinet_items(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_cabinet_items_user_id ON cabinet_items(user_id);
+CREATE INDEX IF NOT EXISTS idx_cabinet_items_drug_key ON cabinet_items(drug_key);
+CREATE INDEX IF NOT EXISTS idx_cabinet_items_created_at ON cabinet_items(created_at DESC);
 
 -- Row Level Security (RLS)
 ALTER TABLE cabinet_items ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
+DROP POLICY IF EXISTS "Users can view own cabinet items" ON cabinet_items;
 -- 1. SELECT: Users can only see their own cabinet items
 CREATE POLICY "Users can view own cabinet items" 
   ON cabinet_items FOR SELECT 
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert own cabinet items" ON cabinet_items;
 -- 2. INSERT: Users can insert their own cabinet items
 CREATE POLICY "Users can insert own cabinet items" 
   ON cabinet_items FOR INSERT 
   WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can delete own cabinet items" ON cabinet_items;
 -- 3. DELETE: Users can delete their own cabinet items (Hard Delete)
 CREATE POLICY "Users can delete own cabinet items" 
   ON cabinet_items FOR DELETE 
@@ -61,6 +64,7 @@ END;
 $$ language 'plpgsql';
 
 -- Trigger to automatically update updated_at
+DROP TRIGGER IF EXISTS update_cabinet_items_updated_at ON cabinet_items;
 CREATE TRIGGER update_cabinet_items_updated_at
   BEFORE UPDATE ON cabinet_items
   FOR EACH ROW

@@ -21,19 +21,23 @@ ALTER TABLE support_conversations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE support_messages ENABLE ROW LEVEL SECURITY;
 
 -- Policies for support_conversations
+DROP POLICY IF EXISTS "Users can view their own conversations" ON support_conversations;
 CREATE POLICY "Users can view their own conversations" 
 ON support_conversations FOR SELECT 
 USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can create their own conversations" ON support_conversations;
 CREATE POLICY "Users can create their own conversations" 
 ON support_conversations FOR INSERT 
 WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update their own conversations" ON support_conversations;
 CREATE POLICY "Users can update their own conversations" 
 ON support_conversations FOR UPDATE 
 USING (auth.uid() = user_id);
 
 -- Policies for support_messages
+DROP POLICY IF EXISTS "Users can view messages from their conversations" ON support_messages;
 CREATE POLICY "Users can view messages from their conversations" 
 ON support_messages FOR SELECT 
 USING (
@@ -43,6 +47,7 @@ USING (
   )
 );
 
+DROP POLICY IF EXISTS "Users can insert messages into their conversations" ON support_messages;
 CREATE POLICY "Users can insert messages into their conversations" 
 ON support_messages FOR INSERT 
 WITH CHECK (
