@@ -310,3 +310,47 @@ export async function clearRecentSearches(token: string): Promise<{ success: boo
     },
   });
 }
+
+// ── Subscription API ───────────────────────────────────────────────────────
+
+export interface CurrentSubscriptionResponse {
+  plan: 'FREE' | 'PREMIUM_MONTHLY' | 'PREMIUM_YEARLY';
+  status: 'NONE' | 'PENDING' | 'ACTIVE' | 'PAST_DUE' | 'CANCELLED' | 'EXPIRED';
+  current_period_end: string | null;
+}
+
+export interface CreateSubscriptionResponse {
+  checkout_url: string;
+  subscription_id: string;
+  tx_ref: string;
+}
+
+export interface CancelSubscriptionResponse {
+  status: string;
+  access_until: string | null;
+}
+
+export async function createSubscription(
+  plan: 'PREMIUM_MONTHLY' | 'PREMIUM_YEARLY',
+  token: string
+): Promise<CreateSubscriptionResponse> {
+  return apiRequest<CreateSubscriptionResponse>(Config.ENDPOINTS.SUBSCRIPTIONS.CREATE, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ plan }),
+  });
+}
+
+export async function getCurrentSubscription(token: string): Promise<CurrentSubscriptionResponse> {
+  return apiRequest<CurrentSubscriptionResponse>(Config.ENDPOINTS.SUBSCRIPTIONS.CURRENT, {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function cancelSubscriptionRequest(token: string): Promise<CancelSubscriptionResponse> {
+  return apiRequest<CancelSubscriptionResponse>(Config.ENDPOINTS.SUBSCRIPTIONS.CANCEL, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}

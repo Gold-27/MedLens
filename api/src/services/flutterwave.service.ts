@@ -66,7 +66,7 @@ class FlutterwaveService {
     payload: FlutterwaveCreateSubscriptionPayload
   ): Promise<FlutterwaveCreateSubscriptionResponse> {
     const response = await this.api.post<FlutterwaveCreateSubscriptionResponse>(
-      '/subscriptions',
+      '/payments',
       payload
     );
     return response.data;

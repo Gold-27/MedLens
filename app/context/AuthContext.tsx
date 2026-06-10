@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { User, Session, AuthError } from '@supabase/supabase-js';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
@@ -9,6 +9,7 @@ import { Platform, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LocalStorageService } from '../services/storage';
 import * as api from '../services/api';
+import type { CurrentSubscriptionResponse } from '../services/api';
 
 if (Platform.OS === 'web') {
   WebBrowser.maybeCompleteAuthSession();
@@ -33,6 +34,8 @@ interface AuthContextType {
   updatePassword: (password: string) => Promise<{ error: AuthError | null }>;
   completeOnboarding: () => Promise<void>;
   isPro: boolean;
+  subscription: CurrentSubscriptionResponse | null;
+  refreshSubscription: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -45,10 +48,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [isGuest, setIsGuest] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [subscription, setSubscription] = useState<CurrentSubscriptionResponse | null>(null);
   
   // Derived user state
   const user = session?.user ?? null;
-  const isPro = user?.user_metadata?.plan === 'pro';
+  const isPro = subscription?.status === 'ACTIVE' && !!subscription?.current_period_end
+    && new Date(subscription.current_period_end) > new Date();
 
   // Persist guest state
   const setGuestState = async (value: boolean) => {
@@ -479,6 +484,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     await LocalStorageService.setOnboardingCompleted();
   };
 
+  const refreshSubscription = useCallback(async () => {
+    try {
+      if (isGuest || !session?.access_token) {
+        setSubscription(null);
+        return;
+      }
+      const sub = await api.getCurrentSubscription(session.access_token);
+      setSubscription(sub);
+    } catch (error) {
+      console.error('[Auth] Failed to fetch subscription:', error);
+      setSubscription(null);
+    }
+  }, [isGuest, session?.access_token]);
+
+  // Fetch subscription on auth load
+  useEffect(() => {
+    if (session?.access_token && !isGuest) {
+      refreshSubscription();
+    } else {
+      setSubscription(null);
+    }
+  }, [session?.access_token, isGuest]);
+
   const value = {
     user,
     session,
@@ -498,6 +526,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     updatePassword,
     completeOnboarding,
     isPro,
+    subscription,
+    refreshSubscription,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

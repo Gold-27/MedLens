@@ -102,12 +102,13 @@ async function processChargeCompleted(payload: any, res: Response) {
       return res.status(500).json({ error: 'Database error' });
     }
 
-    // Update flutterwave IDs on subscription
+    // Update flutterwave customer ID on subscription
+    // Note: flutterwave_subscription_id is set by Flutterwave's subscription.cancelled / subscription.payment events,
+    // not from charge.completed (which only contains a transaction ID)
     await supabase
       .from('subscriptions')
       .update({
         flutterwave_customer_id: verification.data.customer?.id ? String(verification.data.customer.id) : null,
-        flutterwave_subscription_id: payload.data?.id ? String(payload.data.id) : null,
       })
       .eq('id', subscription.id);
 

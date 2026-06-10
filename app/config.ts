@@ -56,6 +56,11 @@ export const Config = {
     AUTH_DELETE: `${API_BASE_URL}/api/auth/account`,
     RECENT_SEARCHES: `${API_BASE_URL}/api/search/recent`,
     SYNC_RECENT_SEARCHES: `${API_BASE_URL}/api/search/recent/sync`,
+    SUBSCRIPTIONS: {
+      CREATE: `${API_BASE_URL}/api/subscriptions/create`,
+      CURRENT: `${API_BASE_URL}/api/subscriptions/current`,
+      CANCEL: `${API_BASE_URL}/api/subscriptions/cancel`,
+    },
   },
   SUPABASE: {
     URL: process.env.EXPO_PUBLIC_SUPABASE_URL || '',

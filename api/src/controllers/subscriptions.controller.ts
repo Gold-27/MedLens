@@ -1,4 +1,5 @@
 import { Response } from 'express';
+import axios from 'axios';
 import { createClient } from '@supabase/supabase-js';
 import { AuthenticatedRequest } from '../middleware/auth.middleware';
 import FlutterwaveService from '../services/flutterwave.service';
@@ -82,7 +83,7 @@ export async function createSubscription(req: AuthenticatedRequest, res: Respons
         tx_ref: txRef,
         amount: amount,
         currency: 'USD',
-        redirect_url: 'https://medquire.app/payment-success',
+        redirect_url: process.env.FLUTTERWAVE_REDIRECT_URL || 'https://medquire.app/payment-success',
         customer: {
           email: user?.email || 'user@medquire.app',
           name: 'MedQuire User',
@@ -184,11 +185,9 @@ export async function cancelSubscription(req: AuthenticatedRequest, res: Respons
       return res.status(404).json({ error: 'No active subscription found' });
     }
 
-    // Cancel via Flutterwave if we have a subscription ID
+      // Cancel via Flutterwave if we have a subscription ID
     if (subscription.flutterwave_subscription_id) {
       try {
-        // Flutterwave cancel subscription endpoint
-        const axios = require('axios');
         await axios.post(
           `https://api.flutterwave.com/v3/subscriptions/${subscription.flutterwave_subscription_id}/cancel`,
           {},

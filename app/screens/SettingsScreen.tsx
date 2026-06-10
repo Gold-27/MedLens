@@ -36,7 +36,7 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 const SettingsScreen: React.FC = () => {
   const theme = useTheme();
   const navigation = (useNavigation as any)();
-  const { user, signOut, isGuest, isPro, updateProfile, deleteAccount } = useAuth();
+  const { user, signOut, isGuest, isPro, subscription, updateProfile, deleteAccount } = useAuth();
   const [activeAccordion, setActiveAccordion] = useState<string | null>(null);
   
   // Edit Profile States
@@ -110,18 +110,7 @@ const SettingsScreen: React.FC = () => {
   };
 
   const handleUpgrade = () => {
-    Alert.alert(
-      'Go Pro',
-      'Unlock unlimited medications, interaction history, and personalized health insights.',
-      [
-        { text: 'Later', style: 'cancel' },
-        { text: 'Upgrade Now', onPress: () => {
-          // Simulate upgrade by updating metadata
-          updateProfile({ full_name: user?.user_metadata?.full_name }); // Just to trigger a refresh if we had a proper backend field
-          Alert.alert('Membership', 'Thank you for upgrading! Your Pro features are now active.');
-        }}
-      ]
-    );
+    navigation.navigate('Upgrade');
   };
 
   const handleSupport = () => {
@@ -132,7 +121,7 @@ const SettingsScreen: React.FC = () => {
     {
       title: 'Account',
       items: [
-        { label: 'Status', value: isGuest ? 'Guest' : (isPro ? 'Pro' : 'Free'), type: 'info' },
+        { label: 'Status', value: isGuest ? 'Guest' : (isPro ? 'Premium' : subscription?.status === 'PAST_DUE' ? 'Past Due' : 'Free'), type: 'info' },
         { label: 'Email', value: isGuest ? 'Not signed in' : (user?.email || 'Not signed in'), type: 'info' },
       ],
     },

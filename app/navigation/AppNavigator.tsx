@@ -20,6 +20,7 @@ import {
   ForgotPasswordScreen,
   VerifyOtpScreen,
   ResetPasswordScreen,
+  UpgradeScreen,
 } from '../screens';
 import { useAuth } from '../context/AuthContext';
 import { CabinetProvider } from '../context/CabinetContext';
@@ -36,6 +37,7 @@ export type RootStackParamList = {
   VerifyOtp: { email: string };
   ResetPassword: { email: string };
   Interaction: { drugKeys?: string[] };
+  Upgrade: undefined;
 };
 
 export type DrawerParamList = {
@@ -290,6 +292,11 @@ const AppNavigator = () => {
             name="Interaction"
             component={InteractionScreen}
             options={{ presentation: 'modal', gestureEnabled: false }}
+          />
+          <Stack.Screen
+            name="Upgrade"
+            component={UpgradeScreen}
+            options={{ gestureEnabled: false }}
           />
         </Stack.Navigator>
       </NavigationContainer>

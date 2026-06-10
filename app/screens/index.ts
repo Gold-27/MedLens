@@ -9,3 +9,4 @@ export { default as LoginScreen } from './LoginScreen';
 export { default as ForgotPasswordScreen } from './ForgotPasswordScreen';
 export { default as VerifyOtpScreen } from './VerifyOtpScreen';
 export { default as ResetPasswordScreen } from './ResetPasswordScreen';
+export { default as UpgradeScreen } from './UpgradeScreen';
