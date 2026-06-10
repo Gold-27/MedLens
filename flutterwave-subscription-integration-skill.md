@@ -149,8 +149,10 @@ Subscription {
   id
   userId
 
-  plan
-  status
+  plan              // FREE | PREMIUM_MONTHLY | PREMIUM_YEARLY
+  status            // PENDING | ACTIVE | PAST_DUE | CANCELLED | EXPIRED
+
+  txRef             // unique transaction reference
 
   flutterwaveCustomerId
   flutterwaveSubscriptionId
@@ -177,10 +179,10 @@ Payment {
   amount
   currency
 
-  gateway
-  gatewayReference
+  gateway          // flutterwave
+  gatewayReference // unique, used for idempotency
 
-  status
+  status           // paid | failed
 
   createdAt
 }
@@ -212,9 +214,9 @@ Workflow:
 
 1. Authenticate user
 2. Create pending Subscription
-3. Generate unique tx_ref
-4. Call Flutterwave
-5. Return hosted checkout URL
+3. Generate unique `tx_ref` using format: `medquire_sub_{userId}_{timestamp}`
+4. Call Flutterwave `POST /v3/subscriptions` to create the subscription
+5. Return hosted checkout URL from response
 
 Example payload:
 
@@ -356,9 +358,23 @@ If payment fails:
 ACTIVE -> PAST_DUE
 ```
 
-User may enter a grace period.
+User enters a configurable grace period (default: 7 days).
 
-Premium access policy is a business decision.
+During grace period:
+```text
+Premium access: maintained
+```
+
+After grace period expires:
+```text
+PAST_DUE -> EXPIRED
+Premium access: revoked
+```
+
+If payment succeeds during grace period:
+```text
+PAST_DUE -> ACTIVE
+```
 
 ---
 

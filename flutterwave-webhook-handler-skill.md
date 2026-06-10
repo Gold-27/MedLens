@@ -43,7 +43,13 @@ Database validation
 Webhook handler:
 
 ```text
-app/api/webhooks/flutterwave/route.ts
+app/api/webhooks/flutterwave.js
+```
+
+Express route definition:
+
+```js
+router.post('/api/webhooks/flutterwave', webhookHandler)
 ```
 
 This file receives incoming webhook events from Flutterwave.
@@ -265,14 +271,14 @@ tx_ref
 
 to locate the subscription.
 
-Example:
+Example (Supabase):
 
 ```ts
-db.subscription.findUnique({
-  where: {
-    txRef: verified.data.tx_ref
-  }
-})
+supabase
+  .from('subscriptions')
+  .select('*')
+  .eq('txRef', verified.data.tx_ref)
+  .single()
 ```
 
 If subscription does not exist:
@@ -283,6 +289,31 @@ Return 200
 ```
 
 Never create subscriptions from webhook data.
+
+---
+
+# Subscription Model Reference
+
+```ts
+Subscription {
+  id
+  userId
+
+  plan              // FREE | PREMIUM_MONTHLY | PREMIUM_YEARLY
+  status            // PENDING | ACTIVE | PAST_DUE | CANCELLED | EXPIRED
+
+  txRef             // unique transaction reference
+
+  flutterwaveCustomerId
+  flutterwaveSubscriptionId
+
+  currentPeriodStart
+  currentPeriodEnd
+
+  createdAt
+  updatedAt
+}
+```
 
 ---
 
@@ -326,18 +357,12 @@ Payment {
   id
   userId
   subscriptionId
-  gatewayReference
+  gatewayReference  // unique, used for idempotency
   amount
   currency
-  status
-  paidAt
+  status            // paid | failed
+  createdAt
 }
-```
-
-Status:
-
-```text
-paid
 ```
 
 ---
@@ -379,15 +404,20 @@ based on plan.
 
 After activation:
 
-Update user:
+Update user.plan:
 
 ```text
 FREE -> PREMIUM
 ```
 
-or derive Premium access directly from Subscription status.
+Premium access is determined server-side by checking:
 
-Premium access should always be determined server-side.
+```text
+Subscription.status === ACTIVE
+currentPeriodEnd > now
+```
+
+Never trust frontend flags.
 
 ---
 
@@ -426,7 +456,8 @@ Allow grace-period handling.
 Cancellation webhook:
 
 ```text
-ACTIVE -> CANCELLED
+ACTIVE  -> CANCELLED
+PAST_DUE -> CANCELLED
 ```
 
 User retains Premium access until:
@@ -453,7 +484,7 @@ Use:
 Payment.gatewayReference
 ```
 
-as a unique field.
+as the unique idempotency key (add a unique constraint on this column).
 
 If duplicate:
 
@@ -466,7 +497,7 @@ Skip processing
 
 # Database Transaction Rules
 
-Use a single database transaction for:
+Use a Supabase RPC or a PostgreSQL transaction for:
 
 ```text
 Create Payment
@@ -476,14 +507,26 @@ Update User Access
 
 This prevents partial updates.
 
-Example:
+Example of what must never happen:
 
 ```text
 Payment Created
 Subscription Not Updated
 ```
 
-must never happen.
+Supabase example:
+
+```ts
+const { data, error } = await supabase.rpc('process_subscription_payment', {
+  p_user_id: userId,
+  p_subscription_id: subscriptionId,
+  p_amount: amount,
+  p_currency: currency,
+  p_gateway_reference: gatewayReference
+})
+```
+
+Create a single Postgres function that handles all three operations atomically.
 
 ---
 
@@ -564,7 +607,7 @@ Sensitive Customer Data
 
 Never send emails inside webhook processing.
 
-Webhook should remain fast.
+Webhook should remain fast (respond 200 immediately).
 
 Queue jobs:
 
@@ -576,6 +619,14 @@ Cancellation Confirmation
 ```
 
 after webhook processing.
+
+Implementation options:
+
+```text
+- Inngest (preferred for Express.js)
+- Bull with Redis
+- Simple job queue in Supabase
+```
 
 ---
 
