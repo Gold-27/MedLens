@@ -80,7 +80,7 @@ $$ LANGUAGE plpgsql;
 
 -- 4. RPC: get usage counters for a user
 CREATE OR REPLACE FUNCTION get_usage_counts(p_user_id UUID)
-RETURNS TABLE(feature TEXT, count INT, limit INT, resets_at TIMESTAMPTZ) AS $$
+RETURNS TABLE(feature TEXT, count INT, max_limit INT, resets_at TIMESTAMPTZ) AS $$
 DECLARE
   v_save_count INT;
 BEGIN
@@ -93,7 +93,7 @@ BEGIN
       WHEN ut.feature = 'search' THEN 5
       WHEN ut.feature = 'interaction' THEN 2
       WHEN ut.feature = 'save' THEN 3
-    END AS limit,
+    END AS max_limit,
     CASE
       WHEN ut.feature IN ('search', 'interaction') THEN ut.last_reset_at + INTERVAL '24 hours'
       ELSE NULL
@@ -161,6 +161,14 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- 6. Trigger: auto-update updated_at
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ language 'plpgsql';
+
 CREATE TRIGGER trg_usage_tracking_updated_at
   BEFORE UPDATE ON usage_tracking
   FOR EACH ROW

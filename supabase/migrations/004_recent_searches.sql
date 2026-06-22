@@ -11,29 +11,33 @@ CREATE TABLE IF NOT EXISTS recent_searches (
 );
 
 -- Indexes for performance
-CREATE INDEX idx_recent_searches_user_id ON recent_searches(user_id);
-CREATE INDEX idx_recent_searches_created_at ON recent_searches(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_recent_searches_user_id ON recent_searches(user_id);
+CREATE INDEX IF NOT EXISTS idx_recent_searches_created_at ON recent_searches(created_at DESC);
 
 -- Row Level Security (RLS)
 ALTER TABLE recent_searches ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
 -- 1. SELECT: Users can only see their own recent searches
+DROP POLICY IF EXISTS "Users can view own recent searches" ON recent_searches;
 CREATE POLICY "Users can view own recent searches" 
   ON recent_searches FOR SELECT 
   USING (auth.uid() = user_id);
 
 -- 2. INSERT: Users can insert their own recent searches
+DROP POLICY IF EXISTS "Users can insert own recent searches" ON recent_searches;
 CREATE POLICY "Users can insert own recent searches" 
   ON recent_searches FOR INSERT 
   WITH CHECK (auth.uid() = user_id);
 
 -- 3. UPDATE: Users can update their own recent searches (for updating timestamps)
+DROP POLICY IF EXISTS "Users can update own recent searches" ON recent_searches;
 CREATE POLICY "Users can update own recent searches" 
   ON recent_searches FOR UPDATE 
   USING (auth.uid() = user_id);
 
 -- 4. DELETE: Users can delete their own recent searches
+DROP POLICY IF EXISTS "Users can delete own recent searches" ON recent_searches;
 CREATE POLICY "Users can delete own recent searches" 
   ON recent_searches FOR DELETE 
   USING (auth.uid() = user_id);

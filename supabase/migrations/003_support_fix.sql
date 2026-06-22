@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS support_messages (
 ALTER TABLE support_messages ENABLE ROW LEVEL SECURITY;
 
 -- 4. Policies for support_messages
+DROP POLICY IF EXISTS "Users can view messages from their conversations" ON support_messages;
 CREATE POLICY "Users can view messages from their conversations" 
 ON support_messages FOR SELECT 
 USING (
@@ -21,6 +22,7 @@ USING (
   )
 );
 
+DROP POLICY IF EXISTS "Users can insert messages into their conversations" ON support_messages;
 CREATE POLICY "Users can insert messages into their conversations" 
 ON support_messages FOR INSERT 
 WITH CHECK (
