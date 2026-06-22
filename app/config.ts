@@ -35,7 +35,7 @@ const API_BASE_URL = getApiBaseUrl();
 
 // Debug logging for configuration
 console.log('[Config] API_BASE_URL:', API_BASE_URL);
-if (API_BASE_URL.includes('api.trycloudflare.com')) {
+if (API_BASE_URL.includes('trycloudflare.com')) {
   console.warn('[Config] WARNING: API_BASE_URL appears to be a placeholder!');
 }
 console.log('[Config] Supabase URL:', process.env.EXPO_PUBLIC_SUPABASE_URL ? 'PRESENT' : 'MISSING');
