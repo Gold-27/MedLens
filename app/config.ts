@@ -10,7 +10,7 @@ const getApiBaseUrl = (): string => {
   // 2. Development mode - try to detect host machine IP for physical device testing
   if (__DEV__) {
     // Try expoConfig first (Expo SDK 49+)
-    const hostUri = Constants.expoConfig?.hostUri || Constants.manifest?.hostUri;
+    const hostUri = Constants.expoConfig?.hostUri || (Constants.manifest as any)?.hostUri;
     
     if (hostUri) {
       // hostUri format: "192.168.1.100:8082" or "localhost:8082"
