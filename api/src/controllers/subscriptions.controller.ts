@@ -33,7 +33,7 @@ export async function createSubscription(req: AuthenticatedRequest, res: Respons
     const userId = req.userId;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-    const { plan, currency } = req.body;
+    const { plan, currency, redirect_url } = req.body;
     if (!plan || !['PREMIUM_MONTHLY', 'PREMIUM_YEARLY'].includes(plan)) {
       return res.status(400).json({ error: 'Invalid plan. Must be PREMIUM_MONTHLY or PREMIUM_YEARLY.' });
     }
@@ -99,7 +99,7 @@ export async function createSubscription(req: AuthenticatedRequest, res: Respons
         amount: amountInSmallestUnit,
         currency: selectedCurrency,
         reference,
-        callback_url: process.env.PAYSTACK_REDIRECT_URL || 'https://medquire.app/payment-success',
+        callback_url: redirect_url || process.env.PAYSTACK_REDIRECT_URL || 'https://medquire.app/payment-success',
         metadata: {
           user_id: userId,
           plan,
