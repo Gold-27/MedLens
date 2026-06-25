@@ -71,8 +71,10 @@ async function processChargeSuccess(payload: any, res: Response) {
 
   const currency = verification.data.currency;
   const expectedAmount = expectedAmounts[subscription.plan]?.[currency];
-  if (!expectedAmount || Number(verification.data.amount) !== expectedAmount) {
-    console.warn('[Webhook] Amount/currency mismatch:', {
+  // Note: Paystack verification.data.amount is the total charged. If the merchant passes 
+  // transaction fees to the customer, this will be > expectedAmount. So we use < instead of !==
+  if (!expectedAmount || Number(verification.data.amount) < expectedAmount) {
+    console.warn('[Webhook] Amount/currency mismatch (paid too little):', {
       expected: `${expectedAmount} ${currency}`,
       actual: `${verification.data.amount} ${currency}`,
     });
