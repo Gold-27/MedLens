@@ -17,9 +17,15 @@ const SUBSCRIPTION_PRICES: Record<string, Record<string, number>> = {
   PREMIUM_YEARLY: { NGN: 13500, USD: 89.99 },
 };
 
-const SUBSCRIPTION_PLANS: Record<string, string | undefined> = {
-  PREMIUM_MONTHLY: process.env.PAYSTACK_PLAN_MONTHLY,
-  PREMIUM_YEARLY: process.env.PAYSTACK_PLAN_YEARLY,
+const SUBSCRIPTION_PLANS: Record<string, Record<string, string | undefined>> = {
+  PREMIUM_MONTHLY: {
+    NGN: process.env.PAYSTACK_PLAN_MONTHLY_NGN || process.env.PAYSTACK_PLAN_MONTHLY,
+    USD: process.env.PAYSTACK_PLAN_MONTHLY_USD,
+  },
+  PREMIUM_YEARLY: {
+    NGN: process.env.PAYSTACK_PLAN_YEARLY_NGN || process.env.PAYSTACK_PLAN_YEARLY,
+    USD: process.env.PAYSTACK_PLAN_YEARLY_USD,
+  },
 };
 
 export async function createSubscription(req: AuthenticatedRequest, res: Response) {
@@ -100,7 +106,7 @@ export async function createSubscription(req: AuthenticatedRequest, res: Respons
         },
       };
 
-      const planCode = SUBSCRIPTION_PLANS[plan];
+      const planCode = SUBSCRIPTION_PLANS[plan]?.[selectedCurrency];
       if (planCode) {
         paystackPayload.plan = planCode;
       }
@@ -115,10 +121,12 @@ export async function createSubscription(req: AuthenticatedRequest, res: Respons
     } catch (paystackError: any) {
       // Clean up pending subscription if Paystack call fails
       await supabase.from('subscriptions').delete().eq('id', subscription.id);
+      const errorMessage = paystackError?.response?.data?.message || paystackError.message;
       console.error('[Subscriptions] Paystack error:', paystackError?.response?.data || paystackError.message);
       return res.status(502).json({
         error: 'Payment gateway error',
-        message: 'Failed to initiate payment. Please try again later.',
+        message: `Failed to initiate payment. Reason: ${errorMessage}`,
+        details: paystackError?.response?.data
       });
     }
   } catch (error: any) {
