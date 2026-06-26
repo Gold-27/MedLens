@@ -20,11 +20,11 @@ import * as api from '../services/api';
 const PRICES: Record<string, Record<string, { price: string, raw: number }>> = {
   PREMIUM_MONTHLY: {
     USD: { price: '$9.99', raw: 9.99 },
-    NGN: { price: '₦1,500', raw: 1500 },
+    NGN: { price: '₦7,000', raw: 7000 },
   },
   PREMIUM_YEARLY: {
     USD: { price: '$89.99', raw: 89.99 },
-    NGN: { price: '₦13,500', raw: 13500 },
+    NGN: { price: '₦75,600', raw: 75600 },
   },
 };
 
@@ -32,12 +32,10 @@ const PLANS = [
   {
     id: 'PREMIUM_MONTHLY' as const,
     name: 'Monthly',
-    badge: null,
   },
   {
     id: 'PREMIUM_YEARLY' as const,
     name: 'Yearly',
-    badge: 'Save 25%',
   },
 ];
 
@@ -175,9 +173,11 @@ const UpgradeScreen: React.FC = () => {
                 <View style={styles.planTop}>
                   <View style={styles.planInfo}>
                     <Text style={[styles.planName, { color: theme.colors.onSurface }]}>{plan.name}</Text>
-                    {plan.badge && selectedCurrency === 'USD' && (
+                    {plan.id === 'PREMIUM_YEARLY' && (
                       <View style={[styles.badge, { backgroundColor: theme.colors.primaryContainer }]}>
-                        <Text style={[styles.badgeText, { color: theme.colors.primary }]}>{plan.badge}</Text>
+                        <Text style={[styles.badgeText, { color: theme.colors.primary }]}>
+                          {selectedCurrency === 'USD' ? 'Save 25%' : 'Save 10%'}
+                        </Text>
                       </View>
                     )}
                   </View>

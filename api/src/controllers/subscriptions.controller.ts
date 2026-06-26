@@ -13,8 +13,8 @@ function getSupabase() {
 }
 
 const SUBSCRIPTION_PRICES: Record<string, Record<string, number>> = {
-  PREMIUM_MONTHLY: { NGN: 1500, USD: 9.99 },
-  PREMIUM_YEARLY: { NGN: 13500, USD: 89.99 },
+  PREMIUM_MONTHLY: { NGN: 7000, USD: 9.99 },
+  PREMIUM_YEARLY: { NGN: 75600, USD: 89.99 },
 };
 
 const SUBSCRIPTION_PLANS: Record<string, Record<string, string | undefined>> = {
